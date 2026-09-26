@@ -367,54 +367,6 @@ button:disabled .tb-glyph {
   text-align: center;
 }
 
-/* ---------- Logos ---------- */
-
-.logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  line-height: 1;
-  vertical-align: middle;
-}
-
-.logo-icon-above {
-  flex-direction: column;
-  gap: 4px;
-}
-
-.logo-emblem {
-  flex: none;
-}
-
-.logo-wordmark {
-  white-space: nowrap;
-}
-
-.logo-text-only {
-  padding-bottom: 3px;
-  border-bottom: 3px solid;
-}
-
-.logo-text-inside {
-  padding: 0.3em 0.7em;
-  white-space: nowrap;
-}
-
-.logo-shape-circle,
-.logo-shape-oval {
-  border-radius: 999px;
-}
-
-.logo-shape-roundedSquare,
-.logo-shape-shield {
-  border-radius: 10px;
-}
-
-.logo-shape-banner {
-  clip-path: polygon(0 0, 100% 0, 94% 50%, 100% 100%, 0 100%, 6% 50%);
-  padding: 0.3em 1.4em;
-}
-
 /* ---------- Company websites: eight layouts ---------- */
 
 .company-site {

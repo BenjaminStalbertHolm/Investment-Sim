@@ -1,7 +1,7 @@
 import { inkColour, type LogoSpec } from '../../art/logo/Logo';
 import { companyLogo } from '../../art/logo/Logo';
 import type { LogoMotif } from '../../art/logo/options';
-import { START_DAY } from '../../sim/calendar';
+import { START_DAY, gameYear } from '../../sim/calendar';
 import { CITIES } from '../../world/cities';
 import type { Company } from '../../world/company';
 import { FIRST_NAMES, LAST_NAMES } from '../../world/people-names';
@@ -72,7 +72,6 @@ export const fill = (template: string, words: Record<string, string | number>) =
 /** "Ridgepine Timber Co." → "Ridgepine Timber": the name without its legal suffix. */
 export const shortName = (name: string) => name.replace(/\s*\(.*?\)/, '').replace(/,?\s(Co|Inc|Corp|Ltd|PLC|Holdings|Group)\.?$/i, '').replace(/\.com$/, '');
 
-const START_YEAR = new Date(START_DAY * 86_400_000).getUTCFullYear();
 
 /**
  * A company's website (spec §14), generated from the company itself: its industry picks the theme, clip-art and
@@ -86,7 +85,8 @@ export function companySite(c: Company): CompanySite {
   const [main, accent] = logo.palette.colors;
   const kinds = PRODUCT_KINDS[c.industry.id] ?? PRODUCT_KINDS.conglomerate;
   const short = shortName(c.name);
-  const year = START_YEAR - c.founded;
+  const startYear = gameYear(START_DAY);
+  const year = startYear - c.founded;
   const ceo = `${c.ceo.firstName} ${c.ceo.lastName}`;
   const kind = rng.pick(kinds);
 
@@ -103,9 +103,9 @@ export function companySite(c: Company): CompanySite {
     product.blurb = fill(rng.pick(PRODUCT_BLURBS), { ...words, product: product.name, kindLower: product.kind.toLowerCase() });
   }
 
-  const since = Math.max(year, START_YEAR - rng.int(1, Math.min(25, c.ceo.age - 28)));
+  const since = Math.max(year, startYear - rng.int(1, Math.min(25, c.ceo.age - 28)));
   const milestones = rng.shuffle([...MILESTONES]).slice(0, 3);
-  const milestoneYears = milestones.map(() => rng.int(Math.min(year, START_YEAR - 1), START_YEAR - 1)).sort((a, b) => a - b);
+  const milestoneYears = milestones.map(() => rng.int(Math.min(year, startYear - 1), startYear - 1)).sort((a, b) => a - b);
   const history = [
     fill(rng.pick(HISTORY), words),
     milestones.map((m, k) => `In ${milestoneYears[k]}, ${short} ${fill(m, { ...words, product: rng.pick(products).name })}.`).join(' '),

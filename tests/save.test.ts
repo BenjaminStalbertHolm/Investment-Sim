@@ -3,7 +3,10 @@ import { createStore, keys, set } from 'idb-keyval';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { CLOSE, START_DAY, at, nextTradingDay } from '../src/sim/calendar';
 import { Engine, type SimState } from '../src/sim/engine';
-import { DIFFICULTIES } from '../src/sim/settings';
+import { DEFAULT_LOGO as PLAYER_LOGO, decodeLogo, encodeLogo } from '../src/art/logo/code';
+import { defaultPlayer } from '../src/sim/player';
+import { DIFFICULTIES, changeSettings } from '../src/sim/settings';
+import { decodeCeo } from '../src/world/ceo';
 import { newBrowserState } from '../src/state/browser';
 import { SAVE_VERSION, migrate } from '../src/state/migrations';
 import { SAVE_FORMAT, packSave, unpackSave, type Manifest } from '../src/state/saveFile';
@@ -49,12 +52,17 @@ const saveAndLoad = (e: Engine): Engine => {
 describe('save system (spec §18)', () => {
   it('save test: 60 days, save, load, 60 more days = 120 days without saving', () => {
     const days = sessions(120);
-    const straight = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Test' });
-    let saved = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Test' });
+    // Phase 5: a Custom game with its own logo and CEO, renamed and redesigned along the way.
+    const settings = changeSettings(DIFFICULTIES.hard, { startingCapital: 2_500_000, startYear: 2001 });
+    const player = { logoCode: encodeLogo(PLAYER_LOGO), ceoName: 'Pat Doe', ceoCode: 'BJaA2pIrBgMQEws' };
+    const straight = Engine.create(world, { settings, firmName: 'Test', player });
+    let saved = Engine.create(world, { settings, firmName: 'Test', player });
     days.forEach((day, s) => {
       for (const e of [straight, saved]) {
         e.advanceTo(at(day, 10 * 60 + 30));
         trade(e, s);
+        if (s === 30) e.setPlayer({ firmName: 'Renamed Capital', logoCode: encodeLogo({ ...PLAYER_LOGO, effect: 'bevel' }) });
+        if (s === 90) e.setPlayer({ ceoName: 'Pat Doe-Ray' });
       }
       if (s === 60) {
         // Save at any moment: mid-session, with open orders.
@@ -71,7 +79,29 @@ describe('save system (spec §18)', () => {
     const quarters = saved.details(5).quarters;
     expect(quarters.at(-1)!.reported).toBeGreaterThan(START_DAY);
     expect(quarters).toEqual(straight.details(5).quarters);
+    // Phase 5: the firm, its logo and CEO, and the Custom settings carry over.
+    expect(saved.player).toMatchObject({ firmName: 'Renamed Capital', ceoName: 'Pat Doe-Ray', ceoCode: player.ceoCode });
+    expect(decodeLogo(saved.player.logoCode).effect).toBe('bevel');
+    expect(saved.settings).toEqual(settings);
+    expect(saved.settings.difficulty).toBe('custom');
   }, 60_000);
+
+  it('upgrades a version 2 save: default logo, a CEO from the seed, and the advanced settings', () => {
+    const e = Engine.create(world, { settings: DIFFICULTIES.hard, firmName: 'Old Firm' });
+    const sim = e.exportState();
+    const { commission, spread, smallCapSpread, volatility, crashes, impact, startingCapital } = DIFFICULTIES.hard;
+    const old = {
+      ...sim,
+      player: { firmName: 'Old Firm' },
+      settings: { difficulty: 'hard', startingCapital, commission, spread, smallCapSpread, volatility, crashes, impact },
+    };
+    const upgraded = migrate(unpackSave(packSave({ manifest: manifest({ version: 2 }), sim: old, game: {} })));
+    const loaded = Engine.restore(upgraded.sim as SimState);
+    expect(loaded.settings).toEqual(DIFFICULTIES.hard);
+    expect(loaded.player).toEqual(defaultPlayer(world.seed, 'Old Firm'));
+    expect(decodeLogo(loaded.player.logoCode)).toMatchObject({ motif: 'bull', shape: 'circle' });
+    expect(() => decodeCeo(loaded.player.ceoCode)).not.toThrow();
+  });
 
   it('upgrades a version 1 save: quarterly results backfilled, browser favourites and history added', () => {
     const e = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Test' });

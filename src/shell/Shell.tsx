@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { Suspense, lazy, useCallback, useEffect } from 'react';
 import { boot, saveGame, useGame } from '../state/game';
 import { useShell } from '../state/shell';
 import { MessageBox } from '../ui98/MessageBox';
@@ -8,12 +8,15 @@ import { Desktop } from './Desktop';
 import { ShutdownScreen } from './ShutdownScreen';
 import { Taskbar } from './Taskbar';
 
+const SetupWizard = lazy(() => import('../apps/mycomputer/SetupWizard'));
+
 export function Shell() {
   const power = useShell((s) => s.power);
   const setPower = useShell((s) => s.setPower);
   const ready = useGame((s) => s.ready);
   const busy = useGame((s) => s.busy);
   const alert = useGame((s) => s.alert);
+  const setup = useShell((s) => s.setup);
   const booted = useCallback(() => setPower('running'), [setPower]);
 
   // Power on: continue the latest save or start a new game while the splash shows.
@@ -26,15 +29,24 @@ export function Shell() {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        if (useGame.getState().ready && useShell.getState().power === 'running') void saveGame();
+        const { power, setup } = useShell.getState();
+        if (useGame.getState().ready && power === 'running' && !setup) void saveGame();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  if (power === 'booting') return <BootScreen ready={ready} status={busy} onDone={booted} />;
+  if (power === 'booting') return <BootScreen ready={ready || setup} status={busy} onDone={booted} />;
   if (power === 'off') return <ShutdownScreen onPowerOn={() => setPower('booting')} />;
+  if (setup) {
+    return (
+      <Suspense fallback={<div className="setup-screen" />}>
+        <SetupWizard />
+        {alert && <MessageBox text={alert} onClose={() => useGame.setState({ alert: undefined })} />}
+      </Suspense>
+    );
+  }
   return (
     <div className="screen">
       <Desktop />

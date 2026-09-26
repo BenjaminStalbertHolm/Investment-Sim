@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon, type IconName } from '../../art/icons';
 import { formatClock } from '../../sim/calendar';
-import { DIFFICULTIES } from '../../sim/settings';
-import { exportSave, importSave, loadGame, newGame, randomSeed, saveGame, showError, useGame } from '../../state/game';
+import { exportSave, importSave, loadGame, openSetup, saveGame, showError, useGame } from '../../state/game';
 import { deleteSave, listSaves, type SaveSlot } from '../../state/saves';
 import { useWindows } from '../../state/windows';
 import { Confirm, Prompt } from '../../ui98/Modal';
 import { VirtualTable, type Column } from '../../ui98/VirtualTable';
 import { AppMenuBar } from '../AppMenuBar';
 import { count, money } from '../format';
+import { FirmPanel } from './FirmPanel';
 import type { AppProps } from '../types';
 
 /** Control-Panel-style panels (spec §17). Those without a phase are built. */
@@ -18,7 +18,7 @@ const PANELS: { id: string; label: string; icon: IconName; phase?: number }[] = 
   { id: 'display', label: 'Display', icon: 'computer', phase: 11 },
   { id: 'sounds', label: 'Sounds', icon: 'settings', phase: 11 },
   { id: 'game', label: 'Game', icon: 'settings', phase: 11 },
-  { id: 'firm', label: 'Firm', icon: 'portfolio', phase: 5 },
+  { id: 'firm', label: 'Firm', icon: 'portfolio' },
   { id: 'about', label: 'About', icon: 'help' },
 ];
 
@@ -57,6 +57,7 @@ export default function MyComputer({ windowId }: AppProps) {
         )}
         {view === 'saves' && <Saves />}
         {view === 'newgame' && <NewGame />}
+        {view === 'firm' && <FirmPanel />}
         {view === 'about' && <About />}
       </div>
     </div>
@@ -170,46 +171,15 @@ function Saves() {
   );
 }
 
-/** A new game with a firm name, a world seed and a difficulty. Phase 5's Setup Wizard replaces this panel. */
+/** New Game (spec §17) relaunches the Setup Wizard. */
 function NewGame() {
-  const [firmName, setFirmName] = useState('Garage Capital');
-  const [seed, setSeed] = useState(randomSeed);
-  const [difficulty, setDifficulty] = useState<keyof typeof DIFFICULTIES>('medium');
   const [confirming, setConfirming] = useState(false);
-
   return (
     <div className="tab-page new-game">
-      <fieldset>
-        <legend>Your firm</legend>
-        <div className="field-row">
-          <label htmlFor="firm-name">Firm name:</label>
-          <input id="firm-name" value={firmName} onChange={(e) => setFirmName(e.target.value)} size={32} />
-        </div>
-        <div className="field-row">
-          <label htmlFor="world-seed">World seed:</label>
-          <input id="world-seed" value={seed} onChange={(e) => setSeed(e.target.value)} size={20} />
-          <button onClick={() => setSeed(randomSeed())}>Randomise</button>
-        </div>
-        <p className="hint">The same seed always builds the same market, so you can share it.</p>
-      </fieldset>
-      <fieldset>
-        <legend>Difficulty</legend>
-        {(Object.keys(DIFFICULTIES) as (keyof typeof DIFFICULTIES)[]).map((d) => {
-          const s = DIFFICULTIES[d];
-          return (
-            <div className="field-row" key={d}>
-              <input id={`difficulty-${d}`} type="radio" checked={difficulty === d} onChange={() => setDifficulty(d)} />
-              <label htmlFor={`difficulty-${d}`}>
-                <b>{d[0].toUpperCase() + d.slice(1)}</b>: {money(s.startingCapital)} to start, {money(s.commission.fixed)} a trade
-                {s.commission.rate ? ` + ${s.commission.rate * 100}%` : ''}, volatility {s.volatility}×
-              </label>
-            </div>
-          );
-        })}
-      </fieldset>
+      <p>Setup builds a new firm, CEO and market. Your current game keeps running until Setup installs the new one.</p>
       <div className="button-row">
-        <button className="default" disabled={!firmName.trim() || !seed.trim()} onClick={() => setConfirming(true)}>
-          Start New Game
+        <button className="default" onClick={() => setConfirming(true)}>
+          Run Setup Wizard…
         </button>
       </div>
       {confirming && (
@@ -217,11 +187,11 @@ function NewGame() {
           title="New Game"
           onOk={() => {
             setConfirming(false);
-            void newGame({ seed: seed.trim(), settings: DIFFICULTIES[difficulty], firmName: firmName.trim() }).catch(showError);
+            openSetup();
           }}
           onCancel={() => setConfirming(false)}
         >
-          Start a new game? Anything you haven't saved will be lost.
+          Start Setup for a new game? Anything you haven't saved will be lost once it installs.
         </Confirm>
       )}
     </div>
@@ -235,7 +205,7 @@ function About() {
   return (
     <div className="tab-page about">
       <p>
-        <b>Majorsoft Doors 98</b> — Investment Firm Edition, build 4.
+        <b>Majorsoft Doors 98</b> — Investment Firm Edition, build 5.
       </p>
       <p>
         Licensed to: {firmName}
@@ -253,6 +223,7 @@ function About() {
         Logo and clip-art silhouettes from game-icons.net by Lorc, Delapouite and contributors, under CC BY 3.0,
         via react-icons (MIT).
       </p>
+      <p>ID badge barcodes by JsBarcode (MIT). Logo export by html-to-image (MIT).</p>
     </div>
   );
 }

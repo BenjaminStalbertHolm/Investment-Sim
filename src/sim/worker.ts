@@ -2,8 +2,9 @@ import * as Comlink from 'comlink';
 import { SAVE_VERSION, checkManifest, migrate } from '../state/migrations';
 import { SAVE_FORMAT, packSave, unpackSave, type Manifest } from '../state/saveFile';
 import type { OrderRequest } from './account';
-import { dayOf, minutesPerSecond, phaseEnd } from './calendar';
+import { dayOf, minutesPerSecond, phaseEnd, setStartYear } from './calendar';
 import { Engine, type NewGameOptions, type SimState } from './engine';
+import type { Player } from './player';
 import { INDEX, type EngineEvent, type Snapshot, type Timeframe } from './types';
 
 /**
@@ -97,11 +98,12 @@ function changed<T>(result: T): T {
 
 function start(e: Engine) {
   engine = e;
+  setStartYear(e.settings.startYear);
   carry = 0;
   sparks.clear();
   e.watch(watched);
   changed(undefined);
-  return { directory: e.directory(), seed: e.seed, firmName: e.firmName };
+  return { directory: e.directory(), seed: e.seed, firmName: e.firmName, player: e.player, settings: e.settings };
 }
 
 const game = () => {
@@ -147,6 +149,11 @@ const api = {
     };
     const bytes = packSave({ manifest, sim: e.exportState(), game: ui });
     return Comlink.transfer({ bytes, manifest }, [bytes.buffer]);
+  },
+
+  /** Renames the firm or changes its logo or CEO. */
+  setPlayer(change: Partial<Omit<Player, 'presetFirm'>>): Player {
+    return changed(game().setPlayer(change));
   },
 
   setSpeed(value: number): void {

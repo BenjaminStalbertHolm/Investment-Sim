@@ -1,15 +1,11 @@
 import { LOGO_FONTS, LOGO_LAYOUTS, LOGO_MOTIFS, LOGO_SHAPES, PALETTES } from '../art/logo/options';
-import {
-  ACCESSORIES, CLOTHING, CLOTHING_COLOURS, EYEBROWS, EYES, FACIAL_HAIR, HAIR_COLOURS, HAIR_STYLES, MOUTHS, NOSES,
-  SKIN_TONES, type Accessory, type Clothing, type HairColour, type HairStyle,
-} from '../art/portrait/options';
+import { ceoGenes } from './ceo';
 import { CITIES } from './cities';
 import { describeCompany, initials, slotLexicon, templateSlots, type Company } from './company';
 import { CURATED_VERSION, GENOME_VERSION, SCALES, encodeGenome, type Genes } from './genome';
 import { INDUSTRIES, type Industry } from './industries';
 import { BLOCKED_LETTERS, GENERIC_SUFFIXES, NAME_TEMPLATES, RESERVED_NAMES } from './lexicons/shared';
 import { competitorFirms, generateOwnership, type Firm, type Ownership } from './ownership';
-import { FIRST_NAMES, LAST_NAMES } from './people-names';
 import { Rng } from './rng';
 import { TOP100, type CuratedCompany } from './top100';
 
@@ -241,46 +237,6 @@ function fixedLogo(logo: CuratedCompany['logo'] = {}): Partial<Genes> {
     ...(logo.palette && { logoPalette: indexOf(PALETTES.map((p) => p.id), logo.palette) }),
     ...(logo.font && { logoFont: indexOf(LOGO_FONTS, logo.font) }),
     ...(logo.layout && { logoLayout: indexOf(LOGO_LAYOUTS, logo.layout) }),
-  };
-}
-
-// Default CEO look. Industries add weight to clothing and accessories; age adds grey hair and baldness.
-const CLOTHING_WEIGHTS: Record<Clothing, number> = {
-  suitAndTie: 6, threePiece: 2, powerSuit: 2, tuxedo: 0.3, turtleneck: 1, polo: 1, hoodie: 0.3, fleeceVest: 1,
-  suspenders: 1, cardigan: 1, flannel: 0.5, hawaiian: 0.3, labCoat: 0.3, windbreaker: 0.5,
-};
-const ACCESSORY_WEIGHTS: Record<Accessory, number> = {
-  none: 14, roundGlasses: 2, squareGlasses: 2, halfMoonGlasses: 1, aviators: 1, monocle: 0.2, earring: 0.5,
-  earpiece: 0.5, phoneHeadset: 0.5, pipe: 0.3, cigar: 0.3, cigarette: 0.3, cigarettePack: 0.2, pearlNecklace: 0.7,
-  bowTieClip: 0.5, lapelPin: 1,
-};
-const HAIR_COLOUR_WEIGHTS: Record<HairColour, number> = {
-  black: 3, darkBrown: 3, brown: 3, auburn: 1, ginger: 0.7, blond: 1.5, platinum: 0.3, grey: 0, white: 0,
-  dyedBlue: 0.1, dyedPink: 0.1, dyedGreen: 0.1,
-};
-const THINNING = new Set<HairStyle>(['bald', 'receding', 'combOver']);
-const FACIAL_HAIR_WEIGHTS = FACIAL_HAIR.map((f) => (f === 'none' ? 12 : f === 'stubble' ? 2 : 1));
-
-function ceoGenes(rng: Rng, industry: Industry) {
-  const age = rng.int(0, 31); // 32–63
-  const old = age / 31;
-  return {
-    ceoFirstName: rng.int(0, FIRST_NAMES.length - 1),
-    ceoLastName: rng.int(0, LAST_NAMES.length - 1),
-    ceoAge: age,
-    skinTone: rng.int(0, SKIN_TONES.length - 1),
-    hair: rng.weighted(HAIR_STYLES.map((h) => (THINNING.has(h) ? 0.3 + 3 * old : 1))),
-    hairColour: rng.weighted(
-      HAIR_COLOURS.map((c) => HAIR_COLOUR_WEIGHTS[c] + (c === 'grey' ? 5 * old : c === 'white' ? 2 * old * old : 0)),
-    ),
-    facialHair: rng.weighted(FACIAL_HAIR_WEIGHTS),
-    eyes: rng.int(0, EYES.length - 1),
-    eyebrows: rng.int(0, EYEBROWS.length - 1),
-    nose: rng.int(0, NOSES.length - 1),
-    mouth: rng.int(0, MOUTHS.length - 1),
-    clothing: rng.weighted(CLOTHING.map((c) => CLOTHING_WEIGHTS[c] + (industry.clothing?.[c] ?? 0))),
-    clothingColour: rng.int(0, CLOTHING_COLOURS.length - 1),
-    accessory: rng.weighted(ACCESSORIES.map((a) => ACCESSORY_WEIGHTS[a] + (industry.accessories?.[a] ?? 0))),
   };
 }
 

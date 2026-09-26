@@ -4,7 +4,7 @@ import type { Firm, Holding } from '../world/ownership';
 import { Rng, type RngState } from '../world/rng';
 import { bookFill, type Account, type Order, type OrderRequest, type OrderStatus } from './account';
 import {
-  BAR_MINUTES, BARS_PER_DAY, CLOSE, OPEN, START_DAY, at, dayOf, holiday, isTradingDay, minuteOf, nextOpen,
+  BAR_MINUTES, BARS_PER_DAY, gameYear, CLOSE, OPEN, START_DAY, at, dayOf, holiday, isTradingDay, minuteOf, nextOpen,
   nextTradingDay, phaseAt, previousTradingDay, weekday, type GameTime, type Phase,
 } from './calendar';
 import {
@@ -17,6 +17,7 @@ import {
 import { Market, PARTICIPATION, initialMarket, type MarketState } from './market';
 import { BAR_YEARS, buildModel, type Model } from './model';
 import { pregameBars, pregameDays, pregameIndex, pregameMarket, sessionBars } from './pregame';
+import { defaultPlayer, type Player } from './player';
 import type { GameSettings } from './settings';
 import {
   INDEX, type AccountView, type CompanyDetails, type Directory, type EngineEvent, type Estimate, type FirmView,
@@ -38,7 +39,7 @@ export interface SavedWorld {
 export interface SimState {
   world: SavedWorld;
   settings: GameSettings;
-  player: { firmName: string };
+  player: Player;
   clock: GameTime;
   rng: { tick: RngState; regime: RngState; earnings: RngState };
   market: MarketState;
@@ -52,6 +53,8 @@ export interface SimState {
 export interface NewGameOptions extends WorldOptions {
   settings: GameSettings;
   firmName: string;
+  /** Logo and CEO; a default logo and a CEO drawn from the seed when omitted. */
+  player?: Omit<Player, 'firmName'>;
 }
 
 const SESSIONS_KEPT = 5;
@@ -83,7 +86,7 @@ export class Engine {
   }
 
   /** A new game on a generated world, at the opening bell of the start date. */
-  static create(world: World, options: { settings: GameSettings; firmName: string }): Engine {
+  static create(world: World, options: Pick<NewGameOptions, 'settings' | 'firmName' | 'player' | 'playerFirm'>): Engine {
     const { seed, companies } = world;
     const model = buildModel(seed, companies, options.settings);
     const clock = at(START_DAY, OPEN);
@@ -100,7 +103,7 @@ export class Engine {
         floatPct: Float64Array.from(world.floatPct),
       },
       settings: options.settings,
-      player: { firmName: options.firmName },
+      player: { ...defaultPlayer(seed, options.firmName), ...options.player, firmName: options.firmName, presetFirm: options.playerFirm },
       clock,
       rng: { tick: stream('market:tick'), regime: stream('market:regime'), earnings: stream('earnings') },
       market: initialMarket(companies, model, Rng.stream(seed, 'market:value')),
@@ -146,6 +149,14 @@ export class Engine {
   }
   get firmName(): string {
     return this.s.player.firmName;
+  }
+  get player(): Player {
+    return { ...this.s.player };
+  }
+  /** Renames the firm or changes its logo or CEO (My Computer → Firm). */
+  setPlayer(change: Partial<Omit<Player, 'presetFirm'>>): Player {
+    this.s.player = { ...this.s.player, ...change };
+    return this.player;
   }
   get halted(): boolean {
     return this.market.state.halted;
@@ -528,7 +539,7 @@ export class Engine {
       subIndustry: c.subIndustry,
       hq: `${c.hq.name}, ${c.hq.country}`,
       ceo: `${c.ceo.firstName} ${c.ceo.lastName}`,
-      founded: new Date(START_DAY * 86_400_000).getUTCFullYear() - c.founded,
+      founded: gameYear(START_DAY) - c.founded,
       shares,
       marketCap: price * shares,
       revenue: f.revenue[i],

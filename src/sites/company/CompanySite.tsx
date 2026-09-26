@@ -1,11 +1,13 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { Logo } from '../../art/logo/Logo';
 import { MOTIF_ICONS } from '../../art/logo/motifs';
+import { Portrait } from '../../art/portrait/Portrait';
 import { PriceChart } from '../../charts/PriceChart';
 import { bigMoney, count, money, pct, price, signed, signedPct, tone } from '../../apps/format';
-import { START_DAY, dayOf, formatDate } from '../../sim/calendar';
+import { START_DAY, dayOf, formatDate, gameYear } from '../../sim/calendar';
 import { TIMEFRAMES, type CompanyDetails, type Directory, type Quote, type QuarterResult, type Timeframe } from '../../sim/types';
 import { useGame } from '../../state/game';
+import { companyCeo, type Ceo } from '../../world/ceo';
 import type { Company } from '../../world/company';
 import { companyOf, useDetails } from '../hooks';
 import { companyUrl, firmUrl, playerUrl, quoteUrl, sites, type Sites } from '../urls';
@@ -151,7 +153,7 @@ function Footer(props: PageProps) {
       <Rule />
       <WebRing {...props} />
       <p>
-        © {new Date(props.live.day * 86_400_000).getUTCFullYear()} {c.name.replace(/\.$/, '')}. All rights reserved. Questions? E-mail the{' '}
+        © {gameYear(props.live.day)} {c.name.replace(/\.$/, '')}. All rights reserved. Questions? E-mail the{' '}
         <u>webmaster@{s.company[id].replace(/^www\./, '')}</u>
       </p>
       <BestViewed />
@@ -248,7 +250,9 @@ function Frame(props: PageProps & { children: ReactNode }) {
   }
 }
 
-const quarterName = (q: number) => `Q${(q % 4) + 1} ${Math.floor(q / 4)}`;
+const quarterName = (q: number) => `Q${(q % 4) + 1} ${quarterYear(q)}`;
+/** Quarters are numbered year × 4 + (0 … 3), in the calendar's own years. */
+const quarterYear = (q: number) => gameYear(Date.UTC(Math.floor(q / 4), 6, 1) / 86_400_000);
 const ORDINAL = ['First', 'Second', 'Third', 'Fourth'];
 
 function pressReleases(c: Company, quarters: readonly QuarterResult[]) {
@@ -257,7 +261,7 @@ function pressReleases(c: Company, quarters: readonly QuarterResult[]) {
     .reverse()
     .map((q) => ({
       day: q.reported,
-      title: `${shortName(c.name)} Reports ${ORDINAL[q.quarter % 4]}-Quarter ${Math.floor(q.quarter / 4)} Results`,
+      title: `${shortName(c.name)} Reports ${ORDINAL[q.quarter % 4]}-Quarter ${quarterYear(q.quarter)} Results`,
       text: `Revenue of ${bigMoney(q.revenue)}; net ${q.income >= 0 ? 'income' : 'loss'} of ${bigMoney(Math.abs(q.income))} (${money(q.eps)} per share).`,
     }));
 }
@@ -322,7 +326,7 @@ function About({ company: c, site }: PageProps) {
       <h1>About {shortName(c.name)}</h1>
       <table className="cs-facts">
         <tbody>
-          <tr><th>Founded</th><td>{new Date(START_DAY * 86_400_000).getUTCFullYear() - c.founded}</td></tr>
+          <tr><th>Founded</th><td>{gameYear(START_DAY) - c.founded}</td></tr>
           <tr><th>Headquarters</th><td>{c.hq.name}, {c.hq.country}</td></tr>
           <tr><th>Industry</th><td>{c.industry.name} ({c.subIndustry})</td></tr>
           <tr><th>Ticker symbol</th><td>{c.ticker}</td></tr>
@@ -334,7 +338,7 @@ function About({ company: c, site }: PageProps) {
       ))}
       <h2>Our Leadership</h2>
       <div className="cs-ceo">
-        <Photo name={`${c.ceo.firstName} ${c.ceo.lastName}`} />
+        <Photo name={`${c.ceo.firstName} ${c.ceo.lastName}`} ceo={companyCeo(c.genes)} />
         <div>
           <b>
             {c.ceo.firstName} {c.ceo.lastName}
@@ -350,16 +354,11 @@ function About({ company: c, site }: PageProps) {
   );
 }
 
-/** A framed photo of a person; the portraits themselves arrive with the portrait system (Phase 5). */
-export function Photo({ name }: { name: string }) {
+/** A framed photo of a person (spec §8). */
+export function Photo({ name, ceo }: { name: string; ceo: Ceo }) {
   return (
     <div className="web-photo" title={name}>
-      <svg viewBox="0 0 60 72" width="90" height="108" aria-label={`Photo of ${name}`}>
-        <rect width="60" height="72" fill="#c8d4e0" />
-        <circle cx="30" cy="28" r="13" fill="#7a8794" />
-        <path d="M6 72c2-16 12-24 24-24s22 8 24 24z" fill="#7a8794" />
-      </svg>
-      <span>Photo coming soon</span>
+      <Portrait ceo={ceo} size={90} title={`Photo of ${name}`} />
     </div>
   );
 }

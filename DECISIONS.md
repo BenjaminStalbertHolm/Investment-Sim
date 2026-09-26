@@ -275,3 +275,76 @@ Judgement calls made where the spec leaves details open.
   five pages of every tenth company render with live details, and the IR page is checked for the stats, genome,
   quarters and each holder. In this container a page renders in 0.8 ms (median; p99 2.5 ms) and a company's details
   take 0.8 ms in the worker, so a site appears within one frame of its data.
+
+## Phase 5 — Character, logo, New Game wizard
+
+- **Libraries.** The ID badge's barcode is a real Code 128 barcode of the CEO code: `jsbarcode`'s encoder alone (its
+  DOM renderer isn't used), drawn as SVG bars. The logo designer's Export SVG… uses `html-to-image` on the live preview,
+  so the file is exactly what the designer shows, with no second layout of the five logo layouts; the SVG wraps HTML in a
+  `foreignObject`, which browsers display but vector editors may not. The badge flip test runs in `happy-dom`. Not
+  used: an avatar library (DiceBear's styles have different option sets, none has the spec's hair, beards, tobacco and
+  RTC logo, and portraits must decode from the genome's CEO block), a colour library (mixing hex colours is six
+  lines), an undo middleware (the designer keeps a list of previous CEOs), a wizard or tabs library (98.css has tabs).
+- **Codes.** Genomes, CEO codes and logo codes share one packer (`world/bitcode.ts`): fields most significant bit first,
+  optional fields as a presence bit, a CRC-4, zero padding to a whole base64url character. Genomes come out bit for bit
+  as before (the spot-check snapshot is unchanged). A **CEO code** is the genome's CEO block (68 bits) followed by a
+  format nibble, face shape, skin undertone, photo background and four optional 24-bit custom colours (skin, hair,
+  clothing, background): 15 characters, up to 31 with every custom colour. A **logo code** is the genome's logo block
+  (shape, motif, palette, font, layout) plus the WordArt effect and optional custom main, accent and background colours:
+  six characters, up to 18. Decoders reject bad checksums, lengths and options that don't exist; tests check that at
+  least 90% of single-character edits are caught (a 4-bit CRC can't catch them all, as Phase 2 found for genomes).
+- **Company CEOs** have no face-shape, undertone or background genes, so those follow from the CEO's name genes: fixed
+  per company, no genome change, and old saves get portraits too. The CEO's name, age and look in a CEO code are the
+  genome's, so a pasted code brings a name along; the player's own name is stored beside it as typed.
+- **Portraits** are original layered SVG on a 120 × 150 bust (`art/portrait/parts.ts` holds the shapes as data,
+  `Portrait.tsx` draws them): all 16 skin tones with four undertones, 5 face shapes, 24 hair styles in up to three layers
+  (behind the head, over the shoulders, over the forehead), 12 hair colours, 6 eyebrows, 6 eyes, 10 noses, 10 mouths, 18
+  facial hair styles clipped to the jaw, 16 accessories, 14 outfits (plaid and Hawaiian prints are SVG patterns) in 16
+  colours, and 8 studio backgrounds. People over 50 get a few lines. The cigar band, the cigarette by its filter and
+  the pack all carry the Rhodesia Tobacco Company's real logo, drawn by the logo renderer. Eyebrows follow the hair
+  colour, except that dyed hair keeps natural brows.
+- **Randomise** reuses the world generator's CEO draw (moved to `world/ceo.ts` with the draws in the same order, so
+  worlds are unchanged): grey hair and thinning come with age, dyed hair and monocles are rare, suits common. Randomise
+  one feature re-rolls a random feature to a different value drawn the same way, and drops that feature's custom colour.
+  Randomise keeps the name (Random name draws one). The designers' streams start from a fresh seed each time they open,
+  like a new world seed (§20's rule is about the game, and a new face picks a look, it doesn't play one). Undo goes back
+  up to 50 steps. The designer also sets the CEO's age (32–63, the gene's range).
+- **Logos.** The WordArt effects apply to the wordmark as CSS (text shadows, a gradient clipped to the text, a stroke)
+  and to the emblem as SVG (drop-shadow filters, a gradient fill, an outline). Custom colours replace the palette's; a
+  third colour draws a panel behind the logo. The three previews are the website header, the taskbar icon (the emblem,
+  or the monogram for text-only layouts) and the badge header. The logo CSS moved from the browser's stylesheet to
+  `art/logo/logo.css`, since logos now appear outside the browser.
+- **ID badge.** A laminated card (a CSS 3D flip, with the back's magnetic stripe, a signature in script and the CEO
+  code) with a drifting hologram band, which stands still under `prefers-reduced-motion`. The employee number comes from the world
+  seed. It shows at the end of Setup, in My Computer → Firm and on the player's website (Leadership).
+- **Preset firms.** Picking one leaves it out of the competitors (the generator already took `playerFirm`). Silverman
+  Sacks, Organ Stanley and J.P. Borgan have listed parents (SLVS, ORGS, JPB), so the player runs "Silverman Sacks Asset
+  Management" and the parent stays tradable. A custom name equal to a preset's is refused, since it would clash with a
+  competitor. Competitor CEOs and officers get portraits from a stream of their own, so nothing else about a firm
+  changed.
+- **Settings.** `GameSettings` now holds every §9 setting, with the table's values per difficulty. Used now: capital,
+  commission, spreads, volatility, crash frequency, market impact, company count, seed, competitor count, start year and
+  the dial-up delay. The rest (event frequency, leverage, margin grace, shorting, futures, clients, patience, tips,
+  scrutiny and audits, aggressiveness, loan rates, dark web, heat decay, ironman, no-bankruptcy, fun modules) are
+  chosen and saved now for the phases that build those systems; Ironman needs the save rules of Phase 11's settings
+  panels. The label is computed: the preset whose values all match, else Custom, so changing a value back restores
+  the label. The world seed, start year, dial-up delay and fun modules don't count (they don't change how hard the game
+  is; §16C says so for the modules); company and competitor counts do. Picking a difficulty card resets to that
+  preset but keeps the start year and modules.
+- **Start year** is cosmetic, as §9 says: dates, quarter labels, founding years, copyright lines and chart axes are
+  shown shifted by whole years (`setStartYear`, set in the UI and in the worker), while the calendar underneath stays
+  1998's, so weekdays and holidays are 1998's in any year.
+- **Setup Wizard.** It fills the screen like Win98 Setup: at first power-on (no saves) it runs before the desktop, and
+  My Computer → New Game relaunches it over the running game, whose clock stops meanwhile. Cancel goes back to the
+  game, or, on a machine with no game yet, installs the standard game (Garage Capital, Medium). Step 5 runs the real
+  generation in the worker; the bar takes at least 2.6 s, holding at 95% until the market exists. Only step 5 replaces
+  the running game. The welcome email waits for Outbox Express (Phase 6).
+- **Saves.** Version 3. The player (`firmName`, `presetFirm`, `logoCode`, `ceoName`, `ceoCode`) is part of the
+  simulation's state, where the firm name already was; My Computer → Firm renames the firm and edits its logo and CEO
+  through the worker. The v2 → v3 migration gives old games the default logo (a navy-and-gold bull), a CEO drawn from
+  the seed and the missing settings from their difficulty's preset (Medium's for Custom). The save test now runs a
+  Custom game with its own logo and CEO, renamed and redesigned before and after the save.
+- **My Computer → Firm** shows the badge, logo and codes, with Rename…, Edit logo… and Edit CEO… The fee structure
+  arrives with clients (Phase 6).
+- **Measured.** The world-generation budget test (1.5 s) failed once at 1.52 s before this phase, when it shared the
+  container with the other test files; it has passed in every full run since.

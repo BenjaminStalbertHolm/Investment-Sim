@@ -14,10 +14,14 @@ export const LOGO_FONTS = ['serif', 'sans', 'slab', 'script', 'pixel', 'condense
 
 export const LOGO_LAYOUTS = ['iconLeft', 'iconAbove', 'textOnly', 'monogram', 'textInside'] as const;
 
+/** 90s WordArt. */
+export const LOGO_EFFECTS = ['none', 'dropShadow', 'bevel', 'gradient', 'outline'] as const;
+
 export type LogoShape = (typeof LOGO_SHAPES)[number];
 export type LogoMotif = (typeof LOGO_MOTIFS)[number];
 export type LogoFont = (typeof LOGO_FONTS)[number];
 export type LogoLayout = (typeof LOGO_LAYOUTS)[number];
+export type LogoEffect = (typeof LOGO_EFFECTS)[number];
 
 export type PaletteFamily = 'blue' | 'green' | 'red' | 'earth' | 'gold' | 'teal' | 'purple' | 'mono';
 

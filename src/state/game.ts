@@ -2,10 +2,11 @@ import * as Comlink from 'comlink';
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import type { AppId } from '../apps/catalog';
-import { formatDate, dayOf } from '../sim/calendar';
+import { formatDate, dayOf, setStartYear } from '../sim/calendar';
 import { simulation } from '../sim/client';
 import type { NewGameOptions } from '../sim/engine';
-import { DIFFICULTIES } from '../sim/settings';
+import type { Player } from '../sim/player';
+import { DIFFICULTIES, type GameSettings } from '../sim/settings';
 import type { Directory, Snapshot } from '../sim/types';
 import { newBrowserState, useBrowser, type Dialup, type Favourite } from './browser';
 import { cleanUp, listSaves, nextAutosave, readSave, writeSave, type SaveSlot } from './saves';
@@ -26,6 +27,9 @@ interface GameStore {
   slot?: { id: string; name: string };
   seed: string;
   firmName: string;
+  /** The firm's logo and CEO (spec §18 player). */
+  player?: Player;
+  settings?: GameSettings;
   directory: Directory;
   snapshot?: Snapshot;
 }
@@ -90,12 +94,17 @@ async function start(): Promise<void> {
       showError(error);
     }
   }
-  await newGame({ seed: randomSeed(), settings: DIFFICULTIES.medium, firmName: 'Garage Capital' });
+  // First power-on: Setup runs before the desktop (spec §5).
+  useShell.getState().setSetup(true);
 }
+
+/** The game Setup installs when cancelled before any game exists. */
+export const standardGame = () => newGame({ seed: randomSeed(), settings: DIFFICULTIES.medium, firmName: 'Garage Capital' });
 
 export async function newGame(options: NewGameOptions): Promise<void> {
   useGame.setState({ busy: 'Installing market…' });
   const started = await simulation().newGame(options);
+  setStartYear(started.settings.startYear);
   useWindows.getState().closeAll();
   useTrade.setState(newTradeState());
   useBrowser.setState(newBrowserState());
@@ -114,8 +123,9 @@ export async function loadGame(id: string): Promise<void> {
     useBrowser.setState(ui.browser);
     // Ctrl+S goes back to a manual slot; after loading an autosave it starts a new one.
     const saved = (await listSaves()).find((s) => s.id === id);
-    const { directory, seed, firmName } = loaded;
-    useGame.setState({ directory, seed, firmName, ready: true, slot: saved && !saved.auto ? { id, name: saved.name } : undefined });
+    const { directory, seed, firmName, player, settings } = loaded;
+    setStartYear(settings.startYear);
+    useGame.setState({ directory, seed, firmName, player, settings, ready: true, slot: saved && !saved.auto ? { id, name: saved.name } : undefined });
     resume();
   } finally {
     useGame.setState({ busy: undefined });
@@ -182,6 +192,24 @@ export async function exportSave(slot: SaveSlot): Promise<void> {
   link.download = `${slot.name.replace(/[\\/:*?"<>|]/g, '_')}.d98`;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+/** Opens the Setup Wizard over the desktop (My Computer → New Game); the clock stops meanwhile. */
+export function openSetup(): void {
+  void simulation().setSpeed(0);
+  useShell.getState().setSetup(true);
+}
+
+/** Leaves Setup: back to the desktop and the clock's speed. */
+export function closeSetup(): void {
+  useShell.getState().setSetup(false);
+  void simulation().setSpeed(useShell.getState().speed);
+}
+
+/** Renames the firm or changes its logo or CEO (My Computer → Firm). */
+export async function updatePlayer(change: Partial<Omit<Player, 'presetFirm'>>): Promise<void> {
+  const player = await simulation().setPlayer(change);
+  useGame.setState({ player, firmName: player.firmName });
 }
 
 export function setSpeed(speed: Speed): void {
