@@ -1,6 +1,10 @@
 import type { ClosedPosition, LedgerEntry, Order, Side } from './account';
 import type { GameTime, Phase } from './calendar';
+import type { Client, Fees } from './clients';
 import type { Bar } from './history';
+import type { MacroState } from './macro';
+import type { Listing } from './market';
+import type { MacroKind } from './news';
 
 /** Chart timeframes (spec §13). */
 export type Timeframe = '1D' | '5D' | '1M' | '6M' | '1Y' | '5Y' | 'MAX';
@@ -72,6 +76,10 @@ export interface CompanyDetails {
   subIndustry: string;
   hq: string;
   ceo: string;
+  /** The CEO's portrait code when a new CEO has taken over (spec §11.6). */
+  ceoCode?: string;
+  /** Still trading, or taken over or bankrupt (spec §11.6). */
+  status: Listing;
   founded: number;
   shares: number;
   marketCap: number;
@@ -124,6 +132,8 @@ export interface MarketTable {
   reported: Int32Array;
   /** Closes at the end of the last two weeks (the start prices stand in before there are two). */
   week?: { day: number; close: Float64Array; previous: Float64Array };
+  /** Listing status (market.ts LISTING): delisted companies no longer trade. */
+  status: Uint8Array;
 }
 
 /** What the order ticket shows before you confirm (spec §12.2). */
@@ -142,12 +152,39 @@ export interface Estimate {
   volumeShare: number;
   buyingPower: number;
   buyingPowerAfter: number;
+  /** Mandate constraints the position after this order would break (spec §15.1). */
+  warnings: string[];
 }
 
 export type EngineEvent =
   | { kind: 'fill'; order: number; company: number; side: Side; shares: number; price: number }
   | { kind: 'close'; day: number; weekEnd: boolean }
-  | { kind: 'halt' };
+  | { kind: 'halt' }
+  | { kind: 'mail'; id: number }
+  | { kind: 'delisted'; company: number };
+
+/** The firm's clients and money (spec §15.1): everything is AUM; the firm's own capital is the part no client owns. */
+export interface ClientsView {
+  aum: number;
+  unit: number;
+  clientAssets: number;
+  firmCapital: number;
+  reputation: number;
+  feesEarned: number;
+  fees: Fees;
+  clients: Client[];
+  macro: MacroState;
+}
+
+/** A line of the Trade app's calendar (spec §12.8). `minute` is the time of day. */
+export interface CalendarEntry {
+  day: number;
+  minute: number;
+  kind: MacroKind | 'earnings';
+  company?: number;
+  /** The quarterly dividend paid that day, per share. */
+  dividend?: number;
+}
 
 /** Company names for lists and search. */
 export interface Directory {
@@ -183,6 +220,9 @@ export interface Snapshot {
   /** Bumped whenever the ledger, order history or closed positions change, so views know to refetch. */
   revision: number;
   events: EngineEvent[];
+  /** Unread mail (the tray badge), the newest letter and the size of the news archive: views refetch when they change. */
+  mail: { unread: number; latest: number };
+  news: number;
 }
 
 export type { Bar, ClosedPosition, LedgerEntry, Order };

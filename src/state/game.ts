@@ -8,7 +8,9 @@ import type { NewGameOptions } from '../sim/engine';
 import type { Player } from '../sim/player';
 import { DIFFICULTIES, type GameSettings } from '../sim/settings';
 import type { Directory, Snapshot } from '../sim/types';
+import { chime } from '../audio/chime';
 import { newBrowserState, useBrowser, type Dialup, type Favourite } from './browser';
+import { newMailView, useMailView, type MailView } from './mail';
 import { cleanUp, listSaves, nextAutosave, readSave, writeSave, type SaveSlot } from './saves';
 import { useShell, type Speed } from './shell';
 import { newTradeState, useTrade, type TradeTab, type Watchlist } from './trade';
@@ -47,6 +49,8 @@ export interface GameState {
   shell: { iconPositions: Record<string, { x: number; y: number }>; speed: Speed; tickerTape: boolean };
   trade: { watchlists: Watchlist[]; active: string; tab: TradeTab };
   browser: { favourites: Favourite[]; history: string[]; dialup: Dialup };
+  /** Outbox Express's folder, sort and junk filter (Phase 6). */
+  mail?: MailView;
 }
 
 export function gameState(): GameState {
@@ -54,11 +58,13 @@ export function gameState(): GameState {
   const { iconPositions, speed, tickerTape } = useShell.getState();
   const { watchlists, active, tab } = useTrade.getState();
   const { favourites, history, dialup } = useBrowser.getState();
+  const { folder, sort, junkFilter, selected } = useMailView.getState();
   return {
     windows: { windows, lastBounds, zCounter, idCounter },
     shell: { iconPositions, speed, tickerTape },
     trade: { watchlists, active, tab },
     browser: { favourites, history, dialup },
+    mail: { folder, sort, junkFilter, selected },
   };
 }
 
@@ -108,6 +114,7 @@ export async function newGame(options: NewGameOptions): Promise<void> {
   useWindows.getState().closeAll();
   useTrade.setState(newTradeState());
   useBrowser.setState(newBrowserState());
+  useMailView.setState(newMailView(), true);
   useGame.setState({ ...started, ready: true, busy: undefined, slot: undefined, snapshot: undefined });
   resume();
 }
@@ -121,6 +128,7 @@ export async function loadGame(id: string): Promise<void> {
     useShell.setState(ui.shell);
     useTrade.setState({ ...ui.trade, ticket: newTradeState().ticket });
     useBrowser.setState(ui.browser);
+    useMailView.setState(ui.mail ?? newMailView(), true);
     // Ctrl+S goes back to a manual slot; after loading an autosave it starts a new one.
     const saved = (await listSaves()).find((s) => s.id === id);
     const { directory, seed, firmName, player, settings } = loaded;
@@ -254,6 +262,11 @@ function resume(): void {
 function receive(snapshot: Snapshot): void {
   useGame.setState({ snapshot });
   const { tickers } = useGame.getState().directory;
+  const mail = snapshot.events.filter((e) => e.kind === 'mail').length;
+  if (mail) {
+    chime();
+    notify(`You have ${mail === 1 ? 'a new message' : `${mail} new messages`} in Outbox Express.`);
+  }
   for (const event of snapshot.events) {
     if (event.kind === 'close' && event.weekEnd) void autosave();
     else if (event.kind === 'halt') notify('Trading halted: the MAJOR 500 is down 10% today.');

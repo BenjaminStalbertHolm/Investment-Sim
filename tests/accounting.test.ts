@@ -76,13 +76,14 @@ function checkBooks(e: Engine): void {
   const shares = new Map<number, number>();
   for (const l of ledger) {
     if (l.kind === 'buy') shares.set(l.company!, (shares.get(l.company!) ?? 0) + l.shares!);
-    if (l.kind === 'sell') shares.set(l.company!, (shares.get(l.company!) ?? 0) - l.shares!);
+    // Sales, and positions paid out in a takeover or written off in a bankruptcy (Phase 6).
+    if (l.kind === 'sell' || l.kind === 'acquisition' || l.kind === 'writeoff') shares.set(l.company!, (shares.get(l.company!) ?? 0) - l.shares!);
   }
   const held = new Map(e.positions().map((p) => [p.company, p.shares]));
   for (const [company, n] of shares) expect(held.get(company) ?? 0).toBe(n);
   for (const p of e.positions()) expect(Number.isInteger(p.shares) && p.shares > 0).toBe(true);
 
-  // Everything made or lost is either realised or unrealised: net worth − deposits = realised + unrealised.
+  // Everything made or lost is either realised (dividends included) or unrealised: net worth − net deposits = realised + unrealised.
   expect(account.netWorth - account.deposits).toBeCloseTo(account.realized + account.unrealized, 4);
 
   // Orders never overfill, and commissions in the ledger are the orders' commissions.

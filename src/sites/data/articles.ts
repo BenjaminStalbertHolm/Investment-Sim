@@ -1,0 +1,165 @@
+// Text templates for news articles (spec §14.1). Articles are written from the news archive's facts every time they are
+// read, so these can change freely. [a|b] picks one; {placeholders} are filled by sites/news/articles.ts:
+// {c} company mention  {name} {short} {ticker} {industry} {sub} {city} {country} {ceo} {product} {pct} {day}
+// {analyst} {firm} {other} {amount} {offer} {premium} {stake} {dividend} {oldDividend} {newCeo} {oldCeo}
+// {level} {prev} {expect} {client} {firmName} {ret} {indexRet} {aum} {revenue} {result} {rumourDay}
+import { templates } from '../text';
+import type { NewsKind } from '../../sim/news';
+
+const p = templates;
+
+type Sided = { up?: readonly string[]; down?: readonly string[] };
+
+export const HEADLINES: Record<NewsKind, Sided> = {
+  fraud: { down: p('{short} Restates Three Years of Earnings|{short} Books Under Scrutiny as Auditor Quits|Accounting Scandal Engulfs {short}|{short} Admits Profits Were “Largely Imaginary”') },
+  scandal: { down: p('{short} Chief Caught in Expense Scandal|{short} Board Probes Executive Conduct|Scandal Rocks {short}|{short} Shares Slide on Boardroom Scandal') },
+  recall: { down: p('{short} Recalls {product}|{short} Pulls {product} From Shelves|Safety Fears Force {short} Recall') },
+  lawsuit: { down: p('{short} Loses Landmark Lawsuit|Jury Orders {short} to Pay Up|{short} Hit With Court Defeat') },
+  trialFail: { down: p('{short} Drug Fails Key Trial|{short} Trial Flop Sends Shares Reeling|Setback for {short} as Study Misses Goal') },
+  approval: { up: p('FDI Approves {short} Drug|{short} Wins Approval for {product}|Green Light for {short} Treatment') },
+  guidance: { up: p('{short} Raises Outlook|{short} Lifts Full-Year Forecast|{short} Sees Brighter Year Ahead'), down: p('{short} Cuts Forecast|{short} Warns on Profits|{short} Slashes Outlook') },
+  investment: { up: p('{otherShort} Invests {amount} in {short}|{short} Lands {amount} From {otherShort}|{otherShort} Takes Stake in {short}') },
+  takeover: { up: p('{otherShort} Bids {amount} for {short}|{short} Agrees to {amount} Takeover|{otherShort} Makes Offer for {short}') },
+  takeoverDone: { up: p('{otherShort} Completes {short} Deal|{short} Takeover Closes|{short} Shareholders Cash Out as Deal Closes') },
+  takeoverFail: { down: p('{short} Deal Collapses|{otherShort} Walks Away From {short}|Takeover of {short} Falls Apart') },
+  activist: { up: p('{firm} Takes {stake} Stake in {short}|Activist {firm} Targets {short}|{firm} Pushes for Change at {short}') },
+  shortReport: { down: p('Short Seller Hindsight Research Attacks {short}|Hindsight Research Calls {short} “Uninvestable”|Short Report Hammers {short}') },
+  downgrade: { down: p('Standard & Pours Downgrades {short}|{short} Credit Rating Cut|Moody Blues Lowers {short} Rating') },
+  upgrade: { up: p('{short} Credit Rating Raised|Moody Blues Upgrades {short}|Standard & Pours Lifts {short} Outlook') },
+  contract: { up: p('{short} Wins Major Contract|{short} Lands {amount} Deal|{short} Awarded Big Order') },
+  strike: { down: p('Workers Walk Out at {short}|Strike Halts Output at {short}|{short} Hit by Strike') },
+  hack: { down: p('Hackers Deface {short} Web Site|{short} Web Site Vandalised|Cyber Pranksters Hit {short}') },
+  launch: { up: p('{short} Unveils {product}|{product} Launch a Hit for {short}|Buyers Line Up for {short}’s {product}'), down: p('{short}’s {product} Flops|Critics Pan {short}’s {product}|{product} Launch Fizzles for {short}') },
+  ceoChange: { up: p('{short} Names {newCeo} Chief Executive|New Boss at {short}|{short} Taps {newCeo} as CEO'), down: p('{short} Chief Executive Resigns|{oldCeo} Out at {short}|Shake-Up at {short} as CEO Quits') },
+  dividendChange: { up: p('{short} Raises Dividend|{short} Rewards Shareholders With Bigger Payout|Dividend Boost at {short}'), down: p('{short} Cuts Dividend|{short} Slashes Payout|Dividend Cut Stuns {short} Investors') },
+  buyback: { up: p('{short} Announces Share Buyback|{short} to Buy Back Stock|{short} Unveils Repurchase Plan') },
+  bankruptcy: { down: p('{short} Files for Bankruptcy|{short} Goes Bust|{short} Seeks Court Protection From Creditors') },
+  earnings: { up: p('{short} Profits Beat Forecasts|{short} Tops Estimates|Strong Quarter for {short}'), down: p('{short} Misses Estimates|{short} Profits Disappoint|Weak Quarter for {short}') },
+  tvPick: { up: p('Stock of the Day: {short}|Today’s Hot Stock: {ticker}|{short} Is Our Stock of the Day!') },
+  fowlPick: { up: p('Foolish Pick: {short}|Why We Like {short}|Fowl Pick of the Day: {ticker}') },
+  jobs: { up: p('Jobless Rate Falls to {level}|Hiring Surges, Unemployment at {level}|Jobs Report Beats Forecasts'), down: p('Jobless Rate Rises to {level}|Hiring Slows, Unemployment at {level}|Jobs Report Disappoints') },
+  cpi: { up: p('Inflation Cools to {level}|Consumer Prices Tame|Inflation Lower Than Expected'), down: p('Inflation Heats Up to {level}|Consumer Prices Jump|Inflation Higher Than Expected') },
+  gdp: { up: p('Economy Grows {level}|GDP Beats Forecasts|Economy Picks Up Speed'), down: p('Growth Slows to {level}|GDP Disappoints|Economy Loses Steam') },
+  confidence: { up: p('Consumer Confidence Rises|Shoppers Feel Upbeat|Confidence Index Climbs to {level}'), down: p('Consumer Confidence Slips|Shoppers Turn Gloomy|Confidence Index Falls to {level}') },
+  fed: { up: p('Federal Reservoir Cuts Rates to {level}|Reservoir Lowers Rates|Rate Cut Cheers Wall Street'), down: p('Federal Reservoir Raises Rates to {level}|Reservoir Tightens|Rate Rise Rattles Wall Street') },
+  firmQuarter: { up: p('{firmName} Beats the Market|{firmName} Posts Strong Quarter|Good Quarter at {firmName}'), down: p('{firmName} Lags the Market|Tough Quarter for {firmName}|{firmName} Trails the Index') },
+  mandate: { up: p('{client} Hands {amount} to {firmName}|{firmName} Wins {amount} Mandate|New Money for {firmName}') },
+};
+
+/** Headline for a Federal Reservoir meeting that left rates alone. */
+export const FED_HOLD = p('Federal Reservoir Holds Rates at {level}|Reservoir Stands Pat|No Change From the Reservoir');
+
+/** The opening paragraph: what happened. */
+export const LEADS: Record<NewsKind, Sided> = {
+  fraud: { down: p('{c} admitted on {day} that it had overstated its profits for three years, after its auditor, Arthur Anderthal, [refused to sign the accounts|resigned without explanation].|{c} said on {day} that “accounting irregularities” had inflated its earnings, and that past results “should no longer be relied upon.”') },
+  scandal: { down: p('{c} said on {day} that its board had opened an inquiry into [the chief executive’s expenses, which reportedly include a helicopter and a pet llama|allegations of misconduct at the top of the company|a lavish party paid for by shareholders].|A scandal engulfed {c} on {day} as [leaked memos|a disgruntled former employee|an anonymous letter to the board] raised questions about how the company is run.') },
+  recall: { down: p('{c} recalled its {product} on {day} after [customers reported problems|regulators raised safety concerns|a batch failed quality tests].|{c} said on {day} it would pull the {product} from shelves [“as a precaution”|while it investigates complaints].') },
+  lawsuit: { down: p('A jury ruled against {c} on {day} in a long-running [patent|product liability|contract] case, [ordering the company to pay damages|a verdict that could cost it dearly].|{c} lost a [court battle|lawsuit] on {day} that [analysts had called a coin toss|had hung over the stock for months].') },
+  trialFail: { down: p('{c} said on {day} that its most advanced drug candidate [failed to beat a placebo|missed its main goal] in a late-stage trial.|Shares of {c} collapsed on {day} after the company said a key study of its [lead drug|flagship treatment] had failed.') },
+  approval: { up: p('The Federal Drug Institute (FDI) approved {c}’s {product} on {day}, [clearing the way for sales|a milestone for the company].|{c} won regulatory approval for its {product} on {day}, [ending years of trials|sending its shares soaring].') },
+  guidance: { up: p('{c} raised its forecast for the year on {day}, citing [strong demand|lower costs|a busy order book].|{c} said on {day} that it now expects [higher sales|record profits] this year.'), down: p('{c} cut its forecast for the year on {day}, blaming [weak demand|rising costs|“difficult market conditions”].|{c} warned on {day} that profits would fall short of what it had promised.') },
+  investment: { up: p('{other} agreed on {day} to invest {amount} in {c}, buying newly issued shares at a premium.|{c} said on {day} it had raised {amount} from {other}, [which will take a seat on its board|in a vote of confidence in its strategy].') },
+  takeover: { up: p('{other} offered to buy {c} for {offer} a share in cash on {day}, a {premium} premium that values the company at {amount}.|{c} agreed on {day} to be acquired by {other} for {offer} a share, or {amount} in all.') },
+  takeoverDone: { up: p('{other} completed its purchase of {c} on {day}. Shareholders received {offer} a share in cash, and the stock no longer trades.|The takeover of {c} by {other} closed on {day}; the shares have been delisted and holders paid {offer} each.') },
+  takeoverFail: { down: p('{other}’s bid for {c} collapsed on {day}, [after regulators raised objections|when financing fell through|as the two sides failed to agree terms].|The planned takeover of {c} is off, the companies said on {day}.') },
+  activist: { up: p('{firm} disclosed a {stake} stake in {c} on {day} and called on the board to [sell underperforming divisions|return cash to shareholders|replace the chief executive].|Activist investor {firm} said on {day} it had built a {stake} stake in {c} and wants “significant changes.”') },
+  shortReport: { down: p('Short seller Hindsight Research published a report on {day} accusing {c} of [aggressive accounting|inflating its sales|misleading investors], and said it is betting against the stock.|{c} came under attack on {day} from Hindsight Research, which called the company “[a house of cards|uninvestable|a promotion, not a business]”.') },
+  downgrade: { down: p('Standard & Pours cut its credit rating on {c} on {day}, citing [rising debt|weaker cash flow|a deteriorating outlook].|Moody Blues Ratings downgraded {c} on {day}, warning that its debts are becoming harder to carry.') },
+  upgrade: { up: p('Moody Blues Ratings upgraded {c} on {day}, pointing to [stronger cash flow|lower debt|an improving outlook].|Standard & Pours raised its credit rating on {c} on {day}.') },
+  contract: { up: p('{c} won a [multi-year|major|landmark] contract worth {amount} on {day}, [its largest ever|beating several rivals].|{c} said on {day} it had been awarded a {amount} order.') },
+  strike: { down: p('Workers at {c} walked off the job on {day} in a dispute over [pay|pensions|working hours], halting production at several sites.|A strike at {c} entered its first day on {day} as union leaders and management traded blame.') },
+  hack: { down: p('Hackers defaced {c}’s web site on {day}, replacing its home page with [a dancing baby animation|rude messages about the chief executive|a picture of a hamster]. The company said no customer data was taken.|{c}’s web site was vandalised on {day}; for several hours visitors were greeted by [a skull and crossbones|a MIDI rendition of a pop song|the words “HACKED BY THE PHANTOM”].') },
+  launch: { up: p('{c} launched its {product} on {day}, and early orders have [exceeded expectations|sold out in several cities].|Customers queued outside stores on {day} as {c} launched the {product}.'), down: p('{c}’s new {product} went on sale on {day} to [lukewarm reviews|empty stores|complaints from early buyers].|The launch of {c}’s {product} on {day} was [a flop|a disappointment|marred by technical problems].') },
+  ceoChange: { up: p('{c} named {newCeo} as chief executive on {day}, replacing {oldCeo}. Investors welcomed the appointment.|{c} said on {day} that {oldCeo} would step down and {newCeo} would take over as chief executive.'), down: p('{c} said on {day} that chief executive {oldCeo} had resigned [with immediate effect|“to spend more time with family”|after a clash with the board]. {newCeo} takes over.|{oldCeo} left {c} abruptly on {day}; {newCeo} was named chief executive.') },
+  dividendChange: { up: p('{c} raised its annual dividend to {dividend} a share on {day}, from {oldDividend}.|{c} said on {day} it would pay shareholders {dividend} a share a year, up from {oldDividend}.'), down: p('{c} cut its annual dividend to {dividend} a share on {day}, from {oldDividend}, to [conserve cash|pay down debt].|{c} slashed its payout to {dividend} a share on {day}, from {oldDividend}.') },
+  buyback: { up: p('{c} said on {day} it would buy back up to [5%|8%|10%] of its shares over the next year.|{c} announced a share repurchase programme on {day}, saying its stock is “undervalued.”') },
+  bankruptcy: { down: p('{c} filed for bankruptcy protection on {day}, [after failing to refinance its debts|having run out of cash|following months of losses]. Its shares are expected to be cancelled.|{c} has gone bust. The company said on {day} that it had filed for bankruptcy and that shareholders were unlikely to receive anything.') },
+  earnings: { up: p('{c} reported quarterly revenue of {revenue} and {result} on {day}, beating Wall Street’s expectations.|{c} said on {day} that its results beat forecasts, with revenue of {revenue}.'), down: p('{c} reported quarterly revenue of {revenue} and {result} on {day}, short of what analysts had expected.|{c} missed forecasts on {day}, reporting revenue of {revenue}.') },
+  tvPick: { up: p('On today’s show, our experts named {c} the Stock of the Day. [“This one has legs,” said our host.|“Buy, buy, buy!” said our host.|“I’d back up the truck,” said our host.]') },
+  fowlPick: { up: p('Dear Fellow Fowls: today we’re excited about {c}, a small {industry} company that Wall Street has [overlooked|barely heard of|written off too soon].') },
+  jobs: { up: p('The unemployment rate fell to {level} last month from {prev}, the Labour Department said on {day}. Economists had expected {expect}.'), down: p('The unemployment rate rose to {level} last month from {prev}, the Labour Department said on {day}. Economists had expected {expect}.') },
+  cpi: { up: p('Consumer prices rose {level} over the past year, the government said on {day}, below the {expect} economists had forecast.'), down: p('Consumer prices rose {level} over the past year, the government said on {day}, above the {expect} economists had forecast.') },
+  gdp: { up: p('The economy grew at an annual rate of {level} last quarter, the Commerce Department said on {day}, beating forecasts of {expect}.'), down: p('The economy grew at an annual rate of just {level} last quarter, the Commerce Department said on {day}, short of forecasts of {expect}.') },
+  confidence: { up: p('The Consumer Confidence Index rose to {level} this month from {prev}, the Conference Board said on {day}.'), down: p('The Consumer Confidence Index fell to {level} this month from {prev}, the Conference Board said on {day}.') },
+  fed: { up: p('The Federal Reservoir lowered its policy rate to {level} from {prev} on {day}.'), down: p('The Federal Reservoir raised its policy rate to {level} from {prev} on {day}.') },
+  firmQuarter: { up: p('{firmName} returned {ret} last quarter, beating the MAJOR 500’s {indexRet}. The firm now manages {aum}.'), down: p('{firmName} returned {ret} last quarter, trailing the MAJOR 500’s {indexRet}. The firm now manages {aum}.') },
+  mandate: { up: p('{client} has chosen {firmName} to manage {amount}, the firm said on {day}.|{firmName} said on {day} it had won a {amount} mandate from {client}.') },
+};
+
+/** Second paragraphs: context, by kind. */
+export const DETAILS: Partial<Record<NewsKind, readonly string[]>> = {
+  fraud: p('Regulators at the Securities Oversight Bureau are said to be investigating. Former employees described a culture in which “the numbers were whatever the boss needed them to be.”|The company has hired forensic accountants and suspended its chief financial officer.'),
+  scandal: p('The company declined to comment beyond a brief statement. Governance experts said the board had been “asleep at the wheel.”|Shareholders have called for an independent investigation.'),
+  recall: p('The company said it was working closely with regulators and would replace affected products free of charge.|Analysts estimate the recall could cost [tens of millions|a quarter’s profits].'),
+  lawsuit: p('{short} said it would appeal.|Lawyers said the verdict could open the door to similar claims.'),
+  trialFail: p('The drug had been expected to account for most of the company’s future sales.|The company said it would review the data and decide on next steps.'),
+  approval: p('Analysts expect the {product} to become [a blockbuster|one of the company’s biggest sellers].|The approval ends a {sub} race that {short} was widely expected to lose.'),
+  investment: p('The money will be used to [expand production|pay down debt|fund research], the company said.'),
+  takeover: p('The boards of both companies [have approved the deal|are said to be in talks]. It is expected to close within a few months, subject to shareholder and regulatory approval.|Some analysts said a rival bid could follow.'),
+  activist: p('{firm} has a history of [pushing for board seats|forcing asset sales|winning proxy fights].'),
+  shortReport: p('{short} called the report “[false and misleading|a cynical attempt to profit from fear|nonsense]” and said it was considering legal action.'),
+  contract: p('The contract will run for [three|five|seven] years, the company said.'),
+  strike: p('Union leaders said the walkout would continue until the company improved its offer.'),
+  hack: p('The site was restored after [three hours|a long lunch|someone found the password on a sticky note].'),
+  launch: p('The {product} is priced to compete with [established rivals|cheaper imports].'),
+  bankruptcy: p('Creditors are expected to take control of the company. The shares will be removed from the exchange.'),
+  earnings: p('Chief executive {ceo} said the company was “[well positioned|cautiously optimistic|pleased with our progress]”.|The company kept its forecast for the full year unchanged.'),
+  fed: p('In a statement the Reservoir said it was watching inflation “[closely|carefully|with interest]”.'),
+  mandate: p('It is the latest sign that {firmName} is winning over [institutional|cautious|long-term] investors.'),
+};
+
+/** Quotes from analysts; {analyst} is a name and a firm. */
+export const ANALYST = {
+  up: p('“This is exactly what the market wanted to hear,” said {analyst}.|“We are raising our price target,” said {analyst}.|“The bulls have been proven right,” said {analyst}.|“I’d be a buyer here,” said {analyst}.'),
+  down: p('“This is a serious blow,” said {analyst}.|“We are cutting our rating to sell,” said {analyst}.|“It’s hard to see a quick recovery,” said {analyst}.|“Investors should tread carefully,” said {analyst}.'),
+};
+
+/** How the next morning's papers see the move (spec §11.7: follow-up stories). */
+export const FOLLOW = {
+  worse: p('Analysts warned that the worst may not be over.|Several brokers downgraded the stock overnight.|Questions are mounting, and the answers may not be pretty.'),
+  better: p('The rally may have further to run, some analysts said.|Brokers raced to raise their targets overnight.|Momentum traders were piling in.'),
+  overdone: p('Some analysts said the reaction looked overdone.|Bargain hunters may take a second look.|Cooler heads may yet prevail, one fund manager said.'),
+};
+
+/** The price reaction, for outlets that print after the market has digested the news. */
+export const REACTION = {
+  up: p('The shares [jumped|rose|climbed] about {pct} on the news.|The stock gained about {pct}.'),
+  down: p('The shares [fell|slid|tumbled] about {pct} on the news.|The stock lost about {pct}.'),
+};
+
+/** A leaked story mentions the rumours that came before it. */
+export const RUMOURED = p('The news had been rumoured on the Raging Bear message boards since {rumourDay}.|Talk of the news had circulated in the trade press since {rumourDay}.');
+
+/** Outlet voices: how each one opens and closes (spec §14.1: distinct looks and audiences). */
+export const OUTLET_VOICE: Record<string, { open?: readonly string[]; close?: readonly string[] }> = {
+  moneytv: { open: p('BREAKING on MoneyTV:|You heard it here first!|Hot off the wire:'), close: p('Stay tuned to MoneyTV for more!|Don’t touch that dial!') },
+  dailyscoop: { open: p('OOH LA LA!|YOU WON’T BELIEVE THIS:|SCOOP!'), close: p('Got a tip? Call our hotline!|Remember: you read it here first.') },
+  wyred: { open: p('The web is buzzing.|Download this:|Heads up, netizens.'), close: p('Bookmark this page!|Discuss it in our chat room.') },
+  motleyfowl: { close: p('Fowl on!|Remember: buy good companies, and hold them.|This is not financial advice. Well, it is, a bit.') },
+  barrens: { close: p('Our take: [we’d steer clear|a buying opportunity for the brave|wait for the dust to settle].') },
+};
+
+/** Posts on the Raging Bear boards (spec §14): rumours with a basis, and the usual chatter. */
+export const RUMOURS: Record<string, readonly string[]> = {
+  takeover: p('Hearing {ticker} is in play. Big buyer circling. You didn’t hear it from me.|My brother-in-law’s banker says {ticker} is getting a bid. Loading up.|Unusual options activity in {ticker}. Somebody knows something.'),
+  fraud: p('Something stinks at {ticker}. Their receivables make no sense.|Cousin works in {ticker} accounting. Says the numbers are “creative.”|{ticker} auditor meetings getting cancelled. Run.'),
+  scandal: p('Word is the {ticker} CEO is in hot water. Big story coming.|{ticker} board meeting called on short notice. Hmm.'),
+  approval: p('FDI panel loves the {ticker} drug, hearing. Could double.|Insiders buying {ticker} ahead of the decision. Just saying.'),
+  trialFail: p('Hearing the {ticker} trial data is ugly. Get out.|{ticker} doctors are quiet. Too quiet.'),
+  bankruptcy: p('{ticker} can’t pay its bonds. Lawyers seen at HQ.|Suppliers not getting paid at {ticker}. Chapter 11 incoming.'),
+  pump: p('{ticker} TO THE MOON!!! Buy before Friday!!!|$$$ {ticker} is the next Majorsoft $$$ load up NOW|Huge news coming for {ticker}!!! 10-bagger!!!'),
+  default: p('Hearing good things about {ticker}. Something’s up.|Friend at {ticker} says big announcement soon.|{ticker} chatter picking up. Positioning ahead.'),
+  bad: p('Hearing bad things about {ticker}. Something’s up.|Friend at {ticker} says trouble brewing.|{ticker} insiders selling? Watch out.'),
+};
+
+export const CHATTER = {
+  hype: p('{ticker} is going higher, trust me.|Just bought more {ticker}. Can’t lose!|{ticker} is the most undervalued stock on the exchange.|Anyone else riding {ticker}? Yeehaw!'),
+  fud: p('{ticker} is a sell. Management is clueless.|Shorting {ticker}. Overvalued junk.|{ticker} will be a penny stock by Christmas.|Why is anyone still holding {ticker}??'),
+  question: p('What does {short} actually do?|Anyone know when {ticker} reports?|Is the {ticker} dividend safe?|Newbie here. Is {ticker} a buy?'),
+  nonsense: p('My horoscope says buy {ticker}.|{ticker} spelled backwards is a sign.|I dreamed about {ticker} last night. Bullish.|First!!!'),
+};
+
+export const HANDLES = p(
+  'BullMarketBob|ShortKing99|DayTrader_Dan|MoonShot|DeepValue|ChartWizard|RetiredAt40|InsiderMaybe|BearClaw|PennyPincher|' +
+    'DotComDreamer|MarginCallMike|HotStockHank|StopLossSteve|NetSurfer98|ModemMaven|FedWatcher|DividendDiva',
+);

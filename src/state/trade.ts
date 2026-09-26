@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { OrderType, Side, TimeInForce } from '../sim/account';
 
-export type TradeTab = 'quotes' | 'ticket' | 'portfolio' | 'orders' | 'ledger';
+export type TradeTab = 'quotes' | 'ticket' | 'portfolio' | 'orders' | 'ledger' | 'calendar';
 
 export interface Watchlist {
   id: string;

@@ -6,7 +6,7 @@ import { decodeCompany, type Company } from '../world/company';
 import { useGame } from '../state/game';
 
 /** Data fetched from the worker, refetched whenever `key` changes. */
-function useFetched<T>(fetch: () => Promise<T>, key: unknown[]): T | undefined {
+export function useFetched<T>(fetch: () => Promise<T>, key: unknown[]): T | undefined {
   const [data, setData] = useState<T>();
   useEffect(() => {
     let current = true;

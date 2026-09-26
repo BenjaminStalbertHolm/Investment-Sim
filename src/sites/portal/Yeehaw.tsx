@@ -5,8 +5,11 @@ import { searchCompanies } from '../../apps/trade/SymbolSearch';
 import type { Directory } from '../../sim/types';
 import { useGame } from '../../state/game';
 import { INDUSTRIES } from '../../world/industries';
+import { OUTLETS } from '../../sim/data/outlets';
+import { headlineOf } from '../news/articles';
+import { useNews } from '../news/data';
 import { useStories } from '../news/NewsSites';
-import { BARRENS, JOTTINGS, NEWSWIRE, QUOTEZONE, YEEHAW, companyUrl, firmUrl, playerUrl, quoteUrl, searchUrl, sites } from '../urls';
+import { RAGINGBEAR, NEWSWIRE, QUOTEZONE, YEEHAW, companyUrl, firmUrl, playerUrl, quoteUrl, searchUrl, sites } from '../urls';
 import { Link, usePage, useTitle } from '../web';
 
 /** Yeehaw! (spec §14): the home portal with search, a directory by industry, headlines and a market summary. */
@@ -66,6 +69,8 @@ function Front() {
   const snapshot = useGame((s) => s.snapshot);
   const categories = useCategories(directory);
   const headlines = useStories().daily;
+  const news = useNews({ minCap: 10e9, limit: 4 });
+  const { firmName, seed } = useGame.getState();
   const columns = [0, 1, 2].map((k) => categories.filter((_, i) => i % 3 === k));
   return (
     <div className="yh-front">
@@ -103,14 +108,25 @@ function Front() {
         <div className="yh-box">
           <b>In the News</b>
           <ul>
-            {headlines.slice(0, 5).map((s) => (
+            {headlines.slice(0, 2).map((s) => (
               <li key={s.id}>
                 <Link href={`http://${NEWSWIRE}/story?id=${s.id}`}>{s.headline}</Link>
               </li>
             ))}
+            {news?.map((n) => (
+              <li key={n.id}>
+                <Link href={`http://${NEWSWIRE}/story?id=${n.id}-newswire`}>{headlineOf(n, directory, firmName, seed)}</Link>
+              </li>
+            ))}
           </ul>
           <p>
-            <Link href={`http://${JOTTINGS}/`}>Wall Street Jottings</Link> · <Link href={`http://${BARRENS}/`}>Barren’s</Link>
+            {OUTLETS.map((o, k) => (
+              <span key={o.id}>
+                {k > 0 && ' · '}
+                <Link href={`http://${o.host}/`}>{o.name}</Link>
+              </span>
+            ))}{' '}
+            · <Link href={`http://${RAGINGBEAR}/`}>Raging Bear boards</Link>
           </p>
         </div>
       </div>

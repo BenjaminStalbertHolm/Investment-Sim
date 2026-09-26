@@ -1,0 +1,116 @@
+/* Outbox Express (spec §15): folders on the left, the message list above the preview pane. */
+
+.outbox-body {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  min-height: 0;
+}
+
+.outbox-folders {
+  flex: none;
+  width: 150px;
+  margin: 0;
+  padding: 2px;
+  overflow: auto;
+  background: #fff;
+  list-style: none;
+}
+
+.outbox-folders li {
+  padding: 1px 4px 1px 18px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.outbox-folders li.outbox-root {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding-left: 2px;
+}
+
+.outbox-folders li.selected {
+  background: #000080;
+  color: #fff;
+}
+
+.outbox-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.outbox-list {
+  flex: 1 1 40%;
+}
+
+.outbox-list tr.unread td {
+  font-weight: bold;
+}
+
+.table-view th.sortable {
+  cursor: default;
+}
+
+.mail-flag {
+  color: #c00000;
+}
+
+.outbox-preview {
+  flex: 1 1 60%;
+  min-height: 80px;
+  padding: 6px 8px;
+  overflow: auto;
+  background: #fff;
+}
+
+.mail-header {
+  width: 100%;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #808080;
+}
+
+.mail-header th {
+  width: 60px;
+  text-align: left;
+  vertical-align: top;
+  font-weight: normal;
+  color: #404040;
+}
+
+.mail-body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  white-space: pre-line;
+}
+
+.mail-body p {
+  margin: 0 0 8px;
+}
+
+.mail-link {
+  color: #0000ee;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.mail-table {
+  margin-bottom: 8px;
+  border-collapse: collapse;
+}
+
+.mail-table th,
+.mail-table td {
+  padding: 1px 8px;
+  border: 1px solid #c0c0c0;
+  text-align: left;
+}
+
+.mail-answer {
+  font-style: italic;
+  color: #404040;
+}

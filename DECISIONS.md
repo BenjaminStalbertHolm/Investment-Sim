@@ -348,3 +348,130 @@ Judgement calls made where the spec leaves details open.
   arrives with clients (Phase 6).
 - **Measured.** The world-generation budget test (1.5 s) failed once at 1.52 s before this phase, when it shared the
   container with the other test files; it has passed in every full run since.
+
+## Phase 6 — Mail, clients, events, news
+
+- **Libraries.** None added. Letters and articles use the existing `{placeholder}` fill plus a 15-line `[a|b]` choice
+  expander (`sites/text.ts`) rather than Tracery (`tracery-grammar` sets its random source globally, is unmaintained and
+  untyped). Archive search is structured — ticker or company, firm, writer, date — with a headline match as the fallback,
+  so no full-text index (MiniSearch would need every headline written out to build one). The new-mail chime is twenty
+  lines of WebAudio, as §2 asks. Outbox Express reuses the virtualised table, which gained sortable headers and row
+  classes. Everything random still goes through the seeded streams; four new ones (`events`, `macro`, `clients`, `mail`)
+  keep a new kind of letter from changing the market.
+- **Facts are stored, words are written on reading.** The news archive holds facts (`sim/news.ts`: kind, company, move,
+  amounts, levels, rumour time); each outlet's article is worked out from them when read — which outlets cover it and
+  when (coverage rules in `sim/data/outlets.ts`), the byline, and the words from a stream named after the article. Mail
+  works the same way (`sim/mail.ts` facts, `apps/mail/letters.ts` words). A year at 10,000 companies archives about 11,000
+  items (1.25 MB of JSON before compression); a year's save is 21.7 MB (Phase 3: about 20; the target is 25).
+- **Events (spec §11.6–11.7)** are decided ten trading days ahead into a timed queue saved with the game, so rumours can
+  leak and tips can be genuine. Each company has a daily chance from the event types' rates (per company-year) times
+  industry, quality and size weights (`sim/data/events.ts`): about 0.65 events per company a year, 25 a day at 10,000
+  companies, scaled by the event-frequency setting. A third break before the bell (07:30–08:45), the rest at a bar. The
+  size of a move is drawn from the §11.7 range, skewed to its low end, and scaled by size, clamp((cap / $10B)^−0.08, 0.6,
+  1.5), so small companies move more; falls stop at −97%. The price jumps over 1–6 bars (the earnings mechanism); value
+  moves by a per-type share of it (fraud and trial results for good, a hacked web site hardly at all), a little more for
+  better-run companies, so prices drift on or drift back (§11.7's "drift or reversal") by the Phase 3 mean reversion.
+  Built: every row of the §11.7 table except bought puff and hit pieces (the dark web, Phase 9), plus product launches and
+  flops, CEO changes (a new CEO code per company, so websites show the new face), dividend changes, buybacks, completed or
+  collapsed takeovers, and bankruptcies. A strategic investment doesn't issue shares (share counts stay fixed); an
+  activist's stake joins the company's holders table. Hindsight Research, Standard & Pours and Moody Blues are named in
+  the stories; their own sites are Phase 10's.
+- **Not built: IPOs and stock splits.** Both change the company count or share counts that the typed arrays, the history
+  ring's layout, the index divisor and the save format take as fixed. They move to Phase 10 with the IPO Hotline.
+  Companies that leave the market instead keep their ids with a listing status (`LISTING`): a delisted company's price
+  freezes, its orders are cancelled and new ones refused, competitors' stakes in it go, lists and screeners skip it, and
+  the MAJOR 500 takes the largest company outside it, the divisor keeping the level (Phase 3's fixed membership ends
+  here). The market shrinks by about 1% a year until IPOs arrive.
+- **Takeovers** offer a 20–60% premium; the target jumps to 70–95% of it and its value goes to the offer, and the acquirer
+  (a larger company, same industry more often than not, or a competitor firm) slips 1–5%. After 20–60 trading days the
+  deal completes three times in four — the target is delisted at the offer and holders are paid in cash — or collapses
+  and the price falls back to about where it was. **Bankruptcies** hit micro and nano caps with poor quality; the filing
+  day's close delists the company and shareholders are written off at $0 (the Recycle Bin shows the loss).
+- **Rumours** (§11.7): each event type has a leak probability; the rumour comes hours or up to three trading days before
+  and moves the price 15–35% of the way in advance (value doesn't move), so the announcement carries the rest. 60% appear
+  on the Raging Bear boards, 40% on the trade press's grapevine. News-driven moves scale with credibility: a board rumour
+  moves a price about 40% as much as the same rumour in the trade press (credibilities 0.25 and 0.6). The event's articles
+  then mention the rumours. **Follow-ups**: some stories get a second move at 07:30 the next morning, after the dailies
+  dig in — the same way (worse, or better) more often for poor companies with bad news and good ones with good news,
+  otherwise a partial reversal ("overdone"). The morning articles say which.
+- **The publication cascade** (§11.7): the Newswire at once, MoneyTV five minutes (a bar) later, the trade press within the
+  hour, the dailies at 06:00 the next morning, Barren's on the Saturday after. Who covers what is data: the Newswire
+  everything; MoneyTV companies over $2B, big moves and the economy; the Journal fraud, scandal and big deals; the
+  Jottings companies over $10B, big moves and the economy; the Financial Timez the economy, foreign and commodity
+  companies; the Daily Scoop gossip; Wyred tech; the Motley Fowl small caps' good news; each trade paper its industry's
+  companies over $50M. Tiny companies make only the wire. Market caps in the rules are the starting ones (a paper's
+  sense of who matters doesn't track every tick). The Phase 4 market stories (the session wrap, movers, sectors, the
+  week) stay, alongside.
+- **Outlets** (§14.1): all nine national outlets and forty trade papers (one per industry, e.g. timbertimes.com,
+  oilgasgazette.com, pharmaweekly.com) share one site framework — front page, story, archive search, writers' pages —
+  with a look each: the wire's flashes, the Jottings' broadsheet with stippled ink portraits, the Journal's grey, the
+  Timez's salmon, a TV player with a talking head and scrolling lower third, a red tabloid in capitals, a jester
+  newsletter, a neon magazine. **Journalists** are generated per game with the portrait system and saved (bylines and
+  Phase 9's bribes refer to them): a generalist and beat writers per outlet, the beats being newsroom groups of industries
+  ("Health & Energy"; three or more read "General Assignment"), with bias and integrity drawn from the outlet's range
+  (the Daily Scoop's are low, the Journal's high). Bias isn't used in the words yet.
+- **MoneyTV's Stock of the Day** (yesterday's hottest large cap, on air at noon) and **the Motley Fowl's pick** (a sound
+  small cap, in the morning newsletter) lift their stocks a little for a while (0.5–3% and 1–5%, none of it lasting).
+- **Raging Bear** (§14): one board per ticker. Real rumours are dressed as ordinary posts among 0–2 chatter posts a day
+  (hype, doom, questions, nonsense) from a stream named after the ticker and day, so the boards read the same every time
+  and the signal is findable but not labelled. The front page lists the latest rumoured tickers and the day's movers.
+- **The economy (§11.4).** The Federal Reservoir meets on the third Tuesday of eight months and moves towards a Taylor
+  rule (3% neutral rate, leaning against inflation and growth, lower in a crash) in 25 or 50 basis-point steps, usually as
+  expected; the jobs report comes on the first Friday, CPI mid-month, GDP after each quarter, consumer confidence on the
+  last Tuesday — each a simple autoregressive series with shocks, nudged by the market regime. The rate now drives value
+  growth (Phase 3's constant cost of equity), a rate change re-rates each industry's value by a duration
+  (`sim/data/macro.ts`: internet 10, banks −3), and surprises move prices at once, scaled by beta and cyclicality. 1998
+  starts at 5.5%, 1.6% inflation, 3.8% growth, 4.7% unemployment. The Federal Reservoir's own site (rate decisions,
+  minutes) joins the Weather Bureau and OPEK in Phase 7; its decisions and the minutes' tone are in the news meanwhile.
+- **Dividends** are paid a quarter at a time on the company's report day (ex-date and pay date the same, for
+  simplicity): price and value drop by the dividend before the open and holders are paid (ledger and a broker letter).
+  Dividends count in the position's realised P&L, so the accounting invariant still holds and the Recycle Bin nets them.
+  The dividend per share is now state (dividend changes), so yields move with prices.
+- **Clients (§15.1)** own units of the firm's single book, like a fund: the seed money is the founding clients' (the CEO's
+  family and a friends-and-family fund), a mandate buys units at the day's price, a redemption sells them. Fees move units
+  from clients to the firm, so the firm's own capital is the units no client owns and grows with fees: 1% a year charged
+  daily, and 20% of any quarter's return above the MAJOR 500 (no high-water mark). Both are set in My Computer → Firm
+  (0–5% and 0–50%); cheaper firms get more and bigger offers, dearer ones fewer. Constraints apply to the whole book
+  while the client is aboard: excluded industries (tobacco, weapons makers, fossil fuels…), no holding above x%, nothing under $300M or $2B, a maximum drawdown, or
+  beating the MAJOR 500 over two to four quarters. A breach gets a warning and five trading days to fix it; a second
+  breach, or one left unfixed, ends the mandate. A drawdown can't be sold away, so it ends the mandate only if it deepens
+  to 1.5× the limit or happens again. The order ticket warns before an order would break a mandate but doesn't block it.
+  A benchmark mandate is judged at its horizon: beaten, the client adds 20–40% and the reputation rises; missed, it leaves.
+  Each quarter the firm sends statements (in Sent Items) and clients reply: praise, questions, top-ups after good
+  quarters, and redemptions after 4, 3 or 2 lagging quarters (the patience setting; founders one more). Redemptions give
+  five trading days' notice; if cash is short on the day the broker sells the largest positions at the open. With clients
+  switched off the game is a sandbox: no clients, the firm owns every unit.
+- **Offers** arrive first on the fourth trading day, then about every two to three weeks, more often for a well-regarded
+  firm: the amount is log-normal around 30% of AUM, scaled by reputation and fees, at least $25,000 and at most 5× AUM,
+  with one to three constraints typical of the kind of client (pensions ask for drawdown limits and benchmarks, churches
+  and endowments exclude industries, insurers want big companies). They lapse after five trading days. **Reputation**
+  (0–100) starts at 25 and so far moves with each quarter against the index, mandates lost or completed, and tips
+  reported; Phase 8 adds drawdowns, the regulator's record and league rank.
+- **Mail (§15).** Folders follow the kind of letter; Deleted Items holds deleted ones (Restore brings them back). The
+  "composer (limited)" is the replies the action buttons send (accepting or declining a mandate, reporting a tip), which
+  land in Sent Items. Junk mail is filed in Junk while Tools → Junk Mail Filter is on (Phase 10's assistant will do this
+  for you); off, it lands in the Inbox. News alerts for holdings can be switched off (Tools). Search matches sender and
+  subject. The chime plays at most every three seconds. The broker's daily digest is written from the ledger, so a save
+  in mid-session loses no fills. Every trading day's 07:00 post brings the Jottings' briefing: the five most important
+  stories since the day before, the day's releases, and earnings due from holdings and the five largest reporters.
+- **Tips (§15.4)** come every 6–18 trading days from the eighth. As often as the difficulty's tip reliability says, a tip is
+  genuine — an event planned for a day or more ahead; the rest are half bait (a sub-$300M company pumped the next day, with
+  board hype, then dumped 20–35% one to three days later) and half nonsense. Reporting one to the Securities Oversight
+  Bureau adds a reputation point. Trades in a genuinely tipped company while its event is still pending are recorded, out
+  of the player's sight, for Phase 8's heat and investigations.
+- **The player's firm in the news:** each quarter's result, and new mandates (the Newswire; the fund trade paper covers
+  mandates, Barren's the quarters). League tables are Phase 8's.
+- **The clock** now also stops at 07:00 on trading days (the morning's work: releases, the events ahead, picks, mail,
+  offers) and at each queued task; at the same minute the market (open, bar, close) goes first.
+- **Elsewhere.** Company sites have In the News, press releases from the company's own announcements, a new CEO's portrait
+  and a banner once delisted; quote windows list the latest news; Yeehaw! links every outlet. MajorTrade Pro gains the
+  Calendar tab (§12.8: earnings for holdings and watchlists, releases, Federal Reservoir meetings), built now because the
+  briefing needs the same calendar. The tray's mail icon shows the unread count.
+- **Saves.** Version 4. The v3 → v4 migration starts Phase 6 where an old game stands: its NAV belongs to the founding
+  clients, the economy starts at 1998's, journalists are hired from the seed, the index keeps its members, dividends come
+  from the genomes, and the event generator plans from the next morning. The save test now also takes mandates, reports a
+  tip and reads and flags mail on both sides of the save.
+- **Measured** in this container: a bar for 10,000 companies 1.16 ms on average, 1.72 ms at p99 (budget 4 ms), a session
+  93 ms; a simulated year at 10,000 companies 22.6 s headless. A browser check caught template lists split on the `|`
+  inside `[a|b]` choices (leads came out as fragments); the splitter now respects brackets and a test checks every
+  template.

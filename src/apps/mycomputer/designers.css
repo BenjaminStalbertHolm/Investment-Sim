@@ -329,10 +329,27 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow: auto;
 }
 
 .firm-panel-summary {
   display: flex;
   gap: 16px;
   align-items: flex-start;
+}
+
+.firm-clients {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.firm-clients .table-view {
+  flex: none;
+  height: 140px;
+}
+
+.firm-clients p {
+  margin: 0;
 }

@@ -39,6 +39,8 @@ export function marketStats(t: MarketTable) {
   let down = 0;
   for (let i = 0; i < n; i++) {
     pct[i] = t.last[i] / t.prevClose[i] - 1;
+    // Delisted companies (spec §11.6) are worth nothing to lists and sectors.
+    if (t.status?.[i]) continue;
     cap[i] = t.last[i] * t.shares[i];
     const s = sums[t.sector[i]];
     s.pct += pct[i] * cap[i];

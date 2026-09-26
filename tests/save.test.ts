@@ -44,6 +44,14 @@ function trade(e: Engine, s: number): void {
   }
 }
 
+/** A state without what Phase 6 added. */
+function beforePhase6(state: SimState) {
+  const { macro: _m, events: _e, journalists: _j, clients: _c, mail: _mail, ...rest } = state;
+  const { events: _re, macro: _rm, clients: _rc, mail: _rmail, ...rng } = state.rng;
+  const { dividend: _d, ...fundamentals } = state.fundamentals;
+  return { ...rest, rng, fundamentals };
+}
+
 const saveAndLoad = (e: Engine): Engine => {
   const bytes = packSave({ manifest: manifest(), sim: e.exportState() });
   return Engine.restore(migrate(unpackSave(bytes)).sim as SimState);
@@ -63,6 +71,17 @@ describe('save system (spec §18)', () => {
         trade(e, s);
         if (s === 30) e.setPlayer({ firmName: 'Renamed Capital', logoCode: encodeLogo({ ...PLAYER_LOGO, effect: 'bevel' }) });
         if (s === 90) e.setPlayer({ ceoName: 'Pat Doe-Ray' });
+        // Phase 6: answer the mail — take mandates, report a tip, read and flag letters.
+        if (s % 20 === 10) {
+          const offer = e.mail().messages.find((m) => m.kind === 'offer' && !m.answer);
+          if (offer) e.mailAction(offer.id, 'accept');
+        }
+        if (s === 45) {
+          const tip = e.mail().messages.find((m) => m.kind === 'tip' && !m.answer);
+          if (tip) e.mailAction(tip.id, 'report');
+          e.markMail([1, 2, 3], { read: true, flagged: true });
+          e.setAlerts(false);
+        }
       }
       if (s === 60) {
         // Save at any moment: mid-session, with open orders.
@@ -75,6 +94,14 @@ describe('save system (spec §18)', () => {
     });
     expect(saved.orders().length).toBeGreaterThan(50);
     expect(difference(saved.exportState(), straight.exportState())).toBeUndefined();
+    // Phase 6: mail, news, rumours, clients and the economy all carried over, answers included.
+    const state = saved.exportState();
+    expect(state.mail.messages.length).toBeGreaterThan(100);
+    expect(state.mail.messages.some((m) => m.answer === 'accepted')).toBe(true);
+    expect(state.events.news.length).toBeGreaterThan(500);
+    expect(state.events.rumours.length).toBeGreaterThan(20);
+    expect(state.clients.clients.filter((c) => c.status === 'active').length).toBeGreaterThan(2);
+    expect(state.events.queue.length).toBeGreaterThan(0);
     // Phase 4: the quarterly results the IR pages show carry over, including reports made after loading.
     const quarters = saved.details(5).quarters;
     expect(quarters.at(-1)!.reported).toBeGreaterThan(START_DAY);
@@ -85,6 +112,32 @@ describe('save system (spec §18)', () => {
     expect(saved.settings).toEqual(settings);
     expect(saved.settings.difficulty).toBe('custom');
   }, 60_000);
+
+  it('upgrades a version 3 save: mail, news, clients and the economy start where the game stands', () => {
+    const e = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Old Firm' });
+    e.placeOrder({ company: 3, side: 'buy', type: 'market', shares: 100, tif: 'day' });
+    e.runSessions(4);
+    const sim = e.exportState() as Partial<SimState> & SimState;
+    const nav = e.nav();
+    const { macro: _m, events: _e, journalists: _j, clients: _c, mail: _mail, ...v3 } = sim;
+    const { events: _re, macro: _rm, clients: _rc, mail: _rmail, ...rng } = sim.rng;
+    const { status: _s, ...market } = sim.market;
+    const { members: _members, ...index } = sim.market.index;
+    const { dividend: _d, ...fundamentals } = sim.fundamentals;
+    const old = { ...v3, rng, market: { ...market, index }, fundamentals };
+    const upgraded = migrate(unpackSave(packSave({ manifest: manifest({ version: 3 }), sim: old, game: {} })));
+    const loaded = Engine.restore(upgraded.sim as SimState);
+    expect(loaded.mail().messages.map((m) => m.kind)).toEqual(['welcome']);
+    const clients = loaded.clients();
+    expect(clients.clients.map((c) => c.kind)).toEqual(['founder', 'founder']);
+    expect(clients.unit).toBeCloseTo(1, 9);
+    expect(clients.clientAssets).toBeCloseTo(nav, 4);
+    expect(loaded.journalists().length).toBeGreaterThan(40);
+    expect(Array.from(loaded.exportState().market.index.members)).toEqual(Array.from(sim.market.index.members));
+    loaded.runSessions(3);
+    expect(loaded.newsCount).toBeGreaterThan(10);
+    expect(loaded.mail().messages.some((m) => m.kind === 'briefing')).toBe(true);
+  });
 
   it('upgrades a version 2 save: default logo, a CEO from the seed, and the advanced settings', () => {
     const e = Engine.create(world, { settings: DIFFICULTIES.hard, firmName: 'Old Firm' });
@@ -115,7 +168,8 @@ describe('save system (spec §18)', () => {
     expect(upgraded.manifest.version).toBe(SAVE_VERSION);
     expect(upgraded.game).toMatchObject({ trade: {}, browser: newBrowserState() });
     const loaded = Engine.restore(upgraded.sim as SimState);
-    expect(difference(loaded.exportState(), sim)).toBeUndefined();
+    // Everything before Phase 6 is as it was; Phase 6 starts afresh (its own test below).
+    expect(difference(beforePhase6(loaded.exportState()), beforePhase6(sim))).toBeUndefined();
   });
 
   it('packs documents with every kind of typed array into a zip and back', () => {

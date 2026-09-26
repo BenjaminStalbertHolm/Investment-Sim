@@ -11,6 +11,7 @@ const components: Partial<Record<AppId, LazyApp>> = {
   mycomputer: lazy(() => import('./mycomputer/MyComputer')),
   browser: lazy(() => import('./browser/Browser')),
   trade: lazy(() => import('./trade/TradeApp')),
+  mail: lazy(() => import('./mail/MailApp')),
   quote: lazy(() => import('./quote/QuoteWindow')),
   recyclebin: lazy(() => import('./recyclebin/RecycleBin')),
   run: lazy(() => import('./run/RunDialog')),

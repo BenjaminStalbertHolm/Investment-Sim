@@ -2,14 +2,20 @@
 
 Run an investment firm from inside a fake 1998 desktop operating system. Fully offline; runs in the browser.
 
-**Status:** Phase 5 (character, logo and the New Game wizard). A seed generates a market of 10,000 companies, and a Web Worker
+**Status:** Phase 6 (mail, clients, events and news). A seed generates a market of 10,000 companies, and a Web Worker
 runs it in real time: trading hours and holidays, market regimes, sector moves, earnings seasons and the MAJOR 500.
 MajorTrade Pro 98 has watchlists, quote windows with charts, market and limit orders, a portfolio and a cash ledger.
 Internet Exploiter browses the in-game web: the Yeehaw! portal and search, every company's own website (home, about,
 products, investor relations with live stats and holders, guestbook), competitor firms' sites and your own, QuoteZone
-(movers, sector map, screener) and three newspapers written from the market. A Setup Wizard founds your firm: pick one of ten
+(movers, sector map, screener) and the news. A Setup Wizard founds your firm: pick one of ten
 famous firms or design your own logo, draw your CEO's portrait (every company CEO has one too), choose a difficulty or
-tune the advanced settings, and get a laminated ID badge. Games save anywhere to named slots and
+tune the advanced settings, and get a laminated ID badge. The market now has corporate events — scandals, frauds,
+takeovers, drug trials, recalls, CEO changes, dividends, bankruptcies — and an economy with a Federal Reservoir; news
+breaks on the Majorsoft Newswire and cascades through TV, the trade press, the morning papers and the weekend
+magazines, each with its own look and staff of writers, often after rumours on the Raging Bear boards. Outbox Express
+brings clients with mandate offers (accept one and its money and its rules are yours), quarterly statements, top-ups
+and redemptions, broker confirmations and dividends, a morning briefing, news alerts, anonymous tips (genuine, bait or
+nonsense) and plenty of junk mail. Games save anywhere to named slots and
 rotating autosaves, and export as `.d98` files. Apps not built yet are placeholders that say which build phase
 delivers them.
 
@@ -35,7 +41,10 @@ Targets Safari and Chrome on macOS, 1280×800 minimum window.
 
 The game boots into your most recent save; the first time, the Setup Wizard founds your firm. Open **MajorTrade Pro 98**
 to watch quotes and trade, and **Internet Exploiter** to read the news and visit companies (type a company or ticker
-in the address bar to search Yeehaw!); the tray sets the game speed (a trading day takes two minutes at 1×). Press **Ctrl+S**
+in the address bar to search Yeehaw!); the tray sets the game speed (a trading day takes two minutes at 1×).
+**Outbox Express** (the tray's envelope shows unread mail) is where clients offer mandates — each with rules that apply
+to your whole portfolio — and where tips, briefings and broker letters arrive. **My Computer → Firm** lists your clients
+and their mandates and sets your fees. Press **Ctrl+S**
 (or ⌘S) to save. **My Computer → Saves** lists saved games and exports or imports `.d98` files; dropping a `.d98` on
 the desktop loads it. **My Computer → New Game** reruns Setup, and **My Computer → Firm** renames your firm and
 edits its logo and CEO.
@@ -60,12 +69,14 @@ src/
   main.tsx          entry point
   shell/            Desktop, Window, Taskbar (+ tray), StartMenu, BootScreen, ShutdownScreen
   apps/             catalog.ts (app metadata as data), registry.ts (lazy components), one folder per app:
-                    trade/ (MajorTrade Pro), quote/ (quote windows), browser/ (Internet Exploiter), mycomputer/
-                    (saves, Setup Wizard, logo and portrait designers, advanced settings, firm panel),
+                    trade/ (MajorTrade Pro), quote/ (quote windows), browser/ (Internet Exploiter), mail/ (Outbox
+                    Express: letters.ts writes the letters, data.ts their templates), mycomputer/ (saves, Setup Wizard,
+                    logo and portrait designers, advanced settings, firm panel with clients and fees),
                     recyclebin/, run/, shutdown/
   sites/            the in-game web: urls.ts (domains), Site.tsx (URL → site), web.tsx (links, marquee, hit counter),
-                    portal/ (Yeehaw!), company/ (company sites: content.ts generates them), firm/, news/, quotezone/;
-                    data/ holds the text templates, product lists and industry themes
+                    text.ts (template writer), portal/ (Yeehaw!), company/ (company sites: content.ts generates them),
+                    firm/, news/ (every outlet; articles.ts writes articles from the news archive), forum/ (Raging
+                    Bear), quotezone/; data/ holds the text templates, product lists and industry themes
   ui98/             98-style widgets 98.css lacks: menu bar, modals, virtualised table view, ticker tape
   charts/           price and performance charts (lightweight-charts), sparklines
   art/icons.tsx     original pixel-style SVG icons
@@ -73,9 +84,14 @@ src/
   art/portrait/     CEO portrait options, parts and renderer
   art/badge/        the ID badge
   sim/              the market simulation: engine.ts (time, orders, queries, save state), market.ts (price model,
-                    regimes, MAJOR 500), earnings.ts, history.ts, pregame.ts (generated history), account.ts,
-                    calendar.ts, settings.ts (difficulty data); worker.ts runs it in a Web Worker via comlink
-  state/            Zustand stores: windows, shell, trade (watchlists), game (session: boot, save, load);
+                    regimes, MAJOR 500, delisting), earnings.ts (and dividends), events.ts (corporate events, rumours,
+                    takeovers), macro.ts (the economy and the Federal Reservoir), press.ts (outlets' coverage and
+                    journalists), news.ts (the archive's shape), clients.ts (clients, mandates, fees), mail.ts (mail and
+                    tips), history.ts, pregame.ts (generated history), account.ts, calendar.ts, settings.ts;
+                    data/ holds event types, outlets, client lexicons and macro sensitivities;
+                    worker.ts runs it in a Web Worker via comlink
+  audio/            WebAudio sounds (the new-mail chime)
+  state/            Zustand stores: windows, shell, trade (watchlists), mail (Outbox view), game (session: boot, save, load);
                     saveFile.ts (.d98 format), saves.ts (IndexedDB slots), migrations.ts
   world/            world generation: rng, bitcode (genome, CEO and logo codes), genome, ceo, generator, company
                     decoding, ownership

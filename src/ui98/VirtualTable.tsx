@@ -25,8 +25,13 @@ export function VirtualTable<T>(props: {
   onOpen?(row: T): void;
   empty?: string;
   className?: string;
+  /** Extra class for a row, e.g. 'unread'. */
+  rowClass?(row: T): string | undefined;
+  /** Sortable columns: the header clicked, and the current sort shown as an arrow. */
+  onSort?(header: string): void;
+  sort?: { header: string; ascending: boolean };
 }) {
-  const { rows, columns, rowKey, selected, onSelect, onOpen, empty, className } = props;
+  const { rows, columns, rowKey, selected, onSelect, onOpen, empty, className, rowClass, onSort, sort } = props;
   const scroller = useRef<HTMLDivElement>(null);
   const virtual = useVirtualizer({
     count: rows.length,
@@ -44,8 +49,14 @@ export function VirtualTable<T>(props: {
         <thead>
           <tr>
             {columns.map((c) => (
-              <th key={c.header} className={c.align} style={c.width ? { width: c.width } : undefined}>
+              <th
+                key={c.header}
+                className={`${c.align ?? ''}${onSort ? ' sortable' : ''}`}
+                style={c.width ? { width: c.width } : undefined}
+                onClick={onSort && (() => onSort(c.header))}
+              >
                 {c.header}
+                {sort?.header === c.header && (sort.ascending ? ' ▲' : ' ▼')}
               </th>
             ))}
           </tr>
@@ -58,7 +69,7 @@ export function VirtualTable<T>(props: {
             return (
               <tr
                 key={key}
-                className={key === selected ? 'highlighted' : undefined}
+                className={[key === selected ? 'highlighted' : '', rowClass?.(row) ?? ''].join(' ').trim() || undefined}
                 onClick={() => onSelect?.(row)}
                 onDoubleClick={() => onOpen?.(row)}
               >
