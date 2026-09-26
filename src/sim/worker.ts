@@ -172,6 +172,13 @@ const api = {
   estimate: (request: OrderRequest) => game().estimate(request),
   bars: (id: number, timeframe: Timeframe) => game().bars(id, timeframe),
   details: (id: number) => game().details(id),
+  firm: (id: number) => game().firm(id),
+  table: () => {
+    const t = game().table();
+    const arrays = [t.last, t.prevClose, t.volume, t.shares, t.revenue, t.income, t.dividendYield, t.sector, t.reported];
+    if (t.week) arrays.push(t.week.close, t.week.previous);
+    return Comlink.transfer(t, arrays.map((a) => a.buffer));
+  },
   ledger: () => game().ledger(),
   orders: () => game().orders(),
   closedPositions: () => game().closedPositions(),

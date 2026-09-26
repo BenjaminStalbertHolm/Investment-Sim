@@ -1,0 +1,1106 @@
+/* Internet Exploiter's chrome, and the 90s web inside it (spec §14): Times by default, tiled backgrounds, bevelled
+   buttons, blue underlined links that turn purple once visited. */
+
+/* ---------- Browser chrome ---------- */
+
+.browser {
+  gap: 2px;
+}
+
+.browser-toolbar {
+  display: flex;
+  flex: none;
+  align-items: stretch;
+  gap: 1px;
+  padding: 1px 2px;
+  border-bottom: 1px solid #808080;
+  box-shadow: 0 1px #fff;
+}
+
+.browser-toolbar button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 50px;
+  padding: 1px 4px;
+  box-shadow: none;
+  background: none;
+}
+
+.browser-toolbar button:not(:disabled):hover {
+  box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff;
+}
+
+.browser-toolbar button.pressed,
+.browser-toolbar button:not(:disabled):active {
+  box-shadow: var(--pressed-shadow);
+}
+
+.tb-glyph {
+  font-size: 16px;
+  line-height: 18px;
+  color: #004080;
+}
+
+button:disabled .tb-glyph {
+  color: #a0a0a0;
+}
+
+.tb-glyph.stop {
+  color: #c00000;
+}
+
+.browser-throbber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  margin-left: auto;
+  background: #000;
+  border: 1px solid #808080;
+}
+
+.browser-throbber.spinning svg {
+  animation: throbber 1.2s linear infinite;
+}
+
+@keyframes throbber {
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+.browser-address {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 0 2px;
+}
+
+.browser-address input {
+  flex: 1;
+}
+
+.browser-address button {
+  min-width: 36px;
+}
+
+.browser-main {
+  display: flex;
+  flex: 1;
+  gap: 2px;
+  min-height: 0;
+}
+
+.browser-panel {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 170px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.browser-panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 4px;
+  background: #c0c0c0;
+}
+
+.browser-panel-title button {
+  min-width: 0;
+  padding: 0 6px;
+}
+
+.browser-panel ul {
+  flex: 1;
+  margin: 0;
+  padding: 2px;
+  overflow: auto;
+  list-style: none;
+}
+
+.browser-panel li {
+  padding: 1px 3px;
+  overflow: hidden;
+  color: #0000ee;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.browser-panel li:hover,
+.browser-panel li.current {
+  background: var(--highlight);
+  color: #fff;
+}
+
+.browser-page {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background: #fff;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.browser-status {
+  display: flex;
+}
+
+.browser-status .status-bar-field:first-child {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.browser-progress {
+  position: relative;
+  flex: none;
+  width: 100px;
+  overflow: hidden;
+}
+
+.browser-progress-bar {
+  position: absolute;
+  inset: 2px auto 2px 2px;
+  background: repeating-linear-gradient(90deg, var(--highlight) 0 8px, transparent 8px 10px);
+  animation: progress linear forwards;
+}
+
+@keyframes progress {
+  from {
+    width: 0;
+  }
+  to {
+    width: calc(100% - 4px);
+  }
+}
+
+.browser-zone {
+  flex: none;
+  width: 90px;
+}
+
+/* ---------- The web page ---------- */
+
+.web-page {
+  min-height: 100%;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 15px;
+  line-height: 1.25;
+  color: #000;
+}
+
+.web-page table,
+.web-page li,
+.web-page p {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Undo 98.css's list-view tables: web tables are plain HTML tables. :where() keeps these below any site's own rules. */
+:where(.web-page) table {
+  position: static;
+  background-color: transparent;
+  white-space: normal;
+  -webkit-font-smoothing: auto;
+}
+
+:where(.web-page) table > thead > tr > *,
+:where(.web-page) table > tbody > tr > * {
+  position: static;
+  height: auto;
+  padding: 2px 6px;
+  background: none;
+  box-shadow: none;
+}
+
+:where(.web-page) table > thead > tr > * {
+  font-weight: bold;
+}
+
+.web-page h1 {
+  margin: 0.4em 0;
+  font-size: 26px;
+}
+
+.web-page h2 {
+  margin: 0.8em 0 0.3em;
+  font-size: 20px;
+}
+
+.web-page h3 {
+  margin: 0.8em 0 0.3em;
+  font-size: 17px;
+}
+
+.web-page a {
+  color: #0000ee;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.web-page a.visited {
+  color: #551a8b;
+}
+
+.web-page a:focus {
+  outline: 1px dotted #000;
+}
+
+.web-page code {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.web-page .up {
+  color: #008000;
+}
+
+.web-page .down {
+  color: #c00000;
+}
+
+.marquee {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.marquee > span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee linear infinite;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.hit-counter {
+  margin: 12px 0;
+  text-align: center;
+}
+
+.hit-digits span {
+  display: inline-block;
+  width: 12px;
+  margin: 0 1px;
+  background: #000;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  color: #3f3;
+  text-align: center;
+}
+
+.under-construction {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 8px auto;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+.uc-stripes {
+  width: 60px;
+  height: 18px;
+  background: repeating-linear-gradient(45deg, #000 0 8px, #fc0 8px 16px);
+  border: 2px solid #000;
+}
+
+.web-rule {
+  height: 4px;
+  margin: 12px 0;
+  background: linear-gradient(90deg, red, orange, yellow, lime, cyan, blue, magenta, red) 0 0 / 200% 100%;
+  animation: web-rule 3s linear infinite;
+}
+
+@keyframes web-rule {
+  to {
+    background-position: 200% 0;
+  }
+}
+
+.best-viewed {
+  margin: 4px 0;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  color: #404040;
+}
+
+.ie-badge {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #1a55c8;
+  font-family: 'Times New Roman', serif;
+  font-weight: bold;
+  font-style: italic;
+  line-height: 12px;
+  color: #fff;
+  text-align: center;
+}
+
+.web-photo {
+  display: inline-flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px;
+  background: #fff;
+  border: 2px outset #c0c0c0;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  color: #606060;
+}
+
+.web-ring {
+  text-align: center;
+}
+
+/* ---------- Logos ---------- */
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.logo-icon-above {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.logo-emblem {
+  flex: none;
+}
+
+.logo-wordmark {
+  white-space: nowrap;
+}
+
+.logo-text-only {
+  padding-bottom: 3px;
+  border-bottom: 3px solid;
+}
+
+.logo-text-inside {
+  padding: 0.3em 0.7em;
+  white-space: nowrap;
+}
+
+.logo-shape-circle,
+.logo-shape-oval {
+  border-radius: 999px;
+}
+
+.logo-shape-roundedSquare,
+.logo-shape-shield {
+  border-radius: 10px;
+}
+
+.logo-shape-banner {
+  clip-path: polygon(0 0, 100% 0, 94% 50%, 100% 100%, 0 100%, 6% 50%);
+  padding: 0.3em 1.4em;
+}
+
+/* ---------- Company websites: eight layouts ---------- */
+
+.company-site {
+  min-height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.cs-header {
+  padding: 6px;
+}
+
+.cs-slogan {
+  margin-top: 6px;
+  font-style: italic;
+  font-weight: bold;
+  color: var(--cs-ink);
+}
+
+.cs-columns {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cs-main {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.cs-column {
+  max-width: 660px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.cs-column .cs-main {
+  text-align: left;
+}
+
+.cs-nav {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cs-nav-buttons a {
+  display: block;
+  min-width: 130px;
+  padding: 4px 8px;
+  background: var(--cs-main);
+  border: 3px outset color-mix(in srgb, var(--cs-main) 60%, white);
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: bold;
+  color: #fff !important;
+  text-align: center;
+  text-decoration: none !important;
+}
+
+.cs-nav-buttons a.current {
+  border-style: inset;
+}
+
+.cs-column .cs-nav-buttons,
+.cs-nav-tabs {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 6px 0;
+}
+
+.cs-nav-tabs {
+  justify-content: flex-start;
+  gap: 2px;
+  margin: 0;
+  border-bottom: 3px solid var(--cs-main);
+}
+
+.cs-nav-tabs a {
+  padding: 4px 12px;
+  background: color-mix(in srgb, var(--cs-main) 25%, white);
+  border: 1px solid var(--cs-main);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  color: #000 !important;
+  text-decoration: none !important;
+}
+
+.cs-nav-tabs a.current {
+  background: var(--cs-main);
+  color: #fff !important;
+}
+
+.cs-frames > .cs-columns {
+  align-items: stretch;
+  min-height: 100%;
+  margin: -10px;
+}
+
+.cs-frames .cs-nav-plain {
+  width: 150px;
+  padding: 12px 8px;
+  background: var(--cs-main);
+  border-right: 4px ridge #c0c0c0;
+}
+
+.cs-frames .cs-nav-plain a {
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  color: #fff !important;
+}
+
+.cs-framed {
+  flex: 1;
+  padding: 10px;
+}
+
+.cs-nav-links {
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+}
+
+.cs-homepage h1 {
+  color: var(--cs-ink);
+  text-align: center;
+}
+
+.cs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: -10px -10px 0;
+  padding: 8px 12px;
+  background: var(--cs-main);
+}
+
+.cs-logo-box {
+  padding: 4px 8px;
+  background: #fff;
+}
+
+.cs-corporate .cs-nav-plain {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.cs-corporate .cs-nav-plain a {
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: bold;
+  color: #fff !important;
+  text-decoration: none;
+}
+
+.cs-corporate .cs-nav-plain a.current {
+  text-decoration: underline;
+}
+
+.cs-panel {
+  max-width: 760px;
+  margin: 12px auto;
+  border: 1px solid #a0a0a0;
+}
+
+.cs-panel .cs-main {
+  background: #fff;
+}
+
+.cs-footer {
+  margin-top: 16px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.cs-highlights td {
+  width: 33%;
+  padding: 6px;
+  text-align: center;
+  vertical-align: top;
+}
+
+.clip-art {
+  display: inline-block;
+  color: var(--cs-main);
+  filter: drop-shadow(2px 2px 0 var(--cs-accent));
+}
+
+.cs-ticker-box {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #ffffe0;
+  border: 1px solid #808080;
+}
+
+.cs-facts th,
+.cs-stats th {
+  padding-right: 10px;
+  text-align: left;
+}
+
+.cs-ceo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cs-ceo p {
+  margin: 6px 0;
+}
+
+.cs-products td {
+  padding: 6px;
+  vertical-align: top;
+}
+
+.cs-price {
+  font-weight: bold;
+  color: #c00000;
+}
+
+.cs-quote-line {
+  font-size: 18px;
+}
+
+.cs-quote-line small {
+  font-size: 12px;
+}
+
+.cs-chart,
+.article-chart,
+.qz-quote-chart,
+.qz-index-chart,
+.firm-chart {
+  display: flex;
+  flex-direction: column;
+  height: 240px;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+}
+
+.qz-index-chart {
+  width: 420px;
+  height: 170px;
+}
+
+.cs-timeframes {
+  margin: 0 0 4px;
+}
+
+.cs-timeframes button {
+  min-width: 0;
+  min-height: 20px;
+  padding: 0 8px;
+}
+
+.cs-timeframes button.current {
+  font-weight: bold;
+}
+
+.cs-stats,
+.cs-quarters,
+.cs-holders,
+.firm-holdings,
+.firm-facts {
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 13px;
+}
+
+.cs-quarters td,
+.cs-holders td,
+.firm-holdings td {
+  text-align: right;
+}
+
+.cs-holders td:first-child,
+.firm-holdings td:first-child,
+.cs-quarters td:first-child {
+  text-align: left;
+}
+
+.cs-registration {
+  margin-top: 16px;
+  font-size: 12px;
+}
+
+.guestbook-entry {
+  padding: 4px 0;
+  border-bottom: 1px dashed #808080;
+}
+
+.guestbook-entry blockquote {
+  margin: 4px 0 4px 24px;
+  font-style: italic;
+}
+
+/* ---------- Yeehaw! ---------- */
+
+.site-yeehaw {
+  padding: 8px 16px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+}
+
+.yh-header {
+  text-align: center;
+}
+
+.web-page a.yh-logo {
+  display: inline-block;
+  margin: 4px 0 8px;
+  font-family: 'Times New Roman', serif;
+  font-size: 44px;
+  font-weight: bold;
+  font-style: italic;
+  color: #c00;
+  text-decoration: none;
+  text-shadow: 3px 3px 0 #7b0099;
+  letter-spacing: -1px;
+}
+
+.yh-search {
+  margin-bottom: 12px;
+}
+
+.yh-front {
+  display: flex;
+  gap: 12px;
+}
+
+.yh-directory {
+  flex: 1;
+  padding: 4px;
+  border: 1px solid #9c9cff;
+}
+
+.yh-directory p {
+  margin: 3px 0;
+}
+
+.yh-directory td {
+  vertical-align: top;
+}
+
+.yh-side {
+  flex: none;
+  width: 230px;
+}
+
+.yh-box {
+  margin-bottom: 8px;
+  padding: 6px;
+  background: #ffffcc;
+  border: 1px solid #c0c080;
+}
+
+.yh-box ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.yh-url {
+  font-size: 11px;
+  color: #008000;
+}
+
+.yh-results li {
+  margin-bottom: 8px;
+}
+
+.yh-footer {
+  margin-top: 16px;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* ---------- QuoteZone ---------- */
+
+.site-quotezone {
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 12px;
+}
+
+.qz-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 10px;
+  background: #003366;
+  color: #fff;
+}
+
+.web-page a.qz-logo {
+  font-family: Arial, sans-serif;
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff;
+  text-decoration: none;
+}
+
+.qz-logo span {
+  color: #ffcc00;
+}
+
+.web-page .qz-nav a {
+  color: #fff;
+}
+
+.site-quotezone > :not(.qz-header) {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.qz-summary {
+  margin: 8px 10px;
+}
+
+.qz-index {
+  vertical-align: top;
+}
+
+.qz-big {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.qz-movers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.qz-table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.qz-table caption {
+  padding: 2px;
+  background: #336699;
+  font-weight: bold;
+  color: #fff;
+}
+
+.qz-table th {
+  background: #dde6f0;
+  text-align: left;
+}
+
+.qz-table tr:nth-child(even) td {
+  background: #f0f4f8;
+}
+
+.qz-table td {
+  padding: 1px 6px;
+}
+
+.qz-heatmap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.web-page a.qz-tile {
+  flex-grow: 1;
+  min-height: 48px;
+  padding: 4px;
+  border: 1px solid #fff;
+  font-size: 11px;
+  color: #000;
+  text-decoration: none;
+}
+
+.qz-footer {
+  margin-top: 16px;
+  font-size: 10px;
+  color: #606060;
+}
+
+/* ---------- News ---------- */
+
+.site-newswire {
+  padding: 8px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.nw-masthead {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: #000;
+  color: #ffb000;
+}
+
+.web-page .nw-masthead a {
+  font-weight: bold;
+  color: #ffb000;
+  text-decoration: none;
+}
+
+.nw-flashes {
+  padding-left: 0;
+  list-style: none;
+}
+
+.nw-flashes li {
+  margin: 6px 0;
+}
+
+.nw-flash {
+  padding: 0 4px;
+  background: #c00;
+  font-weight: bold;
+  color: #fff;
+}
+
+.site-jottings {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 16px;
+  background: #fbfaf5;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.wsj-masthead {
+  border-bottom: 3px double #000;
+  text-align: center;
+}
+
+.web-page .wsj-masthead a {
+  font-family: 'Old English Text MT', 'Times New Roman', serif;
+  font-size: 34px;
+  font-weight: bold;
+  color: #000;
+  text-decoration: none;
+}
+
+.wsj-dateline {
+  padding: 2px 0;
+  border-top: 1px solid #000;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.wsj-front {
+  display: flex;
+  gap: 16px;
+}
+
+.wsj-lead {
+  flex: 2;
+  column-count: 2;
+  column-gap: 16px;
+  column-rule: 1px solid #c0c0c0;
+}
+
+.wsj-lead h1 {
+  column-span: all;
+}
+
+.web-page .wsj-lead h1 a {
+  color: #000;
+  text-decoration: none;
+}
+
+.wsj-whats-news {
+  flex: 1;
+  padding-left: 12px;
+  border-left: 1px solid #000;
+  font-size: 13px;
+}
+
+.site-barrens {
+  font-family: Georgia, serif;
+}
+
+.barrens-masthead {
+  padding: 8px 16px;
+  background: linear-gradient(#1c2a4f, #0a1024);
+  color: #fff;
+}
+
+.web-page .barrens-masthead a {
+  font-family: 'Times New Roman', serif;
+  font-size: 40px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  color: #e8c350;
+  text-decoration: none;
+}
+
+.barrens-cover {
+  padding: 8px 16px;
+}
+
+.barrens-issue {
+  font-style: italic;
+}
+
+.barrens-story {
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #f4f0e6;
+  border-left: 6px solid #e8c350;
+}
+
+.article {
+  padding: 4px 8px;
+}
+
+.byline {
+  font-style: italic;
+  color: #404040;
+}
+
+.article-chart {
+  float: right;
+  width: 300px;
+  height: 180px;
+  margin: 0 0 8px 12px;
+}
+
+/* ---------- Firm websites ---------- */
+
+.firm-site {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 10px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.firm-header {
+  padding: 8px 0;
+  border-bottom: 4px solid var(--firm);
+}
+
+.firm-nav {
+  display: flex;
+  gap: 16px;
+  padding: 4px 0;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  border-bottom: 1px solid #c0c0c0;
+}
+
+.firm-nav a.current {
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.firm-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.firm-footer {
+  font-size: 11px;
+  color: #404040;
+}
+
+/* ---------- Errors ---------- */
+
+.cannot-display {
+  max-width: 560px;
+  padding: 12px 20px;
+  font-family: Tahoma, Verdana, sans-serif;
+  font-size: 12px;
+}
+
+.web-page .cannot-display h1 {
+  font-size: 18px;
+  font-weight: normal;
+}
+
+.cannot-display-code {
+  color: #606060;
+}

@@ -46,9 +46,26 @@ export interface AccountView {
   buyingPower: number;
 }
 
-/** Key stats for the quote window. */
+/** One quarter's results. `quarter` is year × 4 + (0 … 3). */
+export interface QuarterResult {
+  quarter: number;
+  /** Day it was reported. */
+  reported: number;
+  revenue: number;
+  income: number;
+  eps: number;
+}
+
+/** A line of a company's institutional holders table: a competitor firm (index into Directory.firms). */
+export interface Holder {
+  firm: number;
+  shares: number;
+}
+
+/** Key stats for the quote window and the company's Investor Relations page. */
 export interface CompanyDetails {
   id: number;
+  genome: string;
   name: string;
   ticker: string;
   industry: string;
@@ -73,6 +90,40 @@ export interface CompanyDetails {
   lastEarnings: number;
   insiderPct: number;
   floatPct: number;
+  /** The last eight quarters, oldest first. */
+  quarters: QuarterResult[];
+  /** Institutional holders, largest first. */
+  holders: Holder[];
+}
+
+/** A competitor firm's book (spec §14 firm websites). */
+export interface FirmView {
+  firm: number;
+  /** Market value of its holdings. */
+  aum: number;
+  /** Largest first. `pct` is the share of the company it owns. */
+  holdings: { company: number; shares: number; value: number; pct: number }[];
+  /** [day, value, MAJOR 500] at the start and at each week's close, then now. */
+  history: [number, number, number][];
+}
+
+/** Every company's numbers in columns, for market-wide pages: movers, sector map, screener, news (spec §14). */
+export interface MarketTable {
+  last: Float64Array;
+  prevClose: Float64Array;
+  /** Shares traded today (or in the last session, until the next open). */
+  volume: Float64Array;
+  shares: Float64Array;
+  /** Trailing twelve months. */
+  revenue: Float64Array;
+  income: Float64Array;
+  dividendYield: Float64Array;
+  /** Industry index. */
+  sector: Uint8Array;
+  /** Day of the latest earnings report, -1 before the first. */
+  reported: Int32Array;
+  /** Closes at the end of the last two weeks (the start prices stand in before there are two). */
+  week?: { day: number; close: Float64Array; previous: Float64Array };
 }
 
 /** What the order ticket shows before you confirm (spec §12.2). */
@@ -103,6 +154,10 @@ export interface Directory {
   tickers: string[];
   names: string[];
   industries: string[];
+  /** Genomes, so the UI can decode any company (websites, spec §14). */
+  genomes: string[];
+  /** Competitor firms (spec §6, §16). */
+  firms: { id: string; name: string; strategy: string; preset: boolean }[];
 }
 
 /** Live chart data for a watched company: its latest 5-minute bar and today's daily bar so far. */

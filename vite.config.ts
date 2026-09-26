@@ -23,7 +23,7 @@ export default defineConfig({
   // The simulation worker (src/sim/worker.ts) is an ES module that shares chunks with the app.
   worker: { format: 'es' },
   test: {
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/**/*.test.{ts,tsx}'],
     // Vitest's module runner wraps imports in getters; bundled builds (what the game runs) have none.
     benchmark: { include: ['tests/**/*.bench.ts'], suppressExportGetterWarnings: true },
   },

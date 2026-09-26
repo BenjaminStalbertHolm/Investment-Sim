@@ -3,7 +3,8 @@ import { PriceChart } from '../../charts/PriceChart';
 import { dayOf, formatDate } from '../../sim/calendar';
 import { simulation } from '../../sim/client';
 import { TIMEFRAMES, type CompanyDetails, type Quote } from '../../sim/types';
-import { useGame } from '../../state/game';
+import { openUrl, useGame } from '../../state/game';
+import { companyUrl, sites } from '../../sites/urls';
 import { useTrade } from '../../state/trade';
 import { useWindows } from '../../state/windows';
 import { AppMenuBar } from '../AppMenuBar';
@@ -74,7 +75,7 @@ export default function QuoteWindow({ windowId }: AppProps) {
         <button onClick={() => trade('buy')}>Buy…</button>
         <button onClick={() => trade('sell')}>Sell…</button>
         <button onClick={() => useTrade.getState().watch(company)}>Add to Watchlist</button>
-        <button onClick={() => open('browser')}>Open Website</button>
+        <button onClick={() => openUrl(companyUrl(sites(useGame.getState().directory, useGame.getState().firmName), company))}>Open Website</button>
       </div>
     </div>
   );

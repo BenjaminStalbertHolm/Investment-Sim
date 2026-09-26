@@ -14,6 +14,9 @@ export interface Fundamentals {
   margin: Float64Array;
   /** Day of the latest report, -1 before the first. */
   reported: Int32Array;
+  /** The last QUARTERS quarters' revenue and net income, row per company, oldest first (spec §14 IR page). */
+  quarterRevenue: Float32Array;
+  quarterIncome: Float32Array;
   /** First day of the current season, and its economy-wide surprise that every report in it shares. */
   season: number;
   seasonSurprise: number;
@@ -23,6 +26,8 @@ export interface Fundamentals {
 const SEASON_BIAS = [0.2, -0.3, -0.8, -1.2, 0.5];
 /** How much a report follows the season: correlation of each surprise with the economy's. */
 const ECONOMY = 0.4;
+/** Quarters of results kept per company. */
+export const QUARTERS = 8;
 
 /** Starting fundamentals, backed out of market cap: a P/E that rises with growth, or a P/S for loss-makers. */
 export function initialFundamentals(companies: readonly Company[]): Fundamentals {
@@ -33,6 +38,8 @@ export function initialFundamentals(companies: readonly Company[]): Fundamentals
     growth: Float64Array.from(companies, (c) => c.revenueGrowth),
     margin: Float64Array.from(companies, (c) => c.netMargin),
     reported: new Int32Array(n).fill(-1),
+    quarterRevenue: new Float32Array(n * QUARTERS),
+    quarterIncome: new Float32Array(n * QUARTERS),
     season: -1,
     seasonSurprise: 0,
   };
@@ -45,7 +52,21 @@ export function initialFundamentals(companies: readonly Company[]): Fundamentals
       f.income[i] = f.revenue[i] * c.netMargin;
     }
   });
+  pastQuarters(f);
   return f;
+}
+
+/** Fills in the quarters reported before the game: a quarter of the trailing year, shrinking back at its growth. */
+export function pastQuarters(f: Fundamentals): void {
+  f.quarterRevenue = new Float32Array(f.revenue.length * QUARTERS);
+  f.quarterIncome = new Float32Array(f.revenue.length * QUARTERS);
+  f.revenue.forEach((revenue, i) => {
+    for (let k = 0; k < QUARTERS; k++) {
+      const quarter = (revenue / 4) * Math.exp((-f.growth[i] * (QUARTERS - 1 - k)) / 4);
+      f.quarterRevenue[i * QUARTERS + k] = quarter;
+      f.quarterIncome[i * QUARTERS + k] = quarter * (f.income[i] / revenue);
+    }
+  });
 }
 
 /** First trading day on or after the 14th of January, April, July and October: two weeks after a quarter ends. */
@@ -70,6 +91,21 @@ export function seasonOf(day: number): { start: number; index: number } {
   let index = 0;
   for (let d = start; d < day && index < SEASON_DAYS; d = nextTradingDay(d)) index++;
   return { start, index: index < SEASON_DAYS ? index : -1 };
+}
+
+/**
+ * Quarters are numbered year × 4 + (0 … 3). A season reports the quarter that ended before it: January's season
+ * reports the previous year's fourth quarter.
+ */
+export function quarterReported(day: number): number {
+  const start = new Date(seasonOf(day).start * 86_400_000);
+  return start.getUTCFullYear() * 4 + start.getUTCMonth() / 3 - 1;
+}
+
+/** The day a company with this season slot reports a quarter. */
+export function reportDay(quarter: number, slot: number): number {
+  const season = quarter + 1;
+  return addTradingDays(seasonStart(Math.floor(season / 4), season % 4), slot);
 }
 
 /** The next day (today included) a company with this season slot reports. */
@@ -120,4 +156,8 @@ function updateFundamentals(f: Fundamentals, i: number, move: number, ownMargin:
   f.growth[i] += 0.1 * (longRun - f.growth[i]) + 0.2 * move;
   // Trailing twelve months: the new quarter replaces a quarter of the old total.
   f.income[i] = 0.75 * f.income[i] + 0.25 * f.revenue[i] * f.margin[i];
+  const row = i * QUARTERS;
+  for (const quarters of [f.quarterRevenue, f.quarterIncome]) quarters.copyWithin(row, row + 1, row + QUARTERS);
+  f.quarterRevenue[row + QUARTERS - 1] = f.revenue[i] / 4;
+  f.quarterIncome[row + QUARTERS - 1] = (f.revenue[i] * f.margin[i]) / 4;
 }

@@ -33,7 +33,7 @@ const GENERATED_STRATEGIES: Strategy[] = ['value', 'momentum', 'growth', 'activi
 /** Competitors (spec §6, §16): the presets the player didn't pick, then generated firms. */
 export function competitorFirms(seed: string, options: { playerFirm?: string; competitorCount?: number }): Firm[] {
   const rng = Rng.stream(seed, 'competitors');
-  const firms: Firm[] = PRESET_FIRMS.filter((f) => f.id !== options.playerFirm).map((f) => ({ ...f, preset: true }));
+  const firms: Firm[] = PRESET_FIRMS.filter((f) => f.id !== options.playerFirm).map(({ id, name, strategy }) => ({ id, name, strategy, preset: true }));
   const count = Math.min(20, Math.max(0, options.competitorCount ?? firms.length + rng.int(4, 8)));
   firms.length = Math.min(firms.length, count);
   while (firms.length < count) {

@@ -7,6 +7,7 @@ import { simulation } from '../sim/client';
 import type { NewGameOptions } from '../sim/engine';
 import { DIFFICULTIES } from '../sim/settings';
 import type { Directory, Snapshot } from '../sim/types';
+import { newBrowserState, useBrowser, type Dialup, type Favourite } from './browser';
 import { cleanUp, listSaves, nextAutosave, readSave, writeSave, type SaveSlot } from './saves';
 import { useShell, type Speed } from './shell';
 import { newTradeState, useTrade, type TradeTab, type Watchlist } from './trade';
@@ -33,7 +34,7 @@ export const useGame = create<GameStore>()(() => ({
   ready: false,
   seed: '',
   firmName: '',
-  directory: { tickers: [], names: [], industries: [] },
+  directory: { tickers: [], names: [], industries: [], genomes: [], firms: [] },
 }));
 
 /** The UI's half of a save (spec §18 GameState): windows, desktop, tray and the Trade app's watchlists. */
@@ -41,13 +42,20 @@ export interface GameState {
   windows: { windows: WindowState[]; lastBounds: Partial<Record<AppId, Bounds>>; zCounter: number; idCounter: number };
   shell: { iconPositions: Record<string, { x: number; y: number }>; speed: Speed; tickerTape: boolean };
   trade: { watchlists: Watchlist[]; active: string; tab: TradeTab };
+  browser: { favourites: Favourite[]; history: string[]; dialup: Dialup };
 }
 
 export function gameState(): GameState {
   const { windows, lastBounds, zCounter, idCounter } = useWindows.getState();
   const { iconPositions, speed, tickerTape } = useShell.getState();
   const { watchlists, active, tab } = useTrade.getState();
-  return { windows: { windows, lastBounds, zCounter, idCounter }, shell: { iconPositions, speed, tickerTape }, trade: { watchlists, active, tab } };
+  const { favourites, history, dialup } = useBrowser.getState();
+  return {
+    windows: { windows, lastBounds, zCounter, idCounter },
+    shell: { iconPositions, speed, tickerTape },
+    trade: { watchlists, active, tab },
+    browser: { favourites, history, dialup },
+  };
 }
 
 const notify = (text: string) => useGame.setState({ notice: { text, at: Date.now() } });
@@ -90,6 +98,7 @@ export async function newGame(options: NewGameOptions): Promise<void> {
   const started = await simulation().newGame(options);
   useWindows.getState().closeAll();
   useTrade.setState(newTradeState());
+  useBrowser.setState(newBrowserState());
   useGame.setState({ ...started, ready: true, busy: undefined, slot: undefined, snapshot: undefined });
   resume();
 }
@@ -102,6 +111,7 @@ export async function loadGame(id: string): Promise<void> {
     useWindows.setState(ui.windows);
     useShell.setState(ui.shell);
     useTrade.setState({ ...ui.trade, ticket: newTradeState().ticket });
+    useBrowser.setState(ui.browser);
     // Ctrl+S goes back to a manual slot; after loading an autosave it starts a new one.
     const saved = (await listSaves()).find((s) => s.id === id);
     const { directory, seed, firmName } = loaded;
@@ -185,6 +195,11 @@ export const skipToNextOpen = () => void simulation().skipToNextOpen();
 export function openQuote(company: number): void {
   const { tickers, names } = useGame.getState().directory;
   useWindows.getState().open('quote', { company }, `${tickers[company]} — ${names[company]}`);
+}
+
+/** Opens a page in a new Internet Exploiter window. */
+export function openUrl(url: string): void {
+  useWindows.getState().open('browser', { url });
 }
 
 /** Data fetched from the worker (ledger, order history…), refetched whenever the account changes. */

@@ -201,3 +201,77 @@ Judgement calls made where the spec leaves details open.
 - **Measured** in this container (the spec's budgets are for an M1): a bar for 10,000 companies takes 1.5 ms on
   average and 2.4 ms at p99 (budget 4 ms), and a whole session 115 ms. Engine memory after 300 sessions is 59 MB. In
   headless Chromium, frames hold 60 fps (p99 16.8 ms) with two live charts at 20× and while dragging a window.
+
+## Phase 4 — Browser and websites
+
+- **Libraries.** Logo motifs and website clip-art are game-icons.net silhouettes through `react-icons` (MIT package;
+  the icons are CC BY 3.0, credited in My Computer → About and the README). One consistent set covers all 32 motifs of
+  §7 and reads as 90s clip art; Vite keeps only the 32 used (the browser chunk is 82 KB gzipped, sites included). Not
+  added: a router (fake URLs are parsed with the built-in `URL`, and a host → site table picks the page), a search
+  library (Yeehaw! reuses the trade app's ticker/name matcher, which is how 1998 search engines felt anyway), marquee
+  or hit-counter packages (a few lines of CSS each), a templating library (a `{placeholder}` replace).
+- **Logo renderer.** The logo designer is Phase 5, but every site needs logos now, so the renderer came first
+  (`art/logo/Logo.tsx`): the ten containers, 32 motifs, 64 palettes, eight wordmark fonts from what a 1998 Mac or PC had
+  installed, and the five layouts. It is HTML with an SVG emblem, so wordmarks size themselves; Phase 5 adds the
+  WordArt effects and an SVG export. The ten preset firms got logo directions in logo parts (§6) and invented CEOs;
+  generated firms draw theirs from a stream named after the firm.
+- **Portraits.** CEO and staff photos are a grey "Photo coming soon" silhouette until the portrait renderer (Phase 5).
+  The player's site uses a placeholder logo (navy-and-gold bull) and no CEO name until the wizard sets them.
+- **Addresses.** Company sites are `www.<slug>.com`, the slug being the name without punctuation, parentheses,
+  a trailing legal suffix or ".com" ("Ridgepine Timber Co." → ridgepinetimber.com, "Alphabeta (Goggle)" →
+  alphabeta.com). Hosts are claimed in order — news and portal sites, the player's firm, competitor firms, then
+  companies — and a clash falls back to adding the ticker. The address bar adds `http://` and `www.`, and text that isn't
+  an address searches Yeehaw!, as IE4's autosearch did. Unknown hosts get IE's "The page cannot be displayed". Links
+  have no real `href`, so a middle click can never open a real website of the same name. Visited links (purple) use the
+  browser history, which with favourites and the dial-up setting is saved with the game; back/forward stacks are
+  per window and not saved, and a browser window reopens on its page.
+- **Dial-up delay** (§9) is set in the browser's View menu (Phase 5's advanced settings will show it too) and defaults
+  to Short (0.25–0.75 s; Authentic is 1.5–4.5 s). The time comes from a hash of the address, not randomness, so a page
+  always takes as long. The old page stays up while the new one "downloads", with IE's status text and progress bar.
+- **Company sites** are generated from the company every time (no stored HTML): `sites/company/content.ts` turns a
+  company into its layout, colours, tile, font, slogan, welcome, history, CEO bio, 3–6 products, guestbook and hit
+  counter. Its stream is named after the company, so a top-100 company's site is the same in every world. The eight
+  layouts are classic, frames, centered, tabs, sidebar, homepage (tiled, marquee, under construction), corporate and
+  brochure; 60% of the top 100 use corporate. The industry picks the tiled background (from a per-industry set tinted
+  with the logo palette), body fonts, product kinds (a data file of 6–10 per industry) and clip-art (its logo motifs).
+  Guestbooks praise high-quality companies more and complain about poor ones (a test checks the split). The home page's
+  news and the IR press releases are the earnings reports; other press releases come with Phase 6's events. Signing a
+  guestbook thanks you but stores nothing.
+- **Investor Relations** shows the live quote (the browser watches the company it shows, like a quote window), the
+  chart in a white "web" skin, the §14 key stats, eight quarters of results, top shareholders (firms link to their sites;
+  the player's firm appears when it holds shares; insiders are "Officers and directors"), press releases and the
+  genome as Registration No. Short interest reads n/a until short selling exists (Phase 7). To have quarters to show, the
+  engine now keeps each company's last eight quarters of revenue and net income; the quarters before the game are
+  a quarter of the trailing year, shrinking back at the company's growth rate. Quarters are labelled by the season that
+  reports them (January's season reports the previous fourth quarter).
+- **Firm sites** show AUM (their holdings at market prices), a strategy blurb, performance against the MAJOR 500 since
+  the start (weekly, from the weekly closes archive), top 25 holdings, subsidiaries (over 50% owned) and leadership.
+  Holdings don't change until competitors trade (Phase 8), so the 13F-style 45-day delay arrives with Phase 8's
+  disclosure rules; until then the filing is simply today's book. The player's own site shows AUM and returns; holdings
+  are "confidential".
+- **News.** Phase 4 builds the three outlets named in §14's site list (Majorsoft Newswire, The Wall Street Jottings,
+  Barren's Weekly); the rest of §14.1, journalists and a searchable archive belong to Phase 6's news. Stories are written
+  from the market itself: the session wrap, the biggest gainer and loser worth $1B or more (blamed on earnings when they
+  reported that day), the earnings roundup and the leading sector; Barren's has the week's winners and losers and a
+  screen of cheap dividend-paying large caps. They describe the latest session, so an old story's link says it has
+  moved to the archives. Template choices use a seeded stream per day.
+- **QuoteZone** has the market summary with the MAJOR 500's intraday chart, top gainers and losers (companies worth
+  $50M or more, to keep penny-stock noise out) and most active by dollar volume, a sector map (tiles sized by the square
+  root of market value, coloured by cap-weighted change), a screener lite (industry, minimum market cap, maximum P/E,
+  minimum yield, sortable, 25 a page) and quote pages. It reads a column table of all companies from the worker
+  (2.7 ms, refreshed every 15 game minutes) rather than asking the worker for each list.
+- **Yeehaw!** has search (industries, firms, then companies by ticker and name, 20 a page), the directory (every
+  industry, companies A–Z), the market summary with a quote box and headlines. The weather teaser waits for the National
+  Weather Bureau's forecasts (Phase 7), which must be the real signal, not a placeholder.
+- **Web rings** (§14.2) cost one line, so company sites have them now: previous and next company in the same industry.
+- **Other sites** listed in §14 and §14.2 (the regulator, exchange, weather, OPEK, Federal Reservoir, Raging Bear,
+  HomeCities and the rest) arrive with the phases that give them something to say.
+- **Saves.** Save format version 2. The v1 → v2 migration backfills each company's quarters from its trailing figures
+  (the same function a new game uses, so a v1 save made before any report loads identical to a new one) and gives the
+  UI's half the default favourites. The save test also checks that quarters carry over.
+- **Run…** opens addresses in a new browser window; the quote window's Open Website goes to the company's site.
+- **Acceptance.** A test builds the full 10,000-company market: every company's site content is generated and checked
+  for its industry's products, clip-art and theme and for unfilled placeholders; every company's home page renders; all
+  five pages of every tenth company render with live details, and the IR page is checked for the stats, genome,
+  quarters and each holder. In this container a page renders in 0.8 ms (median; p99 2.5 ms) and a company's details
+  take 0.8 ms in the worker, so a site appears within one frame of its data.

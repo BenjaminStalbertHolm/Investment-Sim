@@ -9,6 +9,7 @@ const Placeholder: LazyApp = lazy(() => import('./placeholder/Placeholder'));
 
 const components: Partial<Record<AppId, LazyApp>> = {
   mycomputer: lazy(() => import('./mycomputer/MyComputer')),
+  browser: lazy(() => import('./browser/Browser')),
   trade: lazy(() => import('./trade/TradeApp')),
   quote: lazy(() => import('./quote/QuoteWindow')),
   recyclebin: lazy(() => import('./recyclebin/RecycleBin')),
