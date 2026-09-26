@@ -189,7 +189,7 @@ function Screener({ table, stats, params }: { table: MarketTable; stats: MarketS
   const ids = useMemo(() => {
     const out: number[] = [];
     for (let i = 0; i < table.last.length; i++) {
-      if (sector >= 0 && table.sector[i] !== sector) continue;
+      if (table.status[i] || (sector >= 0 && table.sector[i] !== sector)) continue;
       if (stats.cap[i] < minCap * 1e6) continue;
       if (maxPe && !(pe(i) <= maxPe)) continue;
       if (table.dividendYield[i] * 100 < minYield) continue;

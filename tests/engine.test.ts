@@ -20,7 +20,7 @@ describe('market engine (spec §11)', () => {
     expect(formatClock(e.time)).toBe('Mon 05 Jan 1998 09:30');
     expect(e.phase).toBe('open');
     expect(e.account()).toMatchObject({ cash: 1_000_000, netWorth: 1_000_000, deposits: 1_000_000 });
-    expect(e.ledger()).toEqual([{ time: e.time, kind: 'deposit', amount: 1_000_000, balance: 1_000_000 }]);
+    expect(e.ledger()).toEqual([{ time: e.time, kind: 'deposit', amount: 1_000_000, balance: 1_000_000, note: 'Founding clients' }]);
     expect(e.indexQuote().last).toBeCloseTo(1000, 6);
     world.companies.forEach((c, i) => expect(e.market.price[i]).toBeCloseTo(c.price, 9));
   });

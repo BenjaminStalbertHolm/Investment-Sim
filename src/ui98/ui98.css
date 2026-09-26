@@ -494,3 +494,23 @@ td.table-empty {
 .new-game .field-row {
   margin-bottom: 4px;
 }
+
+.quote-delisted {
+  flex: none;
+  margin: 0;
+  padding: 2px 6px;
+  background: #ffffc0;
+  border: 1px solid #808080;
+}
+
+.quote-news {
+  flex: none;
+  margin: 0;
+  padding-left: 16px;
+}
+
+.quote-news a {
+  color: #0000ee;
+  text-decoration: underline;
+  cursor: pointer;
+}

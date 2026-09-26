@@ -48,7 +48,11 @@ export interface ClosedPosition {
   realized: number;
 }
 
-export type LedgerKind = 'deposit' | 'buy' | 'sell' | 'commission';
+/**
+ * Deposits and withdrawals are clients' money in and out (spec §15.1); an acquisition pays out shares at the offer
+ * price and a write-off removes a bankrupt company's shares (spec §11.6).
+ */
+export type LedgerKind = 'deposit' | 'withdrawal' | 'buy' | 'sell' | 'commission' | 'dividend' | 'acquisition' | 'writeoff';
 
 /** A line of the cash ledger (spec §12.7). `balance` is the cash after it. */
 export interface LedgerEntry {
@@ -60,6 +64,8 @@ export interface LedgerEntry {
   shares?: number;
   price?: number;
   order?: number;
+  /** Whose money: the client of a deposit or withdrawal. */
+  note?: string;
 }
 
 /** The firm's brokerage account: a cash account until margin arrives (Phase 7). */
@@ -72,6 +78,22 @@ export interface Account {
   /** Every order ever placed, oldest first. */
   orders: Order[];
   nextOrder: number;
+}
+
+/**
+ * Cash paid for a position without an order: a dividend (kept, and counted in the position's realised P&L), or the
+ * whole position leaving at `price` a share (a takeover's cash-out, or 0 for a bankruptcy).
+ */
+export function bookCash(account: Account, company: number, kind: 'dividend' | 'acquisition' | 'writeoff', amount: number, time: GameTime): void {
+  const position = account.positions.find((p) => p.company === company);
+  if (!position) return;
+  const shares = position.shares;
+  account.cash += amount;
+  account.ledger.push({ time, kind, amount, balance: account.cash, company, shares, price: amount / shares });
+  position.realized += kind === 'dividend' ? amount : amount - position.cost;
+  if (kind === 'dividend') return;
+  account.positions.splice(account.positions.indexOf(position), 1);
+  account.closed.push({ company, opened: position.opened, closed: time, realized: position.realized });
 }
 
 /** Books a fill at `price` with `commission`: cash, ledger, cost basis and realized P&L. */

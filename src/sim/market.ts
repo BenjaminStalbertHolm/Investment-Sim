@@ -2,7 +2,7 @@ import type { Company } from '../world/company';
 import { INDUSTRIES } from '../world/industries';
 import type { Rng } from '../world/rng';
 import { BARS_PER_DAY } from './calendar';
-import { BAR_YEARS, GAP_BARS, REVERSION, type Model } from './model';
+import { BAR_YEARS, GAP_BARS, POLICY_RATE, REVERSION, type Model } from './model';
 import type { GameSettings } from './settings';
 
 /**
@@ -48,8 +48,10 @@ const VOLUME_NORM = 1 / (1 + 0.6 * Math.SQRT1_2);
 const TAU = 2 * Math.PI;
 
 export interface IndexState {
-  /** Σ price × shares / divisor = level; fixed so the MAJOR 500 starts at 1,000. */
+  /** Σ price × shares / divisor = level; fixed so the MAJOR 500 starts at 1,000, and adjusted when members change. */
   divisor: number;
+  /** Constituents: the 500 largest companies at the start; a delisted one is replaced by the largest outsider. */
+  members: Int32Array;
   prevClose: number;
   open: number;
   high: number;
@@ -74,8 +76,14 @@ export interface MarketState {
   /** Event jump (log return) still to apply, spread over this many more bars. */
   jump: Float64Array;
   jumpBars: Uint8Array;
+  /** LISTING code; delisted companies keep their last price and never trade again. */
+  status: Uint8Array;
   index: IndexState;
 }
+
+/** Why a company left the market (spec §11.6): taken over, or bankrupt. */
+export const LISTING = { listed: 0, acquired: 1, bankrupt: 2 } as const;
+export type Listing = (typeof LISTING)[keyof typeof LISTING];
 
 export function initialMarket(companies: readonly Company[], model: Model, rng: Rng): MarketState {
   const price = Float64Array.from(companies, (c) => c.price);
@@ -85,6 +93,7 @@ export function initialMarket(companies: readonly Company[], model: Model, rng: 
   let cap = 0;
   for (const i of model.members) cap += price[i] * model.shares[i];
   const n = companies.length;
+  const members = model.members.slice();
   return {
     regime: 0,
     bubble: -1,
@@ -98,7 +107,8 @@ export function initialMarket(companies: readonly Company[], model: Model, rng: 
     dayVolume: new Float64Array(n),
     jump: new Float64Array(n),
     jumpBars: new Uint8Array(n),
-    index: { divisor: cap / 1000, prevClose: 1000, open: 1000, high: 1000, low: 1000 },
+    status: new Uint8Array(n),
+    index: { divisor: cap / 1000, members, prevClose: 1000, open: 1000, high: 1000, low: 1000 },
   };
 }
 
@@ -118,6 +128,8 @@ export class Market {
   readonly adv: Float64Array;
   readonly halfSpread: Float64Array;
   indexLevel = 0;
+  /** The Federal Reservoir's policy rate (sim/macro.ts): value grows at it plus the equity premium. */
+  rate = POLICY_RATE;
   private readonly sectorMove = new Float64Array(INDUSTRIES.length);
 
   constructor(
@@ -205,7 +217,13 @@ export class Market {
     }
     const kappa = REVERSION * weight;
     const noise = Math.sqrt(weight);
+    const rateDrift = (this.rate - POLICY_RATE) * years;
+    const { status } = s;
     for (let i = 0; i < price.length; i++) {
+      if (status[i]) {
+        barVolume[i] = 0;
+        continue;
+      }
       // Box–Muller gives z and a spare; ε = z / √(χ²₄/2) is unit-variance Student-t with ν = 4, χ²₄ = −2·ln(u·v).
       const radius = Math.sqrt(-2 * Math.log(1 - rng.float32()));
       const angle = TAU * rng.float32();
@@ -219,7 +237,7 @@ export class Market {
         jumpBars[i]--;
         r += j;
       }
-      lnV[i] += drift[i] * weight;
+      lnV[i] += drift[i] * weight + rateDrift;
       const p = Math.exp((lnP[i] += r));
       price[i] = p;
       if (p > dayHigh[i]) dayHigh[i] = p;
@@ -249,7 +267,40 @@ export class Market {
 
   private computeIndex(): number {
     let cap = 0;
-    for (const i of this.model.members) cap += this.price[i] * this.model.shares[i];
+    for (const i of this.state.index.members) cap += this.price[i] * this.model.shares[i];
     return cap / this.state.index.divisor;
+  }
+
+  /**
+   * Takes a company out of the market at `price` (spec §11.6: takeovers and bankruptcies). If it was in the MAJOR 500,
+   * the largest company outside the index takes its place and the divisor keeps the level where it was.
+   */
+  delist(company: number, reason: Listing, price: number): void {
+    const s = this.state;
+    // The index carries on from where it stood, whatever the last price.
+    const level = this.computeIndex();
+    s.status[company] = reason;
+    s.lnP[company] = s.lnV[company] = Math.log(price);
+    // Always exp(lnP), as a loaded game computes it.
+    price = this.price[company] = Math.exp(s.lnP[company]);
+    s.jump[company] = 0;
+    s.jumpBars[company] = 0;
+    s.dayHigh[company] = Math.max(s.dayHigh[company], price);
+    s.dayLow[company] = Math.min(s.dayLow[company], price);
+    const members = s.index.members;
+    const slot = members.indexOf(company);
+    if (slot < 0) return;
+    const inIndex = new Set(members);
+    let best = -1;
+    for (let i = 0; i < this.price.length; i++) {
+      if (s.status[i] || inIndex.has(i)) continue;
+      if (best < 0 || this.price[i] * this.model.shares[i] > this.price[best] * this.model.shares[best]) best = i;
+    }
+    if (best < 0) return;
+    members[slot] = best;
+    let cap = 0;
+    for (const i of members) cap += this.price[i] * this.model.shares[i];
+    s.index.divisor = cap / level;
+    this.indexLevel = level;
   }
 }

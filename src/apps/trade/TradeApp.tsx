@@ -6,6 +6,7 @@ import { Modal } from '../../ui98/Modal';
 import { AppMenuBar } from '../AppMenuBar';
 import { money, price, signedMoney, signedPct, tone } from '../format';
 import type { AppProps } from '../types';
+import { Calendar } from './Calendar';
 import { Ledger } from './Ledger';
 import { OrderTicket } from './OrderTicket';
 import { Orders } from './Orders';
@@ -18,6 +19,7 @@ const TABS: { id: TradeTab; label: string }[] = [
   { id: 'portfolio', label: 'Portfolio' },
   { id: 'orders', label: 'Orders' },
   { id: 'ledger', label: 'Ledger' },
+  { id: 'calendar', label: 'Calendar' },
 ];
 
 /** MajorTrade Pro 98 (spec §12): simple on the surface, capable underneath. */
@@ -63,6 +65,7 @@ export default function TradeApp({ windowId }: AppProps) {
         {tab === 'portfolio' && <Portfolio />}
         {tab === 'orders' && <Orders />}
         {tab === 'ledger' && <Ledger />}
+        {tab === 'calendar' && <Calendar />}
       </div>
       <StatusBar />
       {about && (

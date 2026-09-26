@@ -170,6 +170,11 @@ export function OrderTicket() {
             about {pct(estimate.impact, 2)}.
           </p>
         )}
+        {request && estimate?.warnings.map((w) => (
+          <p key={w} className="ticket-warning">
+            ⚠ Mandate breach — {w}
+          </p>
+        ))}
       </fieldset>
       <div className="button-row">
         <button className="default" disabled={!request} onClick={() => (setResult(undefined), setConfirming(true))}>
@@ -191,6 +196,7 @@ export function OrderTicket() {
             </p>
           )}
           {ticket.replaces && <p>This replaces order {ticket.replaces}.</p>}
+          {!!estimate?.warnings.length && <p className="down">This order would break a client’s mandate: {estimate.warnings.join(' ')}</p>}
           {!trading && <p>The market is closed: the order will wait for the opening bell.</p>}
         </Confirm>
       )}

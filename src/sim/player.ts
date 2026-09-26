@@ -1,6 +1,7 @@
 import { DEFAULT_LOGO, encodeLogo } from '../art/logo/code';
 import { ceoName, encodeCeo, randomCeo } from '../world/ceo';
 import { Rng } from '../world/rng';
+import type { Fees } from './clients';
 
 /** The player's firm and chief executive (spec §18 `player`), as codes. */
 export interface Player {
@@ -10,6 +11,8 @@ export interface Player {
   logoCode: string;
   ceoName: string;
   ceoCode: string;
+  /** Management and performance fees (spec §15.1, My Computer → Firm); 1% and 20% when unset. */
+  fees?: Fees;
 }
 
 /** A firm with the default logo and a CEO drawn from the world seed. */

@@ -52,6 +52,7 @@ function Tray() {
   const tickerTape = useShell((s) => s.tickerTape);
   const snapshot = useGame((s) => s.snapshot);
   const busy = useGame((s) => s.busy);
+  const unread = snapshot?.mail.unread ?? 0;
   const phase = snapshot?.halted ? 'halted' : snapshot?.phase;
   const light = phase === 'open' ? 'open' : phase === 'pre' ? 'pre' : 'closed';
   const status =
@@ -73,8 +74,13 @@ function Tray() {
       >
         <Icon name="trade" size={16} />
       </button>
-      <button className="tray-icon" title="Outbox Express — no new mail" onClick={() => useWindows.getState().open('mail')}>
+      <button
+        className="tray-icon"
+        title={`Outbox Express — ${unread ? `${unread} unread message${unread > 1 ? 's' : ''}` : 'no new mail'}`}
+        onClick={() => useWindows.getState().open('mail')}
+      >
         <Icon name="mail" size={16} />
+        {unread > 0 && <span className="tray-badge">{unread > 99 ? '99+' : unread}</span>}
       </button>
       <div className="tray-speed" role="group" aria-label="Game speed">
         {SPEEDS.map((s) => (

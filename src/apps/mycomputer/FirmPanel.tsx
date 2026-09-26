@@ -1,4 +1,12 @@
 import { useState } from 'react';
+import { simulation } from '../../sim/client';
+import type { Client } from '../../sim/clients';
+import { DEFAULT_FEES } from '../../sim/clients';
+import { formatDate, dayOf } from '../../sim/calendar';
+import { useAccountData } from '../../state/game';
+import { VirtualTable, type Column } from '../../ui98/VirtualTable';
+import { describeConstraint } from '../mail/letters';
+import { money, pct } from '../format';
 import { encodeLogo } from '../../art/logo/code';
 import { Logo } from '../../art/logo/Logo';
 import { showError, updatePlayer } from '../../state/game';
@@ -75,9 +83,9 @@ export function FirmPanel() {
             <button onClick={() => edit('logo')}>Edit logo…</button>
             <button onClick={() => edit('ceo')}>Edit CEO…</button>
           </div>
-          <p className="hint">Fee structure arrives with your clients (Phase 6).</p>
         </div>
       </div>
+      <Clients />
       {editing === 'rename' && (
         <Prompt
           title="Rename Firm"
@@ -88,5 +96,55 @@ export function FirmPanel() {
         />
       )}
     </div>
+  );
+}
+
+const STATUS: Record<Client['status'], string> = { prospect: 'Offer open', active: 'Client', left: 'Left', declined: 'Declined', expired: 'Offer lapsed' };
+
+/** Clients, fees and reputation (spec §15.1, §17 Firm: fee structure). */
+function Clients() {
+  const view = useAccountData(() => simulation().clients());
+  const [fees, setFees] = useState<{ management: string; performance: string }>();
+  if (!view) return null;
+  const current = view.fees ?? DEFAULT_FEES;
+  const typed = fees ?? { management: String(current.management * 100), performance: String(current.performance * 100) };
+  const management = Number(typed.management) / 100;
+  const performance = Number(typed.performance) / 100;
+  const valid = management >= 0 && management <= 0.05 && performance >= 0 && performance <= 0.5;
+  const rows = view.clients.filter((c) => c.status === 'active' || c.status === 'left').sort((a, b) => a.id - b.id);
+  const columns: Column<Client>[] = [
+    { header: 'Client', cell: (c) => c.name },
+    { header: 'Status', cell: (c) => (c.redeeming ? 'Leaving' : STATUS[c.status]) },
+    { header: 'Assets', align: 'right', cell: (c) => (c.status === 'active' ? money(c.units * view.unit) : '—') },
+    { header: 'Since', cell: (c) => (c.joined !== undefined ? formatDate(dayOf(c.joined)) : '') },
+    { header: 'Mandate', cell: (c) => (c.constraints.length ? c.constraints.map(describeConstraint).join('; ') : 'No restrictions') },
+  ];
+  return (
+    <fieldset className="firm-clients">
+      <legend>Clients and fees</legend>
+      <p>
+        Assets under management <b>{money(view.aum)}</b> · clients’ money {money(view.clientAssets)} · the firm’s own{' '}
+        {money(view.firmCapital)} · fees earned {money(view.feesEarned)} · reputation <b>{Math.round(view.reputation)}</b>/100
+      </p>
+      <div className="field-row">
+        <label htmlFor="fee-management">Management fee:</label>
+        <input id="fee-management" size={4} value={typed.management} onChange={(e) => setFees({ ...typed, management: e.target.value })} />
+        <span>% a year</span>
+        <label htmlFor="fee-performance">Performance fee:</label>
+        <input id="fee-performance" size={4} value={typed.performance} onChange={(e) => setFees({ ...typed, performance: e.target.value })} />
+        <span>% above the MAJOR 500</span>
+        <button
+          disabled={!valid || (management === current.management && performance === current.performance)}
+          onClick={() => void updatePlayer({ fees: { management, performance } }).then(() => setFees(undefined), showError)}
+        >
+          Apply
+        </button>
+      </div>
+      <p className="hint">
+        Fees come out of your clients’ share of the book and add to the firm’s own. Charge less than 1% and 20% and more
+        mandates come your way; charge more and fewer do. Current: {pct(current.management)} and {pct(current.performance, 0)}.
+      </p>
+      <VirtualTable rows={rows} columns={columns} rowKey={(c) => c.id} empty="No clients: the firm invests its own capital." />
+    </fieldset>
   );
 }

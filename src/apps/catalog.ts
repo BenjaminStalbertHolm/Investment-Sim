@@ -50,7 +50,7 @@ const defs: AppDef[] = [
     blurb: 'Quotes, orders, charts, screener and your portfolio.' },
   { id: 'quote', title: 'Quote', icon: 'trade', defaultSize: { width: 640, height: 520 }, multiInstance: true,
     blurb: 'Chart and key statistics for one company.' },
-  { id: 'mail', title: 'Outbox Express', icon: 'mail', defaultSize: { width: 720, height: 480 }, phase: 6, inPrograms: true,
+  { id: 'mail', title: 'Outbox Express', icon: 'mail', defaultSize: { width: 760, height: 520 }, inPrograms: true,
     blurb: 'Clients, mandates, margin calls, tips and takeover offers.' },
   { id: 'notepad', title: 'Notepad', icon: 'notepad', defaultSize: SMALL, phase: 10, inPrograms: true,
     blurb: 'Notes that are kept in your save file.' },

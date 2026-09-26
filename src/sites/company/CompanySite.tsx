@@ -7,10 +7,13 @@ import { bigMoney, count, money, pct, price, signed, signedPct, tone } from '../
 import { START_DAY, dayOf, formatDate, gameYear } from '../../sim/calendar';
 import { TIMEFRAMES, type CompanyDetails, type Directory, type Quote, type QuarterResult, type Timeframe } from '../../sim/types';
 import { useGame } from '../../state/game';
-import { companyCeo, type Ceo } from '../../world/ceo';
+import type { NewsItem } from '../../sim/news';
+import { companyCeo, decodeCeo, type Ceo } from '../../world/ceo';
 import type { Company } from '../../world/company';
 import { companyOf, useDetails } from '../hooks';
-import { companyUrl, firmUrl, playerUrl, quoteUrl, sites, type Sites } from '../urls';
+import { headlineOf } from '../news/articles';
+import { useNews } from '../news/data';
+import { NEWSWIRE, companyUrl, firmUrl, playerUrl, quoteUrl, sites, type Sites } from '../urls';
 import { BestViewed, HitCounter, Link, Marquee, Rule, UnderConstruction, tileStyle, useTitle } from '../web';
 import { companySite, shortName, type CompanySite } from './content';
 
@@ -31,6 +34,8 @@ export interface Live {
   /** Shares the player's firm holds. */
   held: number;
   day: number;
+  /** The company in the news (spec §14.1), newest first. */
+  news?: NewsItem[];
 }
 
 /** A company's website (spec §14), from its genome and live market data. */
@@ -41,6 +46,7 @@ export default function CompanyWebsite({ id, page }: { id: number; page: string 
   const held = useGame((s) => s.snapshot?.positions.find((p) => p.company === id)?.shares ?? 0);
   const day = useGame((s) => (s.snapshot ? dayOf(s.snapshot.time) : START_DAY));
   const details = useDetails(id);
+  const news = useNews({ company: id, limit: 12 });
   const company = companyOf(directory.genomes[id]);
   return (
     <CompanyPages
@@ -50,7 +56,7 @@ export default function CompanyWebsite({ id, page }: { id: number; page: string 
       directory={directory}
       sites={sites(directory, firmName)}
       firmName={firmName}
-      live={{ details, quote, held, day }}
+      live={{ details, quote, held, day, news }}
     />
   );
 }
@@ -87,10 +93,38 @@ export function CompanyPages(props: Props) {
         return <p>The page you requested could not be found on this server. <Link href="index.html">Return to the home page.</Link></p>;
     }
   })();
+  const status = props.live.details?.status;
   return (
     <Frame {...props} site={site}>
+      {!!status && (
+        <p className="cs-delisted">
+          {status === 1
+            ? `${c.name} has been acquired. Its shares no longer trade. This site is kept for historical purposes.`
+            : `${c.name} has filed for bankruptcy and its shares have been cancelled. This site will be closed shortly.`}
+        </p>
+      )}
       {content}
     </Frame>
+  );
+}
+
+/** Kinds of news a company announces itself, which its Investor Relations page lists as press releases. */
+const ANNOUNCED = new Set(['guidance', 'contract', 'launch', 'ceoChange', 'dividendChange', 'buyback', 'approval', 'investment', 'takeover', 'takeoverDone']);
+
+/** Headlines from the company's news, linked to the Majorsoft Newswire. */
+function InTheNews({ items, directory, firmName, only }: { items?: NewsItem[]; directory: Directory; firmName: string; only?: Set<string> }) {
+  const seed = useGame((s) => s.seed);
+  const shown = (items ?? []).filter((n) => !only || only.has(n.kind)).slice(0, 6);
+  if (!shown.length) return null;
+  return (
+    <ul>
+      {shown.map((n) => (
+        <li key={n.id}>
+          <b>{formatDate(dayOf(n.time))}</b> —{' '}
+          <Link href={`http://${NEWSWIRE}/story?id=${n.id}-newswire`}>{headlineOf(n, directory, firmName, seed)}</Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -297,6 +331,12 @@ function Home(props: PageProps) {
         ))}
         {!news.length && <li>Loading news…</li>}
       </ul>
+      {!!live.news?.length && (
+        <>
+          <h2>In the News</h2>
+          <InTheNews items={live.news} directory={props.directory} firmName={props.firmName} />
+        </>
+      )}
       {live.quote && (
         <p className="cs-ticker-box">
           <b>{c.ticker}</b> {price(live.quote.last)}{' '}
@@ -320,7 +360,10 @@ function ClipArt({ motif, size = 64 }: { motif: CompanySite['products'][number][
   );
 }
 
-function About({ company: c, site }: PageProps) {
+function About({ company: c, site, live }: PageProps) {
+  const code = live.details?.ceoCode;
+  const ceo = code ? decodeCeo(code) : companyCeo(c.genes);
+  const ceoName = live.details?.ceo ?? `${c.ceo.firstName} ${c.ceo.lastName}`;
   return (
     <>
       <h1>About {shortName(c.name)}</h1>
@@ -338,16 +381,16 @@ function About({ company: c, site }: PageProps) {
       ))}
       <h2>Our Leadership</h2>
       <div className="cs-ceo">
-        <Photo name={`${c.ceo.firstName} ${c.ceo.lastName}`} ceo={companyCeo(c.genes)} />
+        <Photo name={ceoName} ceo={ceo} />
         <div>
-          <b>
-            {c.ceo.firstName} {c.ceo.lastName}
-          </b>
+          <b>{ceoName}</b>
           <br />
           <i>Chief Executive Officer</i>
-          {site.bio.map((text) => (
-            <p key={text}>{text}</p>
-          ))}
+          {code ? (
+            <p>{ceoName} was recently appointed to lead {shortName(c.name)}.</p>
+          ) : (
+            site.bio.map((text) => <p key={text}>{text}</p>)
+          )}
         </div>
       </div>
     </>
@@ -427,12 +470,13 @@ function Investors(props: PageProps) {
       {d ? (
         <>
           <h2>Key Statistics</h2>
-          <KeyStats c={c} d={d} last={last} />
+          <KeyStats d={d} last={last} />
           <h2>Quarterly Results</h2>
           <QuarterTable quarters={d.quarters} />
           <h2>Top Shareholders</h2>
           <Holders d={d} directory={directory} sites={s} firmName={firmName} held={live.held} />
           <h2>Press Releases</h2>
+          <InTheNews items={live.news} directory={directory} firmName={firmName} only={ANNOUNCED} />
           <ul>
             {pressReleases(c, d.quarters).slice(0, 4).map((n) => (
               <li key={n.day}>
@@ -451,14 +495,15 @@ function Investors(props: PageProps) {
   );
 }
 
-function KeyStats({ c, d, last }: { c: Company; d: CompanyDetails; last: number }) {
+function KeyStats({ d, last }: { d: CompanyDetails; last: number }) {
   const eps = d.eps;
+  const dividend = (d.dividendYield * d.marketCap) / d.shares;
   const rows: [string, string][] = [
     ['Price', `$${price(last)}`],
     ['Market cap', bigMoney(last * d.shares)],
     ['P/E ratio', d.pe === null ? 'n/a' : (last / eps).toFixed(1)],
     ['EPS (TTM)', money(eps)],
-    ['Dividend', c.dividendYield ? `${money(c.dividendYield * last)} (${pct(c.dividendYield, 2)})` : 'None'],
+    ['Dividend', dividend ? `${money(dividend)} (${pct(dividend / last, 2)})` : 'None'],
     ['52-week range', `${price(Math.min(d.low52, last))} – ${price(Math.max(d.high52, last))}`],
     ['Shares outstanding', count(d.shares)],
     ['Float', `${count(d.shares * d.floatPct)} (${pct(d.floatPct)})`],

@@ -1,3 +1,4 @@
+import { ALL_OUTLETS } from '../sim/data/outlets';
 import type { Directory } from '../sim/types';
 
 /** Web addresses of the 90s web (spec §14): every site lives at a fake domain; pages are rendered from data. */
@@ -7,6 +8,7 @@ export const QUOTEZONE = 'www.quotezone.com';
 export const NEWSWIRE = 'newswire.majorsoft.com';
 export const JOTTINGS = 'www.wsjottings.com';
 export const BARRENS = 'www.barrens.com';
+export const RAGINGBEAR = 'www.ragingbear.com';
 
 /** "Alphabeta (Goggle)" → "alphabeta", "Ridgepine Timber Co." → "ridgepinetimber", "Clickzilla.com" → "clickzilla". */
 export function slugOf(name: string): string {
@@ -59,7 +61,7 @@ export function sites(directory: Directory, firmName: string): Sites {
   return result;
 }
 
-const RESERVED = new Set([YEEHAW, QUOTEZONE, NEWSWIRE, JOTTINGS, BARRENS, 'www.majorsoft.com']);
+const RESERVED = new Set([YEEHAW, QUOTEZONE, RAGINGBEAR, 'www.majorsoft.com', ...ALL_OUTLETS.map((o) => o.host)]);
 
 /**
  * What the address bar makes of typed text: a URL gets "http://" (and a trailing slash), a bare domain gets "www."

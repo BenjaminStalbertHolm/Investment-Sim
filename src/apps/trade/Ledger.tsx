@@ -5,7 +5,10 @@ import { useAccountData, useGame } from '../../state/game';
 import { VirtualTable, type Column } from '../../ui98/VirtualTable';
 import { count, money, price, signedMoney, tone } from '../format';
 
-const KIND: Record<LedgerEntry['kind'], string> = { deposit: 'Deposit', buy: 'Purchase', sell: 'Sale', commission: 'Commission' };
+const KIND: Record<LedgerEntry['kind'], string> = {
+  deposit: 'Deposit', withdrawal: 'Withdrawal', buy: 'Purchase', sell: 'Sale', commission: 'Commission', dividend: 'Dividend',
+  acquisition: 'Takeover', writeoff: 'Write-off',
+};
 
 /** Cash ledger (spec §12.7), newest first. */
 export function Ledger() {
@@ -14,7 +17,11 @@ export function Ledger() {
   const rows = (ledger ?? []).map((entry, id) => ({ ...entry, id })).reverse();
 
   const describe = (e: LedgerEntry) => {
-    if (e.kind === 'deposit') return 'Seed money from the founding clients';
+    if (e.kind === 'deposit') return e.note === 'Founding clients' || !e.note ? 'Seed money' + (e.note ? ' from the founding clients' : '') : `From ${e.note}`;
+    if (e.kind === 'withdrawal') return `Redemption paid to ${e.note}`;
+    if (e.kind === 'dividend') return `${count(e.shares!)} ${tickers[e.company!]} @ ${price(e.price!)} a share`;
+    if (e.kind === 'acquisition') return `${count(e.shares!)} ${tickers[e.company!]} bought out @ ${price(e.price!)}`;
+    if (e.kind === 'writeoff') return `${count(e.shares!)} ${tickers[e.company!]}: the company is bankrupt`;
     const what = `${count(e.shares!)} ${tickers[e.company!]} @ ${price(e.price!)}`;
     return e.kind === 'commission' ? `Order ${e.order}: ${what}` : what;
   };

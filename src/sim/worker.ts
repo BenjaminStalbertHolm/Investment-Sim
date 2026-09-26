@@ -2,6 +2,8 @@ import * as Comlink from 'comlink';
 import { SAVE_VERSION, checkManifest, migrate } from '../state/migrations';
 import { SAVE_FORMAT, packSave, unpackSave, type Manifest } from '../state/saveFile';
 import type { OrderRequest } from './account';
+import type { Mail } from './mail';
+import type { NewsQuery } from './news';
 import { dayOf, minutesPerSecond, phaseEnd, setStartYear } from './calendar';
 import { Engine, type NewGameOptions, type SimState } from './engine';
 import type { Player } from './player';
@@ -63,7 +65,7 @@ function post(): void {
   posted = performance.now();
   dirty = false;
   events.push(...e.drainEvents());
-  if (events.some((ev) => ev.kind !== 'halt')) revision++;
+  if (events.some((ev) => ev.kind !== 'halt' && ev.kind !== 'mail')) revision++;
   const quotes: Snapshot['quotes'] = {};
   const live: Snapshot['live'] = { [INDEX]: e.live(INDEX) };
   for (const id of watched) {
@@ -85,6 +87,8 @@ function post(): void {
     openOrders: e.openOrders(),
     revision,
     events,
+    mail: e.mailStatus(),
+    news: e.newsCount,
   });
   events = [];
 }
@@ -187,6 +191,22 @@ const api = {
     return Comlink.transfer(t, arrays.map((a) => a.buffer));
   },
   ledger: () => game().ledger(),
+  // Phase 6: mail, news, clients.
+  mail: () => game().mail(),
+  markMail(ids: number[], patch: Partial<Pick<Mail, 'read' | 'flagged' | 'deleted'>>): void {
+    game().markMail(ids, patch);
+    dirty = true;
+    posted = 0;
+  },
+  mailAction: (id: number, action: 'accept' | 'decline' | 'report') => changed(game().mailAction(id, action)),
+  setAlerts(on: boolean): void {
+    game().setAlerts(on);
+  },
+  news: (query: NewsQuery) => game().news(query),
+  rumours: (company?: number, limit?: number) => game().rumours(company, limit),
+  journalists: () => game().journalists(),
+  clients: () => game().clients(),
+  calendar: (from: number, to: number, companies: number[]) => game().calendar(from, to, companies),
   orders: () => game().orders(),
   closedPositions: () => game().closedPositions(),
   stats: () => game().stats(),

@@ -1056,3 +1056,364 @@ button:disabled .tb-glyph {
 .cannot-display-code {
   color: #606060;
 }
+
+.cs-delisted {
+  padding: 4px 8px;
+  background: #ffffc0;
+  border: 2px solid #c00000;
+  font-weight: bold;
+}
+
+/* ---------- News outlets (spec §14.1): every one looks different ---------- */
+
+.news-site {
+  min-height: 100%;
+}
+
+.news-list {
+  padding-left: 18px;
+}
+
+.news-list li {
+  margin: 3px 0;
+}
+
+.news-time,
+.nw-time {
+  font-size: 11px;
+  color: #606060;
+}
+
+.news-search {
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.news-staff {
+  margin-top: 12px;
+  padding: 6px;
+  border: 1px solid #a0a0a0;
+  font-size: 12px;
+}
+
+.web-page .news-staff h4 {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.news-staff-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 3px 0;
+}
+
+.news-staff-page {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+}
+
+.news-search-page {
+  padding: 8px 16px;
+}
+
+.mugshot {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 0;
+  border: 1px solid #404040;
+}
+
+/* The Jottings' hatched-ink headshots: the same portraits, in stipple. */
+.mugshot.stipple {
+  position: relative;
+  filter: grayscale(1) contrast(2.2) brightness(1.1);
+}
+
+.mugshot.stipple::after {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.3) 0.7px, transparent 1.1px);
+  background-size: 3px 3px;
+  content: '';
+}
+
+.byline .mugshot {
+  margin-right: 4px;
+}
+
+/* The New York Journal: grey broadsheet. */
+.site-nyjournal {
+  background: #f2f2f0;
+}
+
+.site-nyjournal .wsj-masthead a {
+  font-size: 30px;
+}
+
+/* Financial Timez: salmon pink. */
+.site-ftimez {
+  background: #fbe6d4;
+}
+
+.web-page .site-ftimez .wsj-masthead a {
+  font-family: Georgia, serif;
+  letter-spacing: 3px;
+}
+
+/* Wyred: neon. */
+.site-wyred {
+  min-height: 100%;
+  background: #111;
+  color: #e0e0e0;
+  font-family: Verdana, Geneva, sans-serif;
+}
+
+.site-wyred .barrens-masthead {
+  background: linear-gradient(90deg, #ff00a0, #00c8ff);
+}
+
+.web-page .site-wyred .barrens-masthead a {
+  font-family: 'Courier New', monospace;
+  color: #fff;
+}
+
+.site-wyred .barrens-story {
+  background: #222;
+  border-left-color: #39ff14;
+}
+
+.web-page .site-wyred a {
+  color: #39ff14;
+}
+
+/* MoneyTV: a video player with a talking head and a lower third. */
+.site-moneytv {
+  padding: 8px;
+  background: #0a1a3a;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.web-page .site-moneytv a {
+  color: #ffd200;
+}
+
+.tv-masthead a {
+  font-size: 26px;
+  font-weight: bold;
+  font-style: italic;
+  text-decoration: none;
+}
+
+.tv-live {
+  margin-left: 8px;
+  color: #ff3030;
+  font-weight: bold;
+  animation: blink 1s steps(2) infinite;
+}
+
+.tv-player {
+  width: 360px;
+  margin: 8px 0;
+  border: 2px solid #808080;
+  background: #000;
+}
+
+.tv-screen {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  height: 200px;
+  overflow: hidden;
+  background: radial-gradient(#2a4a8a, #000);
+}
+
+.tv-screen .mugshot {
+  border: none;
+}
+
+.tv-lower-third {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 2px 4px;
+  background: rgba(0, 0, 120, 0.85);
+  border-top: 2px solid #ffd200;
+  font-size: 12px;
+}
+
+.tv-controls {
+  display: flex;
+  gap: 10px;
+  padding: 2px 6px;
+  background: #c0c0c0;
+  font-size: 11px;
+  color: #000;
+}
+
+.tv-pick {
+  padding: 6px;
+  background: #ffd200;
+  color: #000;
+}
+
+.web-page .tv-pick a {
+  color: #000;
+}
+
+/* The Daily Scoop: red tabloid, ALL CAPS. */
+.site-scoop {
+  padding: 8px;
+  background: #fff;
+  font-family: Impact, 'Arial Black', sans-serif;
+}
+
+.scoop-masthead {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  background: #d00000;
+  color: #fff;
+}
+
+.web-page .scoop-masthead a {
+  font-size: 36px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.scoop-splash {
+  font-size: 30px;
+  text-transform: uppercase;
+}
+
+.site-scoop .news-list {
+  text-transform: uppercase;
+}
+
+/* The Motley Fowl: jester purple and gold. */
+.site-fowl {
+  padding: 8px;
+  background: repeating-linear-gradient(45deg, #fff8d8 0 20px, #f2e6ff 20px 40px);
+  font-family: 'Comic Sans MS', 'Chalkboard SE', cursive;
+}
+
+.fowl-masthead {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  background: #5a1a8a;
+  border: 3px dashed #ffc800;
+  color: #ffc800;
+}
+
+.web-page .fowl-masthead a {
+  font-size: 28px;
+  color: #ffc800;
+  text-decoration: none;
+}
+
+.fowl-pick {
+  margin: 8px 0;
+  padding: 6px;
+  background: #ffc800;
+  font-weight: bold;
+}
+
+/* The trade press: plain, in the industry's colour. */
+.site-trade {
+  padding: 8px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.trade-masthead {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  color: #fff;
+}
+
+.web-page .trade-masthead a {
+  font-family: Georgia, serif;
+  font-size: 26px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.trade-rumours {
+  float: right;
+  width: 240px;
+  margin: 0 0 8px 12px;
+  padding: 6px;
+  background: #ffffe0;
+  border: 1px solid #c0c0a0;
+  font-size: 12px;
+}
+
+.trade-rumours h3 {
+  margin-top: 0;
+}
+
+/* Raging Bear message boards. */
+.site-ragingbear {
+  padding: 8px;
+  background: #f0f0e0;
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 12px;
+}
+
+.rb-masthead {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: #7a2a00;
+  color: #fff;
+}
+
+.web-page .rb-masthead a {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffcc66;
+  text-decoration: none;
+}
+
+.rb-search {
+  margin: 6px 0;
+}
+
+.rb-front {
+  display: flex;
+  gap: 24px;
+}
+
+.rb-posts {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rb-posts td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #c8c8b0;
+  vertical-align: top;
+}
+
+.rb-meta {
+  width: 140px;
+  font-size: 11px;
+  color: #505050;
+}
+
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tv-live {
+    animation: none;
+  }
+}

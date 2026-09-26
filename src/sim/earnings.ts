@@ -20,6 +20,8 @@ export interface Fundamentals {
   /** First day of the current season, and its economy-wide surprise that every report in it shares. */
   season: number;
   seasonSurprise: number;
+  /** Annual dividend per share, in dollars; paid a quarter at a time on the day the company reports (spec §15.2). */
+  dividend: Float64Array;
 }
 
 /** Mean economy-wide surprise of a season starting in each regime (calm … euphoric): crashes precede bad seasons. */
@@ -42,6 +44,7 @@ export function initialFundamentals(companies: readonly Company[]): Fundamentals
     quarterIncome: new Float32Array(n * QUARTERS),
     season: -1,
     seasonSurprise: 0,
+    dividend: Float64Array.from(companies, (c) => c.dividendYield * c.price),
   };
   companies.forEach((c, i) => {
     if (c.netMargin > 0.01) {
@@ -122,9 +125,15 @@ export function nextReport(day: number, slot: number): number {
  * Quarterly reports staggered over each ~6-week season (spec §11.6–11.7), released before the open. A beat or miss
  * moves the price ±2–20% (more for volatile, low-quality companies) over 1–6 bars; value moves with it, a little
  * further for high-quality companies (the drift continues) and a little less for poor ones (it partly reverses).
- * Returns the companies that reported.
+ * Returns the companies that reported, with their moves.
  */
-export function reportEarnings(day: number, f: Fundamentals, market: Market, companies: readonly Company[], rng: Rng): number[] {
+export function reportEarnings(
+  day: number,
+  f: Fundamentals,
+  market: Market,
+  companies: readonly Company[],
+  rng: Rng,
+): { company: number; move: number }[] {
   const { start, index } = seasonOf(day);
   if (index < 0) return [];
   if (f.season !== start) {
@@ -132,10 +141,10 @@ export function reportEarnings(day: number, f: Fundamentals, market: Market, com
     f.seasonSurprise = rng.normal(SEASON_BIAS[market.state.regime], 1);
   }
   const { model } = market;
-  const { jump, jumpBars, lnV } = market.state;
-  const reporting: number[] = [];
+  const { jump, jumpBars, lnV, status } = market.state;
+  const reporting: { company: number; move: number }[] = [];
   for (let i = 0; i < model.count; i++) {
-    if (model.slot[i] !== index) continue;
+    if (model.slot[i] !== index || status[i]) continue;
     const z = ECONOMY * f.seasonSurprise + Math.sqrt(1 - ECONOMY ** 2) * rng.normal();
     const size = Math.min(1.8, Math.max(0.5, model.volatility[i] / 0.35)) * (1.25 - 0.5 * model.quality[i]);
     const move = Math.sign(z) * Math.min(0.4, (0.02 + 0.06 * Math.abs(z) ** 1.5) * size);
@@ -144,7 +153,7 @@ export function reportEarnings(day: number, f: Fundamentals, market: Market, com
     lnV[i] += move * (1 + 0.4 * (model.quality[i] - 0.5));
     updateFundamentals(f, i, move, companies[i].netMargin, model);
     f.reported[i] = day;
-    reporting.push(i);
+    reporting.push({ company: i, move });
   }
   return reporting;
 }

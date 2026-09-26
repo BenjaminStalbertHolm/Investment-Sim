@@ -4,7 +4,9 @@ import { dayOf, formatDate } from '../../sim/calendar';
 import { simulation } from '../../sim/client';
 import { TIMEFRAMES, type CompanyDetails, type Quote } from '../../sim/types';
 import { openUrl, useGame } from '../../state/game';
-import { companyUrl, sites } from '../../sites/urls';
+import { headlineOf } from '../../sites/news/articles';
+import { useNews } from '../../sites/news/data';
+import { NEWSWIRE, companyUrl, sites } from '../../sites/urls';
 import { useTrade } from '../../state/trade';
 import { useWindows } from '../../state/windows';
 import { AppMenuBar } from '../AppMenuBar';
@@ -70,6 +72,11 @@ export default function QuoteWindow({ windowId }: AppProps) {
         </select>
       </div>
       <PriceChart id={company} timeframe={timeframe} type={chart} />
+      {details?.status ? (
+        <p className="quote-delisted">
+          {details.status === 1 ? 'Acquired: this company has been taken over and no longer trades.' : 'Bankrupt: this company has been delisted.'}
+        </p>
+      ) : null}
       {details && quote && <KeyStats details={details} quote={quote} />}
       <div className="button-row">
         <button onClick={() => trade('buy')}>Buy…</button>
@@ -77,7 +84,27 @@ export default function QuoteWindow({ windowId }: AppProps) {
         <button onClick={() => useTrade.getState().watch(company)}>Add to Watchlist</button>
         <button onClick={() => openUrl(companyUrl(sites(useGame.getState().directory, useGame.getState().firmName), company))}>Open Website</button>
       </div>
+      <CompanyNews company={company} />
     </div>
+  );
+}
+
+/** The latest news about the company (spec §12.1), from the Majorsoft Newswire. */
+function CompanyNews({ company }: { company: number }) {
+  const items = useNews({ company, limit: 4 });
+  const { directory, firmName, seed } = useGame.getState();
+  if (!items?.length) return null;
+  return (
+    <ul className="quote-news">
+      {items.map((n) => (
+        <li key={n.id}>
+          {formatDate(dayOf(n.time))}:{' '}
+          <a role="link" onClick={() => openUrl(`http://${NEWSWIRE}/story?id=${n.id}-newswire`)}>
+            {headlineOf(n, directory, firmName, seed)}
+          </a>
+        </li>
+      ))}
+    </ul>
   );
 }
 

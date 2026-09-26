@@ -1,12 +1,26 @@
+import { ceoName, decodeCeo } from '../world/ceo';
 import { decodeCompany, type Company } from '../world/company';
 import { generateWorld, type World, type WorldOptions } from '../world/generator';
 import type { Firm, Holding } from '../world/ownership';
 import { Rng, type RngState } from '../world/rng';
-import { bookFill, type Account, type Order, type OrderRequest, type OrderStatus } from './account';
+import { bookCash, bookFill, type Account, type Order, type OrderRequest, type OrderStatus } from './account';
 import {
   BAR_MINUTES, BARS_PER_DAY, gameYear, CLOSE, OPEN, START_DAY, at, dayOf, holiday, isTradingDay, minuteOf, nextOpen,
   nextTradingDay, phaseAt, previousTradingDay, weekday, type GameTime, type Phase,
 } from './calendar';
+import {
+  DEFAULT_FEES, accept, clientUnits, closeOfDay, decline, firstOffer, founding, mandateWarnings, morningClients,
+  quarterEnd, settle, unitPrice, type ClientsState, type Fees,
+} from './clients';
+import type { Sim, Streams } from './context';
+import {
+  addTradingDays, applyFollowUp, closeDeal, dump, enqueue, eventRates, fire, leak, newEvents, pick, planAhead, planPicks,
+  type EventsState, type Timed,
+} from './events';
+import { initialMacro, release, releasesOn, type MacroState } from './macro';
+import { FOLDER_OF, digest, morningMail, newMailState, noteTrade, type Mail, type MailDraft, type MailState } from './mail';
+import type { NewsItem, NewsQuery, Rumour } from './news';
+import { hireJournalists, type Journalist } from './press';
 import {
   QUARTERS, initialFundamentals, nextReport, quarterReported, reportDay, reportEarnings, type Fundamentals,
 } from './earnings';
@@ -14,15 +28,17 @@ import {
   createHistory, dailyBars, endsWeek, oldestDay, packHistory, recordDay, unpackHistory, weekCloses, weeklyCloses,
   weeklyValues, type Bar, type HistoryState,
 } from './history';
-import { Market, PARTICIPATION, initialMarket, type MarketState } from './market';
+import { LISTING, Market, PARTICIPATION, initialMarket, type Listing, type MarketState } from './market';
 import { BAR_YEARS, buildModel, type Model } from './model';
 import { pregameBars, pregameDays, pregameIndex, pregameMarket, sessionBars } from './pregame';
 import { defaultPlayer, type Player } from './player';
 import type { GameSettings } from './settings';
 import {
-  INDEX, type AccountView, type CompanyDetails, type Directory, type EngineEvent, type Estimate, type FirmView,
-  type Holder, type LiveBars, type MarketTable, type PositionView, type Quote, type QuarterResult, type Timeframe,
+  INDEX, type AccountView, type CalendarEntry, type ClientsView, type CompanyDetails, type Directory, type EngineEvent,
+  type Estimate, type FirmView, type Holder, type LiveBars, type MarketTable, type PositionView, type Quote,
+  type QuarterResult, type Timeframe,
 } from './types';
+import { seasonOf } from './earnings';
 
 /** The generated world, as saved: genomes rather than decoded companies (spec §18). */
 export interface SavedWorld {
@@ -41,14 +57,27 @@ export interface SimState {
   settings: GameSettings;
   player: Player;
   clock: GameTime;
-  rng: { tick: RngState; regime: RngState; earnings: RngState };
+  rng: Record<keyof Streams, RngState>;
   market: MarketState;
   fundamentals: Fundamentals;
   history: HistoryState;
   account: Account;
   /** [day, net worth, MAJOR 500] at each close. */
   stats: [number, number, number][];
+  /** Phase 6: the economy, corporate events and the news archive, the press, clients and mail. */
+  macro: MacroState;
+  events: EventsState;
+  journalists: Journalist[];
+  clients: ClientsState;
+  mail: MailState;
 }
+
+const STREAMS: (keyof Streams)[] = ['tick', 'regime', 'earnings', 'events', 'macro', 'clients', 'mail'];
+/** The stream each saved state is named after (spec §10.1). */
+const STREAM_NAMES: Record<keyof Streams, string> = {
+  tick: 'market:tick', regime: 'market:regime', earnings: 'earnings', events: 'events', macro: 'macro', clients: 'clients', mail: 'mail',
+};
+const MORNING = 7 * 60;
 
 export interface NewGameOptions extends WorldOptions {
   settings: GameSettings;
@@ -63,9 +92,11 @@ const SESSIONS_KEPT = 5;
  * The market simulation (spec §11): runs headless in tests and inside the Web Worker in the game. It owns market
  * truth; the UI only reads snapshots and sends orders.
  */
-export class Engine {
+export class Engine implements Sim {
   readonly market: Market;
-  private readonly rng: { tick: Rng; regime: Rng; earnings: Rng };
+  readonly rng: Streams;
+  /** Chance per trading day that each company has a corporate event (derived, never saved). */
+  private readonly eventRate: Float64Array;
   /** Companies the player is looking at get real 5-minute bars (spec §11.3), as do holdings and the MAJOR 500. */
   private watched = new Set<number>();
   private readonly intraday = new Map<number, Bar[]>();
@@ -73,12 +104,15 @@ export class Engine {
   private pregame?: { days: number[]; market: Float64Array };
 
   private constructor(
-    private readonly s: SimState,
+    /** The whole saved state. Modules on the engine's clock (events, clients, mail) read and change it. */
+    readonly s: SimState,
     readonly companies: readonly Company[],
     readonly model: Model = buildModel(s.world.seed, companies, s.settings),
   ) {
     this.market = new Market(s.market, model, s.settings);
-    this.rng = { tick: Rng.fromState(s.rng.tick), regime: Rng.fromState(s.rng.regime), earnings: Rng.fromState(s.rng.earnings) };
+    this.market.rate = s.macro.rate;
+    this.rng = Object.fromEntries(STREAMS.map((k) => [k, Rng.fromState(s.rng[k])])) as unknown as Streams;
+    this.eventRate = eventRates(companies, s.world.tiers, s.settings.events);
   }
 
   static newGame(options: NewGameOptions): Engine {
@@ -88,10 +122,17 @@ export class Engine {
   /** A new game on a generated world, at the opening bell of the start date. */
   static create(world: World, options: Pick<NewGameOptions, 'settings' | 'firmName' | 'player' | 'playerFirm'>): Engine {
     const { seed, companies } = world;
-    const model = buildModel(seed, companies, options.settings);
+    const { settings } = options;
+    const model = buildModel(seed, companies, settings);
     const clock = at(START_DAY, OPEN);
-    const capital = options.settings.startingCapital;
-    const stream = (name: string) => Rng.stream(seed, name).state();
+    const capital = settings.startingCapital;
+    const player: Player = {
+      ...defaultPlayer(seed, options.firmName),
+      ...options.player,
+      firmName: options.firmName,
+      presetFirm: options.playerFirm,
+    };
+    const market = initialMarket(companies, model, Rng.stream(seed, 'market:value'));
     const state: SimState = {
       world: {
         seed,
@@ -102,11 +143,11 @@ export class Engine {
         insiderPct: Float64Array.from(world.insiderPct),
         floatPct: Float64Array.from(world.floatPct),
       },
-      settings: options.settings,
-      player: { ...defaultPlayer(seed, options.firmName), ...options.player, firmName: options.firmName, presetFirm: options.playerFirm },
+      settings,
+      player,
       clock,
-      rng: { tick: stream('market:tick'), regime: stream('market:regime'), earnings: stream('earnings') },
-      market: initialMarket(companies, model, Rng.stream(seed, 'market:value')),
+      rng: Object.fromEntries(STREAMS.map((k) => [k, Rng.stream(seed, STREAM_NAMES[k]).state()])) as SimState['rng'],
+      market,
       fundamentals: initialFundamentals(companies),
       history: createHistory(companies.length),
       account: {
@@ -117,11 +158,27 @@ export class Engine {
         orders: [],
         nextOrder: 1,
         // The starting capital is the founding clients' seed money (spec §15.1).
-        ledger: [{ time: clock, kind: 'deposit', amount: capital, balance: capital }],
+        ledger: [{ time: clock, kind: 'deposit', amount: capital, balance: capital, note: settings.clients ? 'Founding clients' : undefined }],
       },
       stats: [],
+      macro: initialMacro(),
+      events: newEvents(),
+      journalists: hireJournalists(seed),
+      clients: founding(Rng.stream(seed, 'clients:founders'), capital, 1000, player.ceoName, player.firmName, settings.clients),
+      mail: newMailState(addTradingDays(START_DAY, 7)),
     };
-    return new Engine(structuredClone(state), companies, model);
+    state.clients.nextOffer = firstOffer(START_DAY);
+    const engine = new Engine(structuredClone(state), companies, model);
+    engine.firstDay();
+    return engine;
+  }
+
+  /** The start of the first day: the game begins at the bell, after the morning's work. */
+  private firstDay(): void {
+    const day = dayOf(this.s.clock);
+    this.send({ kind: 'welcome' });
+    if (this.s.settings.clients) this.send({ kind: 'founders', amount: this.s.settings.startingCapital });
+    this.scheduleDay(day);
   }
 
   /** Continues a game from exportState(). Companies are decoded from their genomes, not regenerated. */
@@ -131,7 +188,7 @@ export class Engine {
 
   /** A snapshot of the whole simulation, ready to save (spec §18). Intraday bars are not part of it. */
   exportState(): SimState {
-    this.s.rng = { tick: this.rng.tick.state(), regime: this.rng.regime.state(), earnings: this.rng.earnings.state() };
+    this.s.rng = Object.fromEntries(STREAMS.map((k) => [k, this.rng[k].state()])) as SimState['rng'];
     return structuredClone({ ...this.s, history: packHistory(this.s.history) });
   }
 
@@ -168,14 +225,24 @@ export class Engine {
 
   // ---------- Time (spec §11.1) ----------
 
-  /** Runs every open, bar and close up to `target`. */
+  /** Runs every morning, open, bar, close and scheduled task up to `target`. */
   advanceTo(target: GameTime): void {
-    for (let next = this.nextEvent(); next <= target; next = this.nextEvent()) {
-      this.s.clock = next;
-      const minute = minuteOf(next);
-      if (minute === OPEN) {
-        this.open();
-      } else {
+    for (;;) {
+      const market = this.nextMarket();
+      const queued = this.s.events.queue[0];
+      // A task runs before a later market moment; at the same minute, the market (open, bar, close) goes first.
+      if (queued && queued.time < market) {
+        if (queued.time > target) break;
+        this.s.clock = Math.max(this.s.clock, queued.time);
+        this.run(this.s.events.queue.shift()!);
+        continue;
+      }
+      if (market > target) break;
+      this.s.clock = market;
+      const minute = minuteOf(market);
+      if (minute === MORNING) this.morning();
+      else if (minute === OPEN) this.open();
+      else {
         this.bar((minute - OPEN) / BAR_MINUTES - 1);
         if (minute === CLOSE) this.close();
       }
@@ -200,27 +267,103 @@ export class Engine {
     this.advanceTo(at(day, CLOSE));
   }
 
-  /** The next open (09:30) or bar end (09:35 … 16:00) after the clock. */
-  private nextEvent(): GameTime {
+  /** The next market moment after the clock: the morning's work (07:00), the open (09:30) or a bar end (09:35 … 16:00). */
+  private nextMarket(): GameTime {
     const day = dayOf(this.s.clock);
     const minute = minuteOf(this.s.clock);
     if (isTradingDay(day)) {
+      if (minute < MORNING) return at(day, MORNING);
       if (minute < OPEN) return at(day, OPEN);
       if (minute < CLOSE) return at(day, OPEN + (Math.floor((minute - OPEN) / BAR_MINUTES) + 1) * BAR_MINUTES);
     }
-    return at(nextTradingDay(day), OPEN);
+    return at(nextTradingDay(day), MORNING);
   }
 
-  /** Opening bell: regime, earnings released overnight, the gap, then everything queued for the open. */
+  private run(task: Timed): void {
+    switch (task.do) {
+      case 'fire':
+        return fire(this, task.plan);
+      case 'rumour':
+        return leak(this, task.plan);
+      case 'followUp':
+        return applyFollowUp(this, task);
+      case 'dealClose':
+        return closeDeal(this, task.news);
+      case 'delist':
+        if (!this.market.state.status[task.company]) this.delist(task.company, LISTING.bankrupt, this.market.price[task.company]);
+        return;
+      case 'dump':
+        return dump(this, task.company, task.move);
+      case 'pick':
+        return pick(this, task);
+      case 'release': {
+        const r = release(task.kind, this.s.macro, this.market, this.rng.macro);
+        this.report({ kind: r.kind, company: -1, level: r.level, prev: r.prev, expect: r.expect, move: r.surprise, follow: r.tone });
+        return;
+      }
+      case 'redeem':
+        return settle(this, task.client);
+    }
+  }
+
+  /** Decides what today brings: the day's releases, picks and events ahead, then the morning post (spec §15.3). */
+  private scheduleDay(day: number): void {
+    for (const r of releasesOn(day)) {
+      const time = at(day, r.minute);
+      if (time > this.s.clock) enqueue(this.s.events, time, { do: 'release', kind: r.kind });
+    }
+    planAhead(this, day, this.eventRate);
+    planPicks(this, day);
+  }
+
+  /** 07:00 on a trading day. */
+  private morning(): void {
+    const day = dayOf(this.s.clock);
+    const { settings } = this.s;
+    this.scheduleDay(day);
+    morningMail(this, day, settings.insiderTips, settings.tipReliability);
+    if (settings.clients) morningClients(this, day, this.fees);
+  }
+
+  /** Opening bell: regime, earnings and dividends released overnight, the gap, then everything queued for the open. */
   private open(): void {
     const day = dayOf(this.s.clock);
     this.market.startDay(this.rng.regime);
-    reportEarnings(day, this.s.fundamentals, this.market, this.companies, this.rng.earnings);
+    const reports = reportEarnings(day, this.s.fundamentals, this.market, this.companies, this.rng.earnings);
+    this.payDividends(reports.map((r) => r.company));
+    for (const { company, move } of reports) {
+      // The archive keeps the reports that make news: large companies, and big surprises at the not-so-small.
+      const cap = this.companies[company].marketCap;
+      if (cap < 10e9 && (cap < 300e6 || Math.abs(move) < 0.2)) continue;
+      const q = company * QUARTERS + QUARTERS - 1;
+      this.report({ kind: 'earnings', company, move, amount: this.s.fundamentals.quarterRevenue[q], level: this.s.fundamentals.quarterIncome[q] });
+    }
     this.market.openingGap(this.rng.tick);
     let oldest = day;
     for (let k = 1; k < SESSIONS_KEPT; k++) oldest = previousTradingDay(oldest);
     for (const [id, bars] of this.intraday) this.intraday.set(id, bars.filter((b) => b.time >= oldest * 86_400));
     for (const order of this.openOrders()) this.execute(order);
+  }
+
+  /**
+   * A quarter of each payer's annual dividend goes out on its report day (spec §15.2): the price and value drop by it
+   * before the open, and the firm is paid for the shares it holds.
+   */
+  private payDividends(companies: number[]): void {
+    const { dividend } = this.s.fundamentals;
+    const lines: { company: number; shares: number; amount: number }[] = [];
+    for (const i of companies) {
+      const paid = dividend[i] / 4;
+      if (paid <= 0) continue;
+      const cut = Math.min(0.5, paid / this.market.price[i]);
+      this.market.push(i, -cut);
+      this.market.state.lnV[i] += Math.log1p(-cut);
+      const shares = this.held(i);
+      if (!shares) continue;
+      bookCash(this.s.account, i, 'dividend', shares * paid, this.s.clock);
+      lines.push({ company: i, shares, amount: shares * paid });
+    }
+    if (lines.length) this.send({ kind: 'dividend', lines, amount: lines.reduce((a, l) => a + l.amount, 0) });
   }
 
   private bar(k: number): void {
@@ -252,8 +395,196 @@ export class Engine {
     const prices = { open: dayOpen, high: dayHigh, low: dayLow, close: market.price, volume: dayVolume };
     recordDay(this.s.history, day, prices, [index.open, index.high, index.low, market.indexLevel]);
     for (const order of this.openOrders()) if (order.tif === 'day') this.finish(order, 'expired');
+    digest(this, day);
+    const { settings } = this.s;
+    closeOfDay(this, this.fees);
+    const month = (d: number) => new Date(d * 86_400_000).getUTCMonth();
+    const next = nextTradingDay(day);
+    if (Math.floor(month(next) / 3) !== Math.floor(month(day) / 3)) quarterEnd(this, this.fees, settings.clientPatience);
     this.s.stats.push([day, this.netWorth(), market.indexLevel]);
     this.events.push({ kind: 'close', day, weekEnd: endsWeek(day) });
+  }
+
+  private get fees(): Fees {
+    return this.s.player.fees ?? DEFAULT_FEES;
+  }
+
+  // ---------- News and mail (spec §14.1, §15) ----------
+
+  report(draft: Omit<NewsItem, 'id' | 'time'>): NewsItem {
+    const news = this.s.events.news;
+    const item = { ...draft, id: news.length, time: this.s.clock } as NewsItem;
+    for (const key of Object.keys(item) as (keyof NewsItem)[]) if (item[key] === undefined) delete item[key];
+    news.push(item);
+    const holdings = [item.company, item.other].filter((c): c is number => c !== undefined && c >= 0 && this.held(c) > 0);
+    if (this.s.mail.alerts && holdings.length && item.kind !== 'takeoverDone') this.send({ kind: 'alert', news: item.id, company: holdings[0] });
+    return item;
+  }
+
+  send(draft: MailDraft): Mail {
+    const messages = this.s.mail.messages;
+    const mail: Mail = { ...draft, id: messages.length + 1, time: draft.time ?? this.s.clock, read: draft.read ?? FOLDER_OF[draft.kind] === 'sent', flagged: false, deleted: false };
+    for (const key of Object.keys(mail) as (keyof Mail)[]) if (mail[key] === undefined) delete mail[key];
+    messages.push(mail);
+    if (!mail.read) this.events.push({ kind: 'mail', id: mail.id });
+    return mail;
+  }
+
+  /**
+   * A company leaves the market (spec §11.6). Open orders are cancelled; the firm's shares are paid out at `price` (a
+   * takeover) or written off (a bankruptcy); competitors' stakes go with it; the MAJOR 500 gets a new member.
+   */
+  delist(company: number, reason: Listing, price: number): void {
+    const final = reason === LISTING.bankrupt ? 0 : price;
+    this.market.delist(company, reason, reason === LISTING.bankrupt ? Math.max(0.01, price) : price);
+    for (const order of this.openOrders()) if (order.company === company) this.finish(order, 'cancelled', 'The company was delisted.');
+    const shares = this.held(company);
+    if (shares) {
+      bookCash(this.s.account, company, reason === LISTING.bankrupt ? 'writeoff' : 'acquisition', shares * final, this.s.clock);
+      this.send({ kind: 'delisted', company, reason: reason === LISTING.bankrupt ? 'bankrupt' : 'acquired', amount: shares * final, lines: [{ company, shares, amount: shares * final }] });
+    }
+    this.s.world.holdings = this.s.world.holdings.filter((h) => h.company !== company);
+    this.events.push({ kind: 'delisted', company });
+  }
+
+  nav(): number {
+    return this.netWorth();
+  }
+
+  /** The broker sells the largest positions first until the cash covers `amount` (redemptions, spec §15.1). */
+  raiseCash(amount: number): void {
+    if (!this.trading) return;
+    const { price } = this.market;
+    const positions = [...this.s.account.positions].sort((a, b) => b.shares * price[b.company] - a.shares * price[a.company] || a.company - b.company);
+    for (const p of positions) {
+      const short = amount - this.s.account.cash;
+      if (short <= 0) break;
+      const bid = price[p.company] * (1 - this.market.halfSpread[p.company]);
+      const shares = Math.min(p.shares, Math.ceil((short * 1.02 + this.s.settings.commission.fixed) / bid));
+      this.placeOrder({ company: p.company, side: 'sell', type: 'market', shares, tif: 'day' });
+    }
+  }
+
+  /** Unread letters (not counting sent or deleted ones) and the newest letter's id: the tray badge. */
+  mailStatus(): { unread: number; latest: number } {
+    const messages = this.s.mail.messages;
+    let unread = 0;
+    for (const m of messages) if (!m.read && !m.deleted) unread++;
+    return { unread, latest: messages.length };
+  }
+
+  /** Size of the news archive; it only grows. */
+  get newsCount(): number {
+    return this.s.events.news.length;
+  }
+
+  /** Every letter, oldest first (spec §15), and whether news alerts are on. */
+  mail(): { messages: Mail[]; alerts: boolean } {
+    return { messages: structuredClone(this.s.mail.messages), alerts: this.s.mail.alerts };
+  }
+
+  /** Marks letters read or unread, flagged, deleted. */
+  markMail(ids: readonly number[], patch: Partial<Pick<Mail, 'read' | 'flagged' | 'deleted'>>): void {
+    for (const m of this.s.mail.messages) if (ids.includes(m.id)) Object.assign(m, patch);
+  }
+
+  /** The action buttons (spec §15): accept or decline a mandate, report a tip to the SOB. */
+  mailAction(id: number, action: 'accept' | 'decline' | 'report'): string | undefined {
+    const mail = this.s.mail.messages.find((m) => m.id === id);
+    if (!mail || mail.answer) return 'You have already answered this message.';
+    if (mail.kind === 'offer' && action !== 'report') {
+      if (action === 'accept') {
+        const error = accept(this, mail.client!);
+        if (error) return error;
+        mail.answer = 'accepted';
+      } else {
+        decline(this, mail.client!);
+        mail.answer = 'declined';
+      }
+      this.send({ kind: 'reply', client: mail.client, variant: action === 'accept' ? 1 : 0 });
+      return undefined;
+    }
+    if (mail.kind === 'tip' && action === 'report') {
+      const tip = this.s.mail.tips.find((t) => t.id === mail.tip);
+      if (tip) tip.reported = true;
+      mail.answer = 'reported';
+      // Reporting tips gives a small reputation boost (spec §15.4).
+      this.s.clients.reputation = Math.min(100, this.s.clients.reputation + 1);
+      this.send({ kind: 'reply', tip: mail.tip, company: mail.company, variant: 2 });
+      return undefined;
+    }
+    return 'This message has no such action.';
+  }
+
+  /** News alerts for held tickers (spec §15.3). */
+  setAlerts(on: boolean): void {
+    this.s.mail.alerts = on;
+  }
+
+  /** The news archive (spec §14.1), newest first. */
+  news(q: NewsQuery = {}): NewsItem[] {
+    const news = this.s.events.news;
+    if (q.ids) return q.ids.flatMap((id) => (news[id] ? [structuredClone(news[id])] : []));
+    const out: NewsItem[] = [];
+    const limit = q.limit ?? 50;
+    for (let k = news.length - 1; k >= 0 && out.length < limit; k--) {
+      const n = news[k];
+      if (q.to !== undefined && n.time >= q.to) continue;
+      if (q.from !== undefined && n.time < q.from) break;
+      if (q.company !== undefined && n.company !== q.company && n.other !== q.company) continue;
+      if (q.firm !== undefined && n.firm !== q.firm) continue;
+      if (q.kinds && !q.kinds.includes(n.kind)) continue;
+      if (q.industry !== undefined && (n.company < 0 || this.model.sector[n.company] !== q.industry)) continue;
+      if (q.minCap !== undefined && (n.company < 0 || this.companies[n.company].marketCap < q.minCap)) continue;
+      out.push(structuredClone(n));
+    }
+    return out;
+  }
+
+  /** Rumours so far (spec §11.7), newest first. */
+  rumours(company?: number, limit = 50): Rumour[] {
+    const all = this.s.events.rumours;
+    const out: Rumour[] = [];
+    for (let k = all.length - 1; k >= 0 && out.length < limit; k--) if (company === undefined || all[k].company === company) out.push({ ...all[k] });
+    return out;
+  }
+
+  journalists(): Journalist[] {
+    return structuredClone(this.s.journalists);
+  }
+
+  /** The firm's clients, mandates and fees (spec §15.1). */
+  clients(): ClientsView {
+    const c = this.s.clients;
+    const unit = unitPrice(this);
+    const held = clientUnits(c);
+    return {
+      aum: this.nav(),
+      unit,
+      clientAssets: held * unit,
+      firmCapital: (c.units - held) * unit,
+      reputation: c.reputation,
+      feesEarned: c.feesEarned,
+      fees: this.fees,
+      clients: structuredClone(c.clients),
+      macro: { ...this.s.macro },
+    };
+  }
+
+  /** What the next weeks hold (spec §12.8): earnings for `companies`, releases and Federal Reservoir meetings. */
+  calendar(from: number, to: number, companies: readonly number[]): CalendarEntry[] {
+    const out: CalendarEntry[] = [];
+    for (let day = isTradingDay(from) ? from : nextTradingDay(from); day <= to; day = nextTradingDay(day)) {
+      for (const r of releasesOn(day)) out.push({ day, minute: r.minute, kind: r.kind });
+      const { index } = seasonOf(day);
+      if (index < 0) continue;
+      for (const c of companies) {
+        if (this.model.slot[c] === index && !this.market.state.status[c]) {
+          out.push({ day, minute: OPEN - 60, kind: 'earnings', company: c, dividend: this.s.fundamentals.dividend[c] / 4 });
+        }
+      }
+    }
+    return out;
   }
 
   // ---------- Orders (spec §12.2) ----------
@@ -304,6 +635,7 @@ export class Engine {
     const buyingPower = this.buyingPower(r.replaces);
     // A buy holds back its worst case: the limit price, or the market price with impact.
     const reserve = sign > 0 ? r.shares * (r.type === 'limit' ? r.limit! : atMarket) + commission : 0;
+    const after = this.held(i) + sign * r.shares;
     return {
       bid: mid * (1 - half),
       ask: mid * (1 + half),
@@ -315,11 +647,13 @@ export class Engine {
       volumeShare: r.shares / market.adv[i],
       buyingPower,
       buyingPowerAfter: buyingPower - reserve,
+      warnings: sign > 0 ? mandateWarnings(this, i, after) : [],
     };
   }
 
   private check(r: OrderRequest): string | undefined {
     if (!Number.isInteger(r.company) || r.company < 0 || r.company >= this.companies.length) return 'Unknown symbol.';
+    if (this.market.state.status[r.company]) return 'This company is no longer listed.';
     if (!Number.isInteger(r.shares) || r.shares < 1) return 'Enter a whole number of shares.';
     if (r.shares > this.model.shares[r.company]) return 'That is more shares than the company has issued.';
     if (r.type === 'limit' && !(Number.isFinite(r.limit) && r.limit! > 0)) return 'Enter a limit price.';
@@ -402,6 +736,7 @@ export class Engine {
       return false;
     }
     bookFill(this.s.account, order, shares, price, commission, this.s.clock);
+    noteTrade(this, order.company, order.side, shares, price);
     this.events.push({ kind: 'fill', order: order.id, company: order.company, side: order.side, shares, price });
     return true;
   }
@@ -417,7 +752,7 @@ export class Engine {
     return (first ? fixed : 0) + rate * value;
   }
 
-  private held(company: number): number {
+  held(company: number): number {
     return this.s.account.positions.find((p) => p.company === company)?.shares ?? 0;
   }
 
@@ -538,7 +873,9 @@ export class Engine {
       industry: c.industry.name,
       subIndustry: c.subIndustry,
       hq: `${c.hq.name}, ${c.hq.country}`,
-      ceo: `${c.ceo.firstName} ${c.ceo.lastName}`,
+      ceo: this.s.events.ceos[i] ? ceoName(decodeCeo(this.s.events.ceos[i])) : `${c.ceo.firstName} ${c.ceo.lastName}`,
+      ceoCode: this.s.events.ceos[i],
+      status: this.market.state.status[i] as Listing,
       founded: gameYear(START_DAY) - c.founded,
       shares,
       marketCap: price * shares,
@@ -546,7 +883,7 @@ export class Engine {
       income: f.income[i],
       eps,
       pe: eps > 0 ? price / eps : null,
-      dividendYield: c.dividendYield,
+      dividendYield: f.dividend[i] / price,
       beta: c.beta,
       volatility: c.volatility,
       high52: Math.max(...year.map((b) => b.high)),
@@ -625,8 +962,9 @@ export class Engine {
       shares: model.shares.slice(),
       revenue: f.revenue.slice(),
       income: f.income.slice(),
-      dividendYield: Float64Array.from(this.companies, (c) => c.dividendYield),
+      dividendYield: f.dividend.map((d, i) => d / market.price[i]),
       sector: model.sector.slice(),
+      status: market.state.status.slice(),
       reported: f.reported.slice(),
       week: weeks
         ? { day: h.weekDays[weeks - 1], close: weekCloses(h, weeks - 1), previous: weeks > 1 ? weekCloses(h, weeks - 2) : start() }
