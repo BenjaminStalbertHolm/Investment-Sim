@@ -22,5 +22,7 @@ export default defineConfig({
   plugins: [patch98css(), react()],
   test: {
     include: ['tests/**/*.test.ts'],
+    // Vitest's module runner wraps imports in getters; bundled builds (what the game runs) have none.
+    benchmark: { include: ['tests/**/*.bench.ts'], suppressExportGetterWarnings: true },
   },
 });
