@@ -20,6 +20,8 @@ function patch98css(): Plugin {
 
 export default defineConfig({
   plugins: [patch98css(), react()],
+  // The simulation worker (src/sim/worker.ts) is an ES module that shares chunks with the app.
+  worker: { format: 'es' },
   test: {
     include: ['tests/**/*.test.ts'],
     // Vitest's module runner wraps imports in getters; bundled builds (what the game runs) have none.

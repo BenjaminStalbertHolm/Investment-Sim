@@ -2,10 +2,11 @@
 
 Run an investment firm from inside a fake 1998 desktop operating system. Fully offline; runs in the browser.
 
-**Status:** Phase 2 (world generation). The desktop shell works and the apps are placeholders that say which build
-phase delivers them. Under the hood, a seed now generates the whole market: 10,000 companies (the curated top 100
-plus procedural ones, each encoded as a 34-character genome), competitor firms and who owns what. The market engine
-and the Trade app that show it arrive in Phase 3.
+**Status:** Phase 3 (market engine, trading and saves). A seed generates a market of 10,000 companies, and a Web Worker
+runs it in real time: trading hours and holidays, market regimes, sector moves, earnings seasons and the MAJOR 500.
+MajorTrade Pro 98 has watchlists, quote windows with charts, market and limit orders, a portfolio and a cash ledger.
+Games save anywhere to named slots and rotating autosaves, and export as `.d98` files. Apps not built yet are
+placeholders that say which build phase delivers them.
 
 ## Running on macOS
 
@@ -25,13 +26,23 @@ Production build: `npm run build && npm run preview`.
 
 Targets Safari and Chrome on macOS, 1280×800 minimum window.
 
+## Playing
+
+The game boots into your most recent save, or a new firm with $1,000,000 of clients' money. Open **MajorTrade Pro 98**
+to watch quotes and trade; the tray sets the game speed (a trading day takes two minutes at 1×). Press **Ctrl+S**
+(or ⌘S) to save. **My Computer → Saves** lists saved games and exports or imports `.d98` files; dropping a `.d98` on
+the desktop loads it. **My Computer → New Game** starts over with a seed and difficulty of your choice.
+
+Saves live in the browser's IndexedDB, so they belong to the browser and address you play in (`localhost:5173` for
+`npm run dev`). Export a `.d98` to keep one elsewhere.
+
 ## Development
 
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server with hot reload |
 | `npm test` | Unit tests (Vitest) |
-| `npm run bench` | Benchmarks (world generation budget: 1.5 s) |
+| `npm run bench` | Benchmarks (budgets: world generation 1.5 s, one bar for 10,000 companies 4 ms) |
 | `npm run typecheck` | TypeScript strict check |
 | `npm run build` | Typecheck + production build into `dist/` |
 
@@ -41,16 +52,24 @@ Targets Safari and Chrome on macOS, 1280×800 minimum window.
 src/
   main.tsx          entry point
   shell/            Desktop, Window, Taskbar (+ tray), StartMenu, BootScreen, ShutdownScreen
-  apps/             catalog.ts (app metadata as data), registry.ts (lazy components), one folder per app
+  apps/             catalog.ts (app metadata as data), registry.ts (lazy components), one folder per app:
+                    trade/ (MajorTrade Pro), quote/ (quote windows), mycomputer/, recyclebin/, run/, shutdown/
+  ui98/             98-style widgets 98.css lacks: menu bar, modals, virtualised table view, ticker tape
+  charts/           price and performance charts (lightweight-charts), sparklines
   art/icons.tsx     original pixel-style SVG icons
   art/logo/, art/portrait/   logo and CEO portrait option lists (the renderers arrive in Phase 5)
-  state/            Zustand stores: windows (window manager), shell (power, icon positions, speed)
+  sim/              the market simulation: engine.ts (time, orders, queries, save state), market.ts (price model,
+                    regimes, MAJOR 500), earnings.ts, history.ts, pregame.ts (generated history), account.ts,
+                    calendar.ts, settings.ts (difficulty data); worker.ts runs it in a Web Worker via comlink
+  state/            Zustand stores: windows, shell, trade (watchlists), game (session: boot, save, load);
+                    saveFile.ts (.d98 format), saves.ts (IndexedDB slots), migrations.ts
   world/            world generation: rng, genome codec, generator, company decoding, ownership
                     data: industries, lexicons/, top100, presetFirms, cities, people-names
 tests/              Vitest unit tests and benchmarks; __snapshots__/world-spotcheck.txt lists
                     20 random companies per industry for reviewing names
 ```
 
+`Engine.newGame(...)` in `src/sim/engine.ts` runs a market headless (the tests do; the game runs it in the worker);
 `generateWorld({ seed })` in `src/world/generator.ts` builds a market; `decodeCompany(genome)` in
 `src/world/company.ts` turns any genome back into its company. Word lists and other content are typed data files;
 genomes store indices into them, so they are append-only.
@@ -59,3 +78,8 @@ Adding an app: add an entry to `src/apps/catalog.ts`, then map its lazy componen
 (until then it renders the placeholder).
 
 Design decisions and judgement calls are recorded in [DECISIONS.md](DECISIONS.md).
+
+## Credits
+
+Charts by TradingView Lightweight Charts™, copyright © 2025 TradingView, Inc., <https://www.tradingview.com/>, under
+the Apache License 2.0. Window styling from [98.css](https://github.com/jdan/98.css) (MIT). All game art is original.

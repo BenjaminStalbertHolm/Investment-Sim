@@ -95,3 +95,109 @@ Judgement calls made where the spec leaves details open.
   use Vitest 5's `bench` test fixture (`npm run bench`); the 1.5 s budget is also asserted in a test.
 - **No UI yet.** Nothing in the shell uses the world until the market engine (Phase 3) and the New Game wizard
   (Phase 5).
+
+## Phase 3 — Market engine, trading and saves
+
+- **Libraries.** The worker API is `comlink` and save slots use `idb-keyval`, as the spec suggests. A slot write is one
+  `setMany` transaction holding the new file under a fresh key and the updated slot index: the spec's "write to a
+  temporary key, then swap atomically". A `.d98` file is an `fflate` zip of JSON documents, with typed arrays stored as
+  byte-shuffled binary entries instead of base64 (rename it `.zip` to look inside). Tables use `@tanstack/react-virtual`
+  (spec §20: virtualise every long list). Tests use `fast-check` for the P&L invariants and `fake-indexeddb` for the
+  slots. Not added: a date library (the calendar needs `Date.UTC` and nine holiday rules), a sparkline library (an SVG
+  polyline), FileSaver (a Blob URL download does it), Zustand's `persist` (saves are IndexedDB slots, not localStorage).
+- **Charts use TradingView's `lightweight-charts`, not a hand-written renderer.** The spec asks for a custom Canvas 2D
+  renderer and no heavy charting library. This one draws to canvas, is 56 KB gzipped and loads only with chart
+  windows, and already does everything §13 lists (line, area, bars and candles, a volume pane, crosshair, drag to pan,
+  wheel to zoom, a percent scale for comparisons), which would otherwise all be written from scratch. It is styled as
+  90s software: grey panel, dotted grid, green and red. Its Apache licence asks for credit and a link to
+  tradingview.com; its on-chart logo is off and the credit is in MajorTrade → Help → About, My Computer → About and the
+  README.
+- **Price model** (spec §11.2): `r = β·M + S + σ·ε + κ·(ln V − ln P) + J`. The market factor comes from five regimes
+  (calm, nervous, turbulent, crash, euphoric), a daily Markov chain whose drifts are relative to value. Calm lasts most
+  of a year and a crash three or four days; at Normal a crash comes about every three years. The crash/bubble setting
+  scales the odds of entering a crash or euphoria (0.5×, 1×, 2×). Euphoria also picks an industry whose prices (not
+  values) drift up 80% a year; the gap deflates once euphoria ends. Each industry's factor has 35% of its typical
+  volatility (γ = 1). A company's own volatility is what its volatility gene leaves after the market (15%) and sector
+  parts, at least 40% of it. ε is unit-variance Student-t with ν = 4. κ halves a mispricing in about six months.
+  Event jumps spread over 1–6 bars. Market impact (square-root law, `k = σ_daily`, halved on Easy) is charged in the
+  fill price, and half of it stays in the price. A day is 78 bars plus an overnight gap carrying 15 bars' variance.
+- **Value** drifts at the cost of equity (a 5.5% policy rate plus β × 4.5%) and jumps on earnings. Day one's prices sit
+  within ±40% of value, further off for low-quality companies, so value investors have something to find. The macro
+  layer (§11.4) is in no phase's list: it comes with Phase 6's events and news, and until then the policy rate is
+  constant and does not move sector multiples.
+- **Liquidity.** Average daily volume is `market cap^0.8 / price` shares, with a U-shaped intraday profile, busier on
+  big moves and event days. The quoted spread is `0.04% + 25 / √(dollar volume)`, capped at 10%. Easy halves it and
+  Hard doubles it under $2B.
+- **MAJOR 500** is cap-weighted over the 500 largest companies at the start and starts at 1,000. Membership is fixed
+  until IPOs and bankruptcies (Phase 6). The circuit breaker (index 10% below the previous close) halts trading for
+  the rest of the day; the spec doesn't say how long. Other indices and index funds come later.
+- **Earnings.** A season starts on the first trading day on or after 14 January, April, July and October and lasts 30
+  trading days. Each company has a seeded day in it and reports before the open, so the gap carries the first part of
+  the move. A surprise is 40% the season's economy-wide surprise, which leans bad when a season starts in a crash. The
+  move is ±(2% + 6%·|z|^1.5), scaled by volatility and lower quality, capped at 40%. Value moves by the surprise ×
+  (1 + 0.4·(quality − ½)): high-quality stocks keep drifting afterwards, poor ones partly reverse (§11.7). Revenue,
+  income, EPS and P/E are backed out of market cap at the start (P/E rising with growth, P/S for loss-makers) and
+  updated at each report. Dividends, splits and other events come with Phase 6's event generator; until then no
+  dividends are paid.
+- **Randomness.** The per-bar noise uses 24-bit uniforms (pure-rand's `uniformFloat32`, half the cost), everything else
+  53 bits. Streams: `market:tick`, `market:regime`, `market:value`, `earnings`, `earnings:slots`, and `pregame:*` and
+  `session:*` for generated history. What the player watches never changes the market; a test holds this.
+- **Time.** Game time is whole minutes since 1970 in market time, so the day is `t / 1440` and a chart timestamp is
+  `t × 60`. The game starts at the opening bell of 5 January 1998. Nine fictional holiday rules (Doors Day, Chairmen's
+  Day, Tulip Friday…) give 252 sessions in 1998, as the real NYSE had. At 1× a session takes two real minutes and the
+  pre-market runs at the same pace. Any closed stretch, night or weekend, takes two seconds. A tick never runs past a
+  phase change, so a fast weekend can't skip Monday's pre-market, and after a stall (a save) the clock doesn't race to
+  catch up. Quotes show the last session's change until the next open.
+- **Trading** (market and limit orders, Day or GTC). It is a cash account until Phase 7: buying power is cash less
+  what open buy orders hold back (limit × shares, or the market price with impact). Market orders fill at once at the
+  bid or ask plus impact. Orders placed while closed, pre-market or halted wait for the open and fill after the gap.
+  Limit orders fill at once as far as the limit leaves room for impact; the rest rests and fills at the limit once the
+  market reaches it, at most 20% of each bar's volume ("partial fills based on volume"). A buy that cash can't cover
+  fills what it can, and the rest is cancelled with a note. Commission is charged once per order, at its first fill,
+  plus Hard's 0.05% of every fill. Modify replaces an order. Cost basis includes commissions, and realised P&L is
+  measured against average cost.
+- **History** (spec §11.3). All companies get a 260-day ring of daily bars, recorded quantised: ln(close) in 0.1 basis
+  point steps, open/high/low as basis-point offsets from the close, and volume on a log scale. That is 12 bytes per
+  company-day. Saves delta-encode the rows and byte-shuffle the arrays, so a full year at 10,000 companies is about
+  20 MB (spec target < 25 MB); 32-bit floats compressed to over 40 MB. Weekly closes are kept for all time and fill
+  5Y and Max between the generated pre-game years and the ring. Pre-game history (1,260 trading days, or since
+  founding) is generated on demand: a late-90s bull market (+15% a year at 14% volatility) times β, plus each company's
+  own walk trending with its growth, ending at its starting price. Real 5-minute bars are kept for five sessions for
+  what the player watches (watchlists, open charts, the order ticket, holdings) and the index, and are never saved.
+  Missing ones (before a company was watched, or after a load) are a seeded Brownian bridge from the day's open to its
+  close, stretched to its high and low.
+- **Charts** offer candles or a line with a volume pane over seven timeframes. They reload each new day and when the
+  session opens or closes, and snapshots update the last bar in between. SMA, Bollinger and compare overlays are left
+  for later.
+- **Saves** (spec §18). A `.d98` holds `manifest.json`, `sim.json` (engine state), `game.json` (windows, desktop icons,
+  tray, watchlists, per-window view state) and `bin/`. The world is saved as genomes and ownership tables, not
+  regenerated from the seed, since later phases may change the generator (as Phase 2 anticipated); loading decodes
+  the genomes (~130 ms). Deflate level 1 packs a year's save 2.8× faster than level 6 for 3% more size, about 1.6 s at
+  10,000 companies. The worker's clock stands still meanwhile, which is the spec's "saving pauses the clock". There are
+  named slots plus three rotating autosaves written at each week's last close. Ctrl+S saves to the slot in use, or to
+  a new one named after the firm and date; after loading an autosave, Ctrl+S starts a new slot. The game boots into
+  the most recent save (quick-load). Shut Down offers to save first. A `.d98` dropped on the desktop is imported and
+  loaded. Files a crash leaves orphaned are swept up at boot. Migrations are keyed by version (v1 now, with a test of
+  the chain), and saves from a newer version are refused. Autosaves before risky actions come with those actions.
+- **Save test** (spec §18, extended every phase). It uses the smallest legal market (1,000 companies) so it runs in
+  seconds; the code paths are the same at 10,000. It trades on a schedule and saves mid-session at 11:00 with open
+  orders, through the real `.d98` format. It then compares every byte of state against a run without the save. Maths
+  functions may differ in the last bit between browsers, so a save moved from Chrome to Safari can diverge from there;
+  within one browser a game replays exactly.
+- **Trade app.** The tabs are Quotes, Order Ticket, Portfolio, Orders and Ledger. The screener (§12.6) is not in
+  Phase 3's list, so Start → Find opens the symbol lookup (ticker or part of a name) instead of the screener Phase 1
+  planned. Futures, Calendar and Financing tabs arrive with their phases; meanwhile the quote window shows the next
+  earnings date. Quote windows are separate windows, one per company, and their timeframe and chart type are window
+  params saved with the layout. The portfolio's allocation pie is left for later: Phase 10's Portfolio Defragmenter
+  visualises holdings. Every app so far has a File menu (Save, Save As…, Close).
+- **My Computer.** Saves, New Game and About are built; Display, Sounds, Game and Firm say which phase installs them.
+  New Game (firm name, seed with Randomise, difficulty) stands in until Phase 5's wizard. A new game defaults to
+  Medium, a random seed, "Garage Capital" and a starter watchlist of seven top-100 names plus RTC. A new seed is the
+  one use of `crypto.getRandomValues`: it picks a world, it doesn't play one.
+- **Shell.** The tray clock ticks in game minutes. The light is green when open, amber pre-market and red when closed
+  or halted. Fills and saves show as a notice for five seconds. The ticker button shows a scrolling tape of the MAJOR
+  500 and the active watchlist above the taskbar. Run… accepts tickers. The Recycle Bin lists closed losing positions
+  as `TICKER.POS`, sized in KB by the dollars lost.
+- **Measured** in this container (the spec's budgets are for an M1): a bar for 10,000 companies takes 1.5 ms on
+  average and 2.4 ms at p99 (budget 4 ms), and a whole session 115 ms. Engine memory after 300 sessions is 59 MB. In
+  headless Chromium, frames hold 60 fps (p99 16.8 ms) with two live charts at 20× and while dragging a window.

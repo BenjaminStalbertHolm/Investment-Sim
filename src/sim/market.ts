@@ -1,0 +1,255 @@
+import type { Company } from '../world/company';
+import { INDUSTRIES } from '../world/industries';
+import type { Rng } from '../world/rng';
+import { BARS_PER_DAY } from './calendar';
+import { BAR_YEARS, GAP_BARS, REVERSION, type Model } from './model';
+import type { GameSettings } from './settings';
+
+/**
+ * Market regimes (spec §11.2), a Markov chain stepped once a day. Each sets the market factor's drift and
+ * volatility; the drift is relative to fundamental value, which prices revert to.
+ */
+export const REGIMES = [
+  { name: 'calm', drift: 0.02, vol: 0.11 },
+  { name: 'nervous', drift: -0.04, vol: 0.18 },
+  { name: 'turbulent', drift: -0.15, vol: 0.3 },
+  { name: 'crash', drift: -10, vol: 0.6 },
+  { name: 'euphoric', drift: 0.35, vol: 0.14 },
+] as const;
+const CRASH = 3;
+const EUPHORIC = 4;
+
+/**
+ * Daily chance of moving from a regime (row) to another (column). Crashes and euphoria (bubbles) are entered
+ * more or less often with the crash/bubble setting; a crash lasts a few days, a calm spell most of a year.
+ */
+const TRANSITIONS = [
+  [0, 1 / 250, 0, 1 / 8000, 1 / 800],
+  [1 / 50, 0, 1 / 60, 1 / 900, 1 / 800],
+  [1 / 150, 1 / 25, 0, 1 / 80, 0],
+  [0, 1 / 15, 1 / 4, 0, 0],
+  [1 / 150, 1 / 90, 0, 1 / 700, 0],
+];
+/** Extra drift of the industry a euphoric regime inflates past its value. The gap deflates once euphoria ends. */
+const BUBBLE_DRIFT = 0.8;
+/** Trading halts for the rest of the day when the MAJOR 500 falls 10% below its previous close. */
+const CIRCUIT_BREAKER = 0.9;
+/** Share of a bar's volume a resting limit order can take. */
+export const PARTICIPATION = 0.2;
+
+/** Intraday volume profile, busiest at the open and the close; sums to 1 over the day. */
+export const PROFILE = (() => {
+  const shape = Array.from({ length: BARS_PER_DAY }, (_, k) => 1 + Math.exp(-k / 6) + 0.8 * Math.exp((k + 1 - BARS_PER_DAY) / 8));
+  const total = shape.reduce((a, b) => a + b, 0);
+  return shape.map((v) => v / total);
+})();
+/** 1 / E[(1 + 0.6|t|)] for unit-variance Student-t(4) noise, so volume averages the ADV. */
+const VOLUME_NORM = 1 / (1 + 0.6 * Math.SQRT1_2);
+const TAU = 2 * Math.PI;
+
+export interface IndexState {
+  /** Σ price × shares / divisor = level; fixed so the MAJOR 500 starts at 1,000. */
+  divisor: number;
+  prevClose: number;
+  open: number;
+  high: number;
+  low: number;
+}
+
+/** The market's dynamic state (spec §11.3): typed arrays indexed by company id. */
+export interface MarketState {
+  regime: number;
+  /** Industry inflating in a euphoric regime, or -1. */
+  bubble: number;
+  /** Circuit breaker tripped: prices are frozen until the next open. */
+  halted: boolean;
+  /** Log price and log fundamental value. */
+  lnP: Float64Array;
+  lnV: Float64Array;
+  prevClose: Float64Array;
+  dayOpen: Float64Array;
+  dayHigh: Float64Array;
+  dayLow: Float64Array;
+  dayVolume: Float64Array;
+  /** Event jump (log return) still to apply, spread over this many more bars. */
+  jump: Float64Array;
+  jumpBars: Uint8Array;
+  index: IndexState;
+}
+
+export function initialMarket(companies: readonly Company[], model: Model, rng: Rng): MarketState {
+  const price = Float64Array.from(companies, (c) => c.price);
+  const lnP = price.map(Math.log);
+  // Day one's prices are not quite fair: value sits within ±40% of price, further off for low-quality companies.
+  const lnV = lnP.map((p, i) => p + Math.max(-0.4, Math.min(0.4, rng.normal(0, 0.05 + 0.15 * (1 - model.quality[i])))));
+  let cap = 0;
+  for (const i of model.members) cap += price[i] * model.shares[i];
+  const n = companies.length;
+  return {
+    regime: 0,
+    bubble: -1,
+    halted: false,
+    lnP,
+    lnV,
+    prevClose: price.slice(),
+    dayOpen: price.slice(),
+    dayHigh: price.slice(),
+    dayLow: price.slice(),
+    dayVolume: new Float64Array(n),
+    jump: new Float64Array(n),
+    jumpBars: new Uint8Array(n),
+    index: { divisor: cap / 1000, prevClose: 1000, open: 1000, high: 1000, low: 1000 },
+  };
+}
+
+/**
+ * The price model of spec §11.2, per bar and in log returns:
+ *   r = β·M + S_sector + σ·ε + κ·(ln V − ln P) + J
+ * M is the regime's market factor, S an industry factor, ε Student-t(4) noise, J event jumps. Market impact (I) is
+ * applied to the price when an order fills. Value V grows at the cost of equity and jumps on news.
+ */
+export class Market {
+  /** exp(lnP). */
+  readonly price: Float64Array;
+  readonly barVolume: Float64Array;
+  /** |z| of each company's latest bar, which sizes the bar's wicks on intraday charts. */
+  readonly wick: Float64Array;
+  /** Average daily volume in shares, ∝ market cap^0.8 / price (spec §11.2). */
+  readonly adv: Float64Array;
+  readonly halfSpread: Float64Array;
+  indexLevel = 0;
+  private readonly sectorMove = new Float64Array(INDUSTRIES.length);
+
+  constructor(
+    readonly state: MarketState,
+    readonly model: Model,
+    readonly settings: GameSettings,
+  ) {
+    const n = model.count;
+    this.price = state.lnP.map(Math.exp);
+    this.barVolume = new Float64Array(n);
+    this.wick = new Float64Array(n);
+    this.adv = new Float64Array(n);
+    this.halfSpread = new Float64Array(n);
+    this.refreshLiquidity();
+    this.indexLevel = this.computeIndex();
+  }
+
+  /**
+   * Before the opening bell: yesterday's close becomes the previous close (quotes show the last session's change
+   * until then), the regime moves on and liquidity is re-estimated.
+   */
+  startDay(rng: Rng): void {
+    const s = this.state;
+    s.prevClose.set(this.price);
+    s.index.prevClose = this.indexLevel;
+    const weights = TRANSITIONS[s.regime].map((p, to) => (to === CRASH || to === EUPHORIC ? p * this.settings.crashes : p));
+    weights[s.regime] = 1 - weights.reduce((a, b) => a + b, 0);
+    const next = rng.weighted(weights);
+    if (next !== s.regime) s.bubble = next === EUPHORIC ? rng.int(0, INDUSTRIES.length - 1) : -1;
+    s.regime = next;
+    s.halted = false;
+    this.refreshLiquidity();
+  }
+
+  /** The overnight gap, then the day's open/high/low start from the opening prices. */
+  openingGap(rng: Rng): void {
+    const s = this.state;
+    this.step(rng, GAP_BARS, 0);
+    s.dayOpen.set(this.price);
+    s.dayHigh.set(this.price);
+    s.dayLow.set(this.price);
+    s.dayVolume.fill(0);
+    this.indexLevel = this.computeIndex();
+    s.index.open = s.index.high = s.index.low = this.indexLevel;
+  }
+
+  /** One 5-minute bar (`bar` 0–77). Returns false while trading is halted. */
+  bar(rng: Rng, bar: number): boolean {
+    const s = this.state;
+    if (s.halted) return false;
+    this.step(rng, 1, PROFILE[bar]);
+    const level = (this.indexLevel = this.computeIndex());
+    s.index.high = Math.max(s.index.high, level);
+    s.index.low = Math.min(s.index.low, level);
+    if (level <= CIRCUIT_BREAKER * s.index.prevClose) s.halted = true;
+    return true;
+  }
+
+  /** Market impact of trading `shares` now (square-root law, spec §11.2), as a fraction of the price. */
+  impact(company: number, shares: number): number {
+    const dailyVol = (this.model.volatility[company] * this.settings.volatility) / Math.sqrt(252);
+    return this.settings.impact * dailyVol * Math.sqrt(shares / this.adv[company]);
+  }
+
+  /** Moves a company's price by a fraction (market impact of a fill). */
+  push(company: number, fraction: number): void {
+    const s = this.state;
+    const p = Math.exp((s.lnP[company] += Math.log1p(fraction)));
+    this.price[company] = p;
+    if (p > s.dayHigh[company]) s.dayHigh[company] = p;
+    if (p < s.dayLow[company]) s.dayLow[company] = p;
+  }
+
+  private step(rng: Rng, weight: number, profile: number): void {
+    const s = this.state;
+    const { beta, idio, drift, sector, sectorVol } = this.model;
+    const { lnP, lnV, jump, jumpBars, dayHigh, dayLow, dayVolume } = s;
+    const { price, barVolume, wick, adv, sectorMove } = this;
+    const years = BAR_YEARS * weight;
+    const root = Math.sqrt(years);
+    const regime = REGIMES[s.regime];
+    const market = regime.drift * years + regime.vol * this.settings.volatility * root * rng.normal();
+    for (let k = 0; k < sectorMove.length; k++) {
+      sectorMove[k] = sectorVol[k] * root * rng.normal() + (k === s.bubble ? BUBBLE_DRIFT * years : 0);
+    }
+    const kappa = REVERSION * weight;
+    const noise = Math.sqrt(weight);
+    for (let i = 0; i < price.length; i++) {
+      // Box–Muller gives z and a spare; ε = z / √(χ²₄/2) is unit-variance Student-t with ν = 4, χ²₄ = −2·ln(u·v).
+      const radius = Math.sqrt(-2 * Math.log(1 - rng.float32()));
+      const angle = TAU * rng.float32();
+      const tails = -Math.log((1 - rng.float32()) * (1 - rng.float32()));
+      const eps = Math.max(-12, Math.min(12, (radius * Math.cos(angle)) / Math.sqrt(tails)));
+      let r = beta[i] * market + sectorMove[sector[i]] + idio[i] * noise * eps + kappa * (lnV[i] - lnP[i]);
+      const jumping = jumpBars[i] > 0;
+      if (jumping) {
+        const j = jump[i] / jumpBars[i];
+        jump[i] -= j;
+        jumpBars[i]--;
+        r += j;
+      }
+      lnV[i] += drift[i] * weight;
+      const p = Math.exp((lnP[i] += r));
+      price[i] = p;
+      if (p > dayHigh[i]) dayHigh[i] = p;
+      if (p < dayLow[i]) dayLow[i] = p;
+      // The spare normal drives volume (and wick size): busy bars move more.
+      const spare = radius * Math.sin(angle);
+      wick[i] = Math.abs(spare);
+      const v = profile * adv[i] * Math.max(0.2, 1 + 0.35 * spare) * (1 + 0.6 * Math.abs(eps)) * VOLUME_NORM * (jumping ? 3 : 1);
+      barVolume[i] = v;
+      dayVolume[i] += v;
+    }
+  }
+
+  /** ADV and spreads by liquidity: tight for mega caps, wide for pennies (spec §11.2). */
+  private refreshLiquidity(): void {
+    const { prevClose } = this.state;
+    const { shares } = this.model;
+    const { spread, smallCapSpread } = this.settings;
+    for (let i = 0; i < prevClose.length; i++) {
+      const cap = prevClose[i] * shares[i];
+      const dollars = cap ** 0.8;
+      this.adv[i] = dollars / prevClose[i];
+      const quoted = Math.min(0.1, 0.0004 + 25 / Math.sqrt(dollars)) * spread * (cap < 2e9 ? smallCapSpread : 1);
+      this.halfSpread[i] = quoted / 2;
+    }
+  }
+
+  private computeIndex(): number {
+    let cap = 0;
+    for (const i of this.model.members) cap += this.price[i] * this.model.shares[i];
+    return cap / this.state.index.divisor;
+  }
+}

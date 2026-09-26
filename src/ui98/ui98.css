@@ -1,0 +1,496 @@
+/* App layouts and the 98-style widgets 98.css doesn't have: menu bars, modals, list views, ticker tape. */
+
+.up {
+  color: #008000;
+}
+.down {
+  color: #c00000;
+}
+tr.highlighted .up,
+tr.highlighted .down {
+  color: inherit;
+}
+
+/* ---------- App frames ---------- */
+
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  min-height: 0;
+}
+
+.tab-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 6px;
+}
+
+.tab-page,
+.window-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+.toolbar,
+.button-row {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar button {
+  min-width: 0;
+  padding: 0 8px;
+}
+
+.toolbar button.pressed {
+  font-weight: bold;
+}
+
+.toolbar-gap {
+  flex: 1;
+}
+
+.section-title {
+  flex: none;
+  font-weight: bold;
+}
+
+.hint {
+  margin: 4px 0 0;
+  color: #404040;
+}
+
+.address {
+  flex: 1;
+}
+
+.status-bar {
+  flex: none;
+}
+
+/* ---------- Menu bar ---------- */
+
+.menu-bar {
+  display: flex;
+  flex: none;
+  margin-top: -4px;
+}
+
+.menu-bar-entry {
+  position: relative;
+}
+
+.menu-bar .menu-bar-title {
+  min-width: 0;
+  min-height: 0;
+  padding: 2px 7px;
+  background: none;
+  box-shadow: none;
+}
+
+.menu-bar .menu-bar-title:hover,
+.menu-bar .menu-bar-title.open {
+  box-shadow: inset 1px 1px #808080, inset -1px -1px #fff;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 50;
+  min-width: 190px;
+  padding: 2px;
+}
+
+.menu-dropdown .menu-item {
+  padding: 3px 12px 3px 2px;
+}
+
+.menu-check {
+  width: 12px;
+  text-align: center;
+}
+
+.menu-shortcut {
+  margin-left: auto;
+  padding-left: 24px;
+}
+
+.menu-item.disabled,
+.menu-item.disabled:hover {
+  background: none;
+  color: #808080;
+}
+
+/* ---------- Tables ---------- */
+
+.table-view {
+  flex: 1;
+  min-height: 60px;
+  background: #fff;
+}
+
+.table-view table {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.table-view th,
+.table-view td {
+  height: 17px;
+}
+
+th.right,
+td.right {
+  text-align: right;
+}
+
+td.table-empty {
+  padding: 8px;
+  color: #808080;
+  white-space: normal;
+}
+
+/* ---------- Dialogs ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-backdrop.in-window {
+  position: absolute;
+  z-index: 60;
+  background: rgba(192, 192, 192, 0.35);
+}
+
+.modal {
+  min-width: 300px;
+  max-width: 90%;
+}
+
+.modal .dialog-body p {
+  margin: 0 0 6px;
+}
+
+.message-box {
+  width: 380px;
+}
+
+.message-box-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #c00000;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.about p {
+  max-width: 460px;
+  margin: 0 0 8px;
+}
+
+/* ---------- Tray, boot, ticker tape ---------- */
+
+.tray-notice,
+.tray-busy {
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tray-busy {
+  cursor: wait;
+}
+
+.boot-status {
+  position: absolute;
+  right: 0;
+  bottom: 44px;
+  left: 0;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  text-align: center;
+  text-shadow: 1px 1px #0006;
+}
+
+.ticker-tape {
+  flex: none;
+  height: 18px;
+  overflow: hidden;
+  background: #000;
+  border-top: 1px solid #808080;
+  white-space: nowrap;
+}
+
+.ticker-tape-track {
+  display: inline-flex;
+  animation: ticker-scroll linear infinite;
+}
+
+.ticker-tape:hover .ticker-tape-track {
+  animation-play-state: paused;
+}
+
+.ticker-item {
+  padding: 1px 18px;
+  color: #d0d0d0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ticker-item.up {
+  color: #40e040;
+}
+
+.ticker-item.down {
+  color: #ff5050;
+}
+
+@keyframes ticker-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------- Charts ---------- */
+
+.price-chart {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 170px;
+}
+
+.chart-legend {
+  display: flex;
+  flex: none;
+  gap: 10px;
+  height: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.performance-chart {
+  flex: 1 1 0;
+  min-height: 130px;
+}
+
+.sparkline {
+  display: block;
+}
+
+/* ---------- MajorTrade Pro ---------- */
+
+.symbol-search {
+  position: relative;
+}
+
+.symbol-matches {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 40;
+  min-width: 340px;
+  max-height: 240px;
+  margin: 0;
+  padding: 2px;
+  overflow: auto;
+  list-style: none;
+}
+
+.symbol-matches li {
+  display: flex;
+  gap: 8px;
+  padding: 1px 4px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.symbol-matches li b {
+  width: 36px;
+}
+
+.symbol-matches small {
+  margin-left: auto;
+  color: #606060;
+}
+
+.symbol-matches li.active,
+.symbol-matches li:hover {
+  background: #000080;
+  color: #fff;
+}
+
+.symbol-matches li.active small,
+.symbol-matches li:hover small {
+  color: #c0c0c0;
+}
+
+.summary {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px 16px;
+}
+
+.figure,
+.key-stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.figure span,
+.key-stats span {
+  color: #404040;
+}
+
+.positions {
+  flex: 1 1 0;
+}
+
+.open-orders {
+  flex: 0 0 96px;
+}
+
+.order-ticket fieldset {
+  flex: none;
+}
+
+.order-ticket .field-row {
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.ticket-label {
+  display: inline-block;
+  width: 86px;
+}
+
+.ticket-quote {
+  color: #404040;
+}
+
+.ticket-estimate {
+  background: none;
+}
+
+.ticket-estimate td:first-child {
+  width: 150px;
+  color: #404040;
+}
+
+.ticket-warning {
+  margin: 6px 0 0;
+  color: #804000;
+}
+
+.ticket-result {
+  margin-left: 8px;
+}
+
+/* ---------- Quote window ---------- */
+
+.quote-header {
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quote-ticker,
+.quote-last b {
+  font-size: 16px;
+}
+
+.quote-last {
+  white-space: nowrap;
+}
+
+.quote-sub {
+  color: #404040;
+}
+
+.key-stats {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1px 14px;
+}
+
+/* ---------- My Computer ---------- */
+
+.icon-view {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+  padding: 8px;
+  background: #fff;
+  box-shadow: inset -1px -1px #fff, inset 1px 1px #808080, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+}
+
+.icon-view-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 80px;
+  min-width: 0;
+  min-height: 0;
+  padding: 4px;
+  background: none;
+  box-shadow: none;
+}
+
+.icon-view-item:focus {
+  outline: none;
+}
+
+.icon-view-item:focus span {
+  background: #000080;
+  color: #fff;
+  outline: 1px dotted #000;
+}
+
+.new-game fieldset {
+  flex: none;
+}
+
+.new-game .field-row {
+  margin-bottom: 4px;
+}

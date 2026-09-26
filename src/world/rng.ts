@@ -1,5 +1,6 @@
 import { sha256 } from '@noble/hashes/sha2.js';
 import { utf8ToBytes } from '@noble/hashes/utils.js';
+import { uniformFloat32 } from 'pure-rand/distribution/uniformFloat32';
 import { uniformFloat64 } from 'pure-rand/distribution/uniformFloat64';
 import { uniformInt } from 'pure-rand/distribution/uniformInt';
 import { xoroshiro128plusFromState } from 'pure-rand/generator/xoroshiro128plus';
@@ -35,6 +36,11 @@ export class Rng {
   /** Uniform in [0, 1). */
   float(): number {
     return uniformFloat64(this.gen);
+  }
+
+  /** Uniform in [0, 1) with 24 bits: half the cost of float(), for the per-bar market noise. */
+  float32(): number {
+    return uniformFloat32(this.gen);
   }
 
   /** Uniform in [lo, hi). */

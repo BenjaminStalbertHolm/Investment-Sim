@@ -1,21 +1,31 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Icon } from '../art/icons';
 
 const BOOT_MS = 2000;
 
-/** Original splash with an animated progress stripe; any click or key skips it. */
-export function BootScreen({ onDone }: { onDone(): void }) {
+/**
+ * Original splash with an animated progress stripe. It shows for 2 seconds (any click or key skips that) and until
+ * the game has loaded.
+ */
+export function BootScreen({ ready, status, onDone }: { ready: boolean; status?: string; onDone(): void }) {
+  const [shown, setShown] = useState(false);
+
   useEffect(() => {
-    const timer = setTimeout(onDone, BOOT_MS);
-    window.addEventListener('keydown', onDone);
+    const skip = () => setShown(true);
+    const timer = setTimeout(skip, BOOT_MS);
+    window.addEventListener('keydown', skip);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('keydown', onDone);
+      window.removeEventListener('keydown', skip);
     };
-  }, [onDone]);
+  }, []);
+
+  useEffect(() => {
+    if (shown && ready) onDone();
+  }, [shown, ready, onDone]);
 
   return (
-    <div className="boot-screen" onClick={onDone}>
+    <div className="boot-screen" onClick={() => setShown(true)}>
       <div className="boot-logo">
         <Icon name="doors" size={128} />
         <div className="boot-wordmark">
@@ -25,6 +35,7 @@ export function BootScreen({ onDone }: { onDone(): void }) {
           </span>
         </div>
       </div>
+      {shown && !ready && <div className="boot-status">{status ?? 'Starting Majorsoft Doors 98…'}</div>}
       <div className="boot-stripe" />
     </div>
   );

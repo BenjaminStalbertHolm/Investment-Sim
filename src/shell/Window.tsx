@@ -35,7 +35,7 @@ export function Window({ win, active }: { win: WindowState; active: boolean }) {
       <div className={`title-bar${active ? '' : ' inactive'}`} onDoubleClick={() => canMaximize && toggleMaximize(win.id)}>
         <div className="title-bar-text">
           <Icon name={app.icon} size={16} />
-          {app.title}
+          {win.title ?? app.title}
         </div>
         <div className="title-bar-controls">
           {!app.dialog && <button aria-label="Minimize" onClick={() => minimize(win.id)} />}

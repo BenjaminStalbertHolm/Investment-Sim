@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { resolveRunTarget } from '../src/apps/run/RunDialog';
+import { findTicker, resolveRunTarget } from '../src/apps/run/RunDialog';
 import { activeWindowId, useWindows } from '../src/state/windows';
 
 const initial = useWindows.getState();
@@ -81,6 +81,16 @@ describe('window manager', () => {
     expect(win(a).bounds).toEqual({ x: 0, y: 0, width: 600, height: 400 });
   });
 
+  it('opens one quote window per company, keeping what it shows', () => {
+    const a = wm().open('quote', { company: 3 }, 'PEAR — Pear Computer');
+    const b = wm().open('quote', { company: 4 });
+    expect(b).not.toBe(a);
+    expect(wm().open('quote', { company: 3 })).toBe(a);
+    expect(win(a).title).toBe('PEAR — Pear Computer');
+    wm().setParams(a, { timeframe: '5Y' });
+    expect(win(a).params).toEqual({ company: 3, timeframe: '5Y' });
+  });
+
   it('centres dialogs', () => {
     wm().setArea(1000, 700);
     const b = win(wm().open('run')).bounds;
@@ -95,5 +105,11 @@ describe('Run…', () => {
     expect(resolveRunTarget('www.yeehaw.com')).toBe('browser');
     expect(resolveRunTarget('shutdown')).toBeUndefined();
     expect(resolveRunTarget('nonsense')).toBeUndefined();
+    expect(resolveRunTarget('quote')).toBeUndefined(); // quote windows open from a ticker
+  });
+
+  it('finds tickers in any case', () => {
+    expect(findTicker(['MVDA', 'MJSF'], ' mjsf ')).toBe(1);
+    expect(findTicker(['MVDA', 'MJSF'], 'MVD')).toBeUndefined();
   });
 });
