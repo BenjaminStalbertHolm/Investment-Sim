@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { APPS, type AppId } from '../catalog';
 import { Icon } from '../../art/icons';
-import { openQuote, useGame } from '../../state/game';
+import { normalizeUrl } from '../../sites/urls';
+import { openQuote, openUrl, useGame } from '../../state/game';
 import { useWindows } from '../../state/windows';
 import type { AppProps } from '../types';
 
@@ -9,11 +10,14 @@ import type { AppProps } from '../types';
 export function resolveRunTarget(input: string): AppId | undefined {
   const q = input.trim().toLowerCase();
   if (!q) return undefined;
-  if (/^https?:\/\/|^www\.|\.(com|net|org|gov)\b/.test(q)) return 'browser';
+  if (isAddress(q)) return 'browser';
   // Quote windows need a company: they open from a ticker instead.
   const apps = Object.values(APPS).filter((a) => !a.dialog && a.id !== 'quote');
   return (apps.find((a) => a.id === q) ?? apps.find((a) => a.title.toLowerCase().startsWith(q)))?.id;
 }
+
+/** Whether Run… input is an Internet address. */
+export const isAddress = (input: string) => /^https?:\/\/|^www\.|\.(com|net|org|gov|co\.uk)\b/i.test(input.trim());
 
 /** The company whose ticker was typed, if any. */
 export function findTicker(tickers: readonly string[], input: string): number | undefined {
@@ -35,6 +39,7 @@ export default function RunDialog({ windowId }: AppProps) {
     }
     close(windowId);
     if (company !== undefined) openQuote(company);
+    else if (isAddress(text)) openUrl(normalizeUrl(text));
     else open(target!);
   };
 
@@ -48,7 +53,7 @@ export default function RunDialog({ windowId }: AppProps) {
     >
       <div className="dialog-row">
         <Icon name="run" />
-        <p>Type the name of a program or a ticker symbol, and Doors will open it for you.</p>
+        <p>Type the name of a program, a ticker symbol or an Internet address, and Doors will open it for you.</p>
       </div>
       <div className="field-row">
         <label htmlFor={`${windowId}-open`}>Open:</label>

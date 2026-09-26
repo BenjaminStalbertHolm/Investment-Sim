@@ -4,6 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { CLOSE, START_DAY, at, nextTradingDay } from '../src/sim/calendar';
 import { Engine, type SimState } from '../src/sim/engine';
 import { DIFFICULTIES } from '../src/sim/settings';
+import { newBrowserState } from '../src/state/browser';
 import { SAVE_VERSION, migrate } from '../src/state/migrations';
 import { SAVE_FORMAT, packSave, unpackSave, type Manifest } from '../src/state/saveFile';
 import { cleanUp, deleteSave, listSaves, nextAutosave, readSave, writeSave, type SaveSlot } from '../src/state/saves';
@@ -66,7 +67,26 @@ describe('save system (spec §18)', () => {
     });
     expect(saved.orders().length).toBeGreaterThan(50);
     expect(difference(saved.exportState(), straight.exportState())).toBeUndefined();
+    // Phase 4: the quarterly results the IR pages show carry over, including reports made after loading.
+    const quarters = saved.details(5).quarters;
+    expect(quarters.at(-1)!.reported).toBeGreaterThan(START_DAY);
+    expect(quarters).toEqual(straight.details(5).quarters);
   }, 60_000);
+
+  it('upgrades a version 1 save: quarterly results backfilled, browser favourites and history added', () => {
+    const e = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Test' });
+    e.runSessions(3);
+    const sim = e.exportState();
+    const old = { ...sim, fundamentals: { ...sim.fundamentals } } as Record<string, unknown> & SimState;
+    delete (old.fundamentals as Partial<SimState['fundamentals']>).quarterRevenue;
+    delete (old.fundamentals as Partial<SimState['fundamentals']>).quarterIncome;
+    const v1 = unpackSave(packSave({ manifest: manifest({ version: 1 }), sim: old, game: { trade: {} } }));
+    const upgraded = migrate(v1);
+    expect(upgraded.manifest.version).toBe(SAVE_VERSION);
+    expect(upgraded.game).toMatchObject({ trade: {}, browser: newBrowserState() });
+    const loaded = Engine.restore(upgraded.sim as SimState);
+    expect(difference(loaded.exportState(), sim)).toBeUndefined();
+  });
 
   it('packs documents with every kind of typed array into a zip and back', () => {
     const documents = {

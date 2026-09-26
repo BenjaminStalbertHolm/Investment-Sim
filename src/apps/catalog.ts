@@ -43,7 +43,7 @@ const SMALL = { width: 420, height: 320 };
 const defs: AppDef[] = [
   { id: 'mycomputer', title: 'My Computer', icon: 'computer', defaultSize: WIN, inPrograms: true,
     blurb: 'Settings, save/load, new game and firm editing.' },
-  { id: 'browser', title: 'Internet Exploiter', icon: 'browser', defaultSize: { width: 760, height: 520 }, phase: 4,
+  { id: 'browser', title: 'Internet Exploiter', icon: 'browser', defaultSize: { width: 780, height: 560 },
     multiInstance: true, inPrograms: true,
     blurb: 'Company websites, news, competitor sites, the regulator and the weather.' },
   { id: 'trade', title: 'MajorTrade Pro 98', icon: 'trade', defaultSize: { width: 800, height: 540 }, inPrograms: true,

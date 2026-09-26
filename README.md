@@ -2,11 +2,14 @@
 
 Run an investment firm from inside a fake 1998 desktop operating system. Fully offline; runs in the browser.
 
-**Status:** Phase 3 (market engine, trading and saves). A seed generates a market of 10,000 companies, and a Web Worker
+**Status:** Phase 4 (browser and websites). A seed generates a market of 10,000 companies, and a Web Worker
 runs it in real time: trading hours and holidays, market regimes, sector moves, earnings seasons and the MAJOR 500.
 MajorTrade Pro 98 has watchlists, quote windows with charts, market and limit orders, a portfolio and a cash ledger.
-Games save anywhere to named slots and rotating autosaves, and export as `.d98` files. Apps not built yet are
-placeholders that say which build phase delivers them.
+Internet Exploiter browses the in-game web: the Yeehaw! portal and search, every company's own website (home, about,
+products, investor relations with live stats and holders, guestbook), competitor firms' sites and your own, QuoteZone
+(movers, sector map, screener) and three newspapers written from the market. Games save anywhere to named slots and
+rotating autosaves, and export as `.d98` files. Apps not built yet are placeholders that say which build phase
+delivers them.
 
 ## Running on macOS
 
@@ -29,7 +32,8 @@ Targets Safari and Chrome on macOS, 1280×800 minimum window.
 ## Playing
 
 The game boots into your most recent save, or a new firm with $1,000,000 of clients' money. Open **MajorTrade Pro 98**
-to watch quotes and trade; the tray sets the game speed (a trading day takes two minutes at 1×). Press **Ctrl+S**
+to watch quotes and trade, and **Internet Exploiter** to read the news and visit companies (type a company or ticker
+in the address bar to search Yeehaw!); the tray sets the game speed (a trading day takes two minutes at 1×). Press **Ctrl+S**
 (or ⌘S) to save. **My Computer → Saves** lists saved games and exports or imports `.d98` files; dropping a `.d98` on
 the desktop loads it. **My Computer → New Game** starts over with a seed and difficulty of your choice.
 
@@ -53,11 +57,16 @@ src/
   main.tsx          entry point
   shell/            Desktop, Window, Taskbar (+ tray), StartMenu, BootScreen, ShutdownScreen
   apps/             catalog.ts (app metadata as data), registry.ts (lazy components), one folder per app:
-                    trade/ (MajorTrade Pro), quote/ (quote windows), mycomputer/, recyclebin/, run/, shutdown/
+                    trade/ (MajorTrade Pro), quote/ (quote windows), browser/ (Internet Exploiter), mycomputer/,
+                    recyclebin/, run/, shutdown/
+  sites/            the in-game web: urls.ts (domains), Site.tsx (URL → site), web.tsx (links, marquee, hit counter),
+                    portal/ (Yeehaw!), company/ (company sites: content.ts generates them), firm/, news/, quotezone/;
+                    data/ holds the text templates, product lists and industry themes
   ui98/             98-style widgets 98.css lacks: menu bar, modals, virtualised table view, ticker tape
   charts/           price and performance charts (lightweight-charts), sparklines
   art/icons.tsx     original pixel-style SVG icons
-  art/logo/, art/portrait/   logo and CEO portrait option lists (the renderers arrive in Phase 5)
+  art/logo/         logo parts and the logo renderer (the designer arrives in Phase 5)
+  art/portrait/     CEO portrait option lists (the renderer arrives in Phase 5)
   sim/              the market simulation: engine.ts (time, orders, queries, save state), market.ts (price model,
                     regimes, MAJOR 500), earnings.ts, history.ts, pregame.ts (generated history), account.ts,
                     calendar.ts, settings.ts (difficulty data); worker.ts runs it in a Web Worker via comlink
@@ -82,4 +91,7 @@ Design decisions and judgement calls are recorded in [DECISIONS.md](DECISIONS.md
 ## Credits
 
 Charts by TradingView Lightweight Charts™, copyright © 2025 TradingView, Inc., <https://www.tradingview.com/>, under
-the Apache License 2.0. Window styling from [98.css](https://github.com/jdan/98.css) (MIT). All game art is original.
+the Apache License 2.0. Window styling from [98.css](https://github.com/jdan/98.css) (MIT). Logo motifs and website
+clip-art are silhouettes from [game-icons.net](https://game-icons.net) by Lorc, Delapouite and contributors, under
+[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), via [react-icons](https://react-icons.github.io/react-icons/)
+(MIT). All other game art is original.

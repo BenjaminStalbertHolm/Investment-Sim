@@ -7,18 +7,20 @@ import {
   BAR_MINUTES, BARS_PER_DAY, CLOSE, OPEN, START_DAY, at, dayOf, holiday, isTradingDay, minuteOf, nextOpen,
   nextTradingDay, phaseAt, previousTradingDay, weekday, type GameTime, type Phase,
 } from './calendar';
-import { initialFundamentals, nextReport, reportEarnings, type Fundamentals } from './earnings';
 import {
-  createHistory, dailyBars, endsWeek, oldestDay, packHistory, recordDay, unpackHistory, weeklyCloses, type Bar,
-  type HistoryState,
+  QUARTERS, initialFundamentals, nextReport, quarterReported, reportDay, reportEarnings, type Fundamentals,
+} from './earnings';
+import {
+  createHistory, dailyBars, endsWeek, oldestDay, packHistory, recordDay, unpackHistory, weekCloses, weeklyCloses,
+  weeklyValues, type Bar, type HistoryState,
 } from './history';
 import { Market, PARTICIPATION, initialMarket, type MarketState } from './market';
 import { BAR_YEARS, buildModel, type Model } from './model';
 import { pregameBars, pregameDays, pregameIndex, pregameMarket, sessionBars } from './pregame';
 import type { GameSettings } from './settings';
 import {
-  INDEX, type AccountView, type CompanyDetails, type Directory, type EngineEvent, type Estimate, type LiveBars,
-  type PositionView, type Quote, type Timeframe,
+  INDEX, type AccountView, type CompanyDetails, type Directory, type EngineEvent, type Estimate, type FirmView,
+  type Holder, type LiveBars, type MarketTable, type PositionView, type Quote, type QuarterResult, type Timeframe,
 } from './types';
 
 /** The generated world, as saved: genomes rather than decoded companies (spec §18). */
@@ -504,6 +506,8 @@ export class Engine {
       tickers: this.companies.map((c) => c.ticker),
       names: this.companies.map((c) => c.name),
       industries: this.companies.map((c) => c.industry.name),
+      genomes: this.companies.map((c) => c.genome),
+      firms: this.s.world.firms.map(({ id, name, strategy, preset }) => ({ id, name, strategy, preset })),
     };
   }
 
@@ -517,6 +521,7 @@ export class Engine {
     const year = this.daily(i).slice(-252);
     return {
       id: i,
+      genome: c.genome,
       name: c.name,
       ticker: c.ticker,
       industry: c.industry.name,
@@ -540,6 +545,81 @@ export class Engine {
       lastEarnings: f.reported[i],
       insiderPct: this.s.world.insiderPct[i],
       floatPct: this.s.world.floatPct[i],
+      quarters: this.quarters(i),
+      holders: this.holders(i),
+    };
+  }
+
+  /** The last eight quarters' results, oldest first. */
+  private quarters(i: number): QuarterResult[] {
+    const f = this.s.fundamentals;
+    const shares = this.model.shares[i];
+    // Before its first report in the game, a company's latest quarter is the one reported before the start.
+    const latest = quarterReported(f.reported[i] >= 0 ? f.reported[i] : START_DAY);
+    return Array.from({ length: QUARTERS }, (_, k) => {
+      const quarter = latest - (QUARTERS - 1 - k);
+      const revenue = f.quarterRevenue[i * QUARTERS + k];
+      const income = f.quarterIncome[i * QUARTERS + k];
+      return { quarter, reported: reportDay(quarter, this.model.slot[i]), revenue, income, eps: income / shares };
+    });
+  }
+
+  /** A company's institutional holders, largest first (the holdings table is sorted by company). */
+  private holders(i: number): Holder[] {
+    const { holdings } = this.s.world;
+    let lo = 0;
+    let hi = holdings.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (holdings[mid].company < i) lo = mid + 1;
+      else hi = mid;
+    }
+    const out: Holder[] = [];
+    for (let k = lo; k < holdings.length && holdings[k].company === i; k++) out.push({ firm: holdings[k].firm, shares: holdings[k].shares });
+    return out;
+  }
+
+  /** A competitor's holdings at today's prices, and their value week by week since the start. */
+  firm(f: number): FirmView {
+    const { price } = this.market;
+    const held = this.s.world.holdings.filter((h) => h.firm === f);
+    const holdings = held
+      .map(({ company, shares }) => ({ company, shares, value: shares * price[company], pct: shares / this.model.shares[company] }))
+      .sort((a, b) => b.value - a.value);
+    const aum = holdings.reduce((a, h) => a + h.value, 0);
+    const index = new Map(this.s.history.index.map(([day, , , , close]) => [day, close]));
+    const start = held.reduce((a, h) => a + h.shares * this.companies[h.company].price, 0);
+    const history: [number, number, number][] = [
+      [START_DAY, start, 1000],
+      ...weeklyValues(this.s.history, held).map(([day, value]): [number, number, number] => [day, value, index.get(day)!]),
+    ];
+    // Then now, in place of this week's close if that was today.
+    const today = dayOf(this.s.clock);
+    if (history.length > 1 && history.at(-1)![0] === today) history.pop();
+    history.push([today, aum, this.market.indexLevel]);
+    return { firm: f, aum, holdings, history };
+  }
+
+  /** Every company's latest numbers, column by column. */
+  table(): MarketTable {
+    const { market, model } = this;
+    const f = this.s.fundamentals;
+    const h = this.s.history;
+    const weeks = h.weekDays.length;
+    const start = () => Float64Array.from(this.companies, (c) => c.price);
+    return {
+      last: market.price.slice(),
+      prevClose: market.state.prevClose.slice(),
+      volume: market.state.dayVolume.slice(),
+      shares: model.shares.slice(),
+      revenue: f.revenue.slice(),
+      income: f.income.slice(),
+      dividendYield: Float64Array.from(this.companies, (c) => c.dividendYield),
+      sector: model.sector.slice(),
+      reported: f.reported.slice(),
+      week: weeks
+        ? { day: h.weekDays[weeks - 1], close: weekCloses(h, weeks - 1), previous: weeks > 1 ? weekCloses(h, weeks - 2) : start() }
+        : undefined,
     };
   }
 

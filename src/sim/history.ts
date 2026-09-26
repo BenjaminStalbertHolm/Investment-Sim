@@ -163,3 +163,17 @@ export function unpackHistory(h: HistoryState): HistoryState {
     weekly: undeltaRows(h.weekly, h.count),
   };
 }
+
+/** Every company's close at the end of week `w` (weekDays[w]). */
+export function weekCloses(h: HistoryState, w: number): Float64Array {
+  return Float64Array.from(h.weekly.subarray(w * h.count, (w + 1) * h.count), (q) => Math.exp(q / CLOSE_STEP));
+}
+
+/** The value of fixed holdings at each week's close, oldest first. */
+export function weeklyValues(h: HistoryState, holdings: readonly { company: number; shares: number }[]): [number, number][] {
+  return h.weekDays.map((day, w) => {
+    let value = 0;
+    for (const { company, shares } of holdings) value += shares * Math.exp(h.weekly[w * h.count + company] / CLOSE_STEP);
+    return [day, value];
+  });
+}

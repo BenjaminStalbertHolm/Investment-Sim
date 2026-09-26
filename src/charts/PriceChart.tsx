@@ -39,6 +39,13 @@ export const LOOK = {
   },
 };
 
+/** The same chart on a company website (spec §13): a more "web 1.0" skin, white with a Times legend. */
+export const WEB_LOOK = {
+  ...LOOK,
+  layout: { ...LOOK.layout, background: { type: ColorType.Solid, color: '#ffffff' }, fontFamily: '"Times New Roman", Times, serif', fontSize: 11 },
+  grid: { vertLines: { color: '#d0d0d0', style: LineStyle.Solid }, horzLines: { color: '#d0d0d0', style: LineStyle.Solid } },
+};
+
 type PriceSeries = { kind: 'candles'; api: ISeriesApi<'Candlestick'> } | { kind: 'line'; api: ISeriesApi<'Line'> };
 
 const time = (b: Bar) => b.time as UTCTimestamp;
@@ -50,7 +57,7 @@ const volume = (b: Bar) => ({ time: time(b), value: b.volume, color: b.close >= 
  * Price chart for a company or the MAJOR 500 (id -1): line or candles with a volume pane, crosshair legend, drag to
  * pan and wheel to zoom. Bars come from the worker; snapshots keep the last one live.
  */
-export function PriceChart({ id, timeframe, type }: { id: number; timeframe: Timeframe; type: ChartType }) {
+export function PriceChart({ id, timeframe, type, skin = 'terminal' }: { id: number; timeframe: Timeframe; type: ChartType; skin?: 'terminal' | 'web' }) {
   const box = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi>(undefined);
   const series = useRef<{ price: PriceSeries; volume?: ISeriesApi<'Histogram'> }>(undefined);
@@ -63,7 +70,7 @@ export function PriceChart({ id, timeframe, type }: { id: number; timeframe: Tim
   const session = useGame((s) => (s.snapshot ? `${dayOf(s.snapshot.time)}:${s.snapshot.phase}` : ''));
 
   useEffect(() => {
-    const c = createChart(box.current!, LOOK);
+    const c = createChart(box.current!, skin === 'web' ? WEB_LOOK : LOOK);
     chart.current = c;
     c.subscribeCrosshairMove((param) => setLegend(param.time ? bars.current.get(param.time as number) : undefined));
     return () => {
@@ -71,6 +78,7 @@ export function PriceChart({ id, timeframe, type }: { id: number; timeframe: Tim
       chart.current = undefined;
       series.current = undefined;
     };
+    // The skin is fixed for the chart's lifetime.
   }, []);
 
   useEffect(() => {
@@ -128,7 +136,7 @@ export function PriceChart({ id, timeframe, type }: { id: number; timeframe: Tim
 
   const shown = legend ?? last.current;
   return (
-    <div className="price-chart">
+    <div className={`price-chart price-chart-${skin}`}>
       <div className="chart-legend">
         {shown && (
           <>

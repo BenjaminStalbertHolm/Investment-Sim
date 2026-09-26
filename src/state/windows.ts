@@ -16,6 +16,8 @@ export interface WindowParams {
   view?: string;
   timeframe?: Timeframe;
   chart?: ChartType;
+  /** The page a browser window shows. */
+  url?: string;
 }
 
 export interface WindowState {
@@ -48,6 +50,7 @@ interface WindowsStore {
   toggleMaximize(id: string): void;
   setBounds(id: string, bounds: Bounds): void;
   setParams(id: string, params: WindowParams): void;
+  setTitle(id: string, title: string): void;
   /** Taskbar button behaviour: restore if minimised, minimise if active, otherwise focus. */
   taskbarClick(id: string): void;
   setArea(width: number, height: number): void;
@@ -164,6 +167,10 @@ export const useWindows = create<WindowsStore>()((set, get) => {
 
     setParams(id, params) {
       update(id, (w) => ({ params: { ...w.params, ...params } }));
+    },
+
+    setTitle(id, title) {
+      update(id, () => ({ title }));
     },
 
     taskbarClick(id) {

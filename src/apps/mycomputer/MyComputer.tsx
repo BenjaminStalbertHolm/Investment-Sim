@@ -235,7 +235,7 @@ function About() {
   return (
     <div className="tab-page about">
       <p>
-        <b>Majorsoft Doors 98</b> — Investment Firm Edition, build 3.
+        <b>Majorsoft Doors 98</b> — Investment Firm Edition, build 4.
       </p>
       <p>
         Licensed to: {firmName}
@@ -248,6 +248,10 @@ function About() {
           https://www.tradingview.com/
         </a>
         , under the Apache License 2.0. Window styling from 98.css by Jordan Scales (MIT).
+      </p>
+      <p>
+        Logo and clip-art silhouettes from game-icons.net by Lorc, Delapouite and contributors, under CC BY 3.0,
+        via react-icons (MIT).
       </p>
     </div>
   );
