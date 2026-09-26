@@ -1,4 +1,5 @@
 import type { IconName } from '../art/icons';
+import type { TradeTab } from '../state/trade';
 
 export type AppId =
   | 'mycomputer'
@@ -17,6 +18,7 @@ export type AppId =
   | 'taskmangler'
   | 'paint'
   | 'help'
+  | 'quote'
   | 'run'
   | 'shutdown';
 
@@ -39,20 +41,22 @@ const WIN = { width: 640, height: 440 };
 const SMALL = { width: 420, height: 320 };
 
 const defs: AppDef[] = [
-  { id: 'mycomputer', title: 'My Computer', icon: 'computer', defaultSize: WIN, phase: 3, inPrograms: true,
+  { id: 'mycomputer', title: 'My Computer', icon: 'computer', defaultSize: WIN, inPrograms: true,
     blurb: 'Settings, save/load, new game and firm editing.' },
   { id: 'browser', title: 'Internet Exploiter', icon: 'browser', defaultSize: { width: 760, height: 520 }, phase: 4,
     multiInstance: true, inPrograms: true,
     blurb: 'Company websites, news, competitor sites, the regulator and the weather.' },
-  { id: 'trade', title: 'MajorTrade Pro 98', icon: 'trade', defaultSize: { width: 800, height: 540 }, phase: 3, inPrograms: true,
+  { id: 'trade', title: 'MajorTrade Pro 98', icon: 'trade', defaultSize: { width: 800, height: 540 }, inPrograms: true,
     blurb: 'Quotes, orders, charts, screener and your portfolio.' },
+  { id: 'quote', title: 'Quote', icon: 'trade', defaultSize: { width: 640, height: 520 }, multiInstance: true,
+    blurb: 'Chart and key statistics for one company.' },
   { id: 'mail', title: 'Outbox Express', icon: 'mail', defaultSize: { width: 720, height: 480 }, phase: 6, inPrograms: true,
     blurb: 'Clients, mandates, margin calls, tips and takeover offers.' },
   { id: 'notepad', title: 'Notepad', icon: 'notepad', defaultSize: SMALL, phase: 10, inPrograms: true,
     blurb: 'Notes that are kept in your save file.' },
   { id: 'calculator', title: 'Calculator', icon: 'calculator', defaultSize: { width: 300, height: 320 }, phase: 10, inPrograms: true,
     blurb: 'Standard, Scientific and Financial modes.' },
-  { id: 'recyclebin', title: 'Recycle Bin', icon: 'recyclebin', defaultSize: SMALL, phase: 3,
+  { id: 'recyclebin', title: 'Recycle Bin', icon: 'recyclebin', defaultSize: { width: 520, height: 320 },
     blurb: 'Your closed losing positions, filed by size of loss.' },
   { id: 'messenger', title: 'ISeekYou', icon: 'messenger', defaultSize: { width: 300, height: 440 }, phase: 10, inPrograms: true,
     blurb: 'Chat with your broker, staff, informants and your mother.' },
@@ -85,12 +89,14 @@ export interface DesktopIconDef {
   icon: IconName;
   opens: AppId;
   shortcut?: boolean;
+  /** Trade app tab the shortcut opens on. */
+  tab?: TradeTab;
 }
 
 export const DESKTOP_ICONS: DesktopIconDef[] = [
   ...(['mycomputer', 'browser', 'trade', 'mail'] as const).map((id) => ({ id, label: APPS[id].title, icon: APPS[id].icon, opens: id })),
-  // Shortcut to Trade → Portfolio (the tab deep-link arrives with the Trade app in Phase 3).
-  { id: 'portfolio', label: 'My Portfolio', icon: 'portfolio', opens: 'trade', shortcut: true },
+  // Shortcut to Trade → Portfolio.
+  { id: 'portfolio', label: 'My Portfolio', icon: 'portfolio', opens: 'trade', shortcut: true, tab: 'portfolio' },
   ...(['notepad', 'calculator', 'recyclebin', 'messenger', 'word', 'sheet', 'hr', 'rolodex', 'defrag', 'taskmangler', 'paint'] as const).map(
     (id) => ({ id, label: APPS[id].title, icon: APPS[id].icon, opens: id }),
   ),

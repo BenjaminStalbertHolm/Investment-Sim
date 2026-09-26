@@ -1,0 +1,184 @@
+import * as Comlink from 'comlink';
+import { SAVE_VERSION, checkManifest, migrate } from '../state/migrations';
+import { SAVE_FORMAT, packSave, unpackSave, type Manifest } from '../state/saveFile';
+import type { OrderRequest } from './account';
+import { dayOf, minutesPerSecond, phaseEnd } from './calendar';
+import { Engine, type NewGameOptions, type SimState } from './engine';
+import { INDEX, type EngineEvent, type Snapshot, type Timeframe } from './types';
+
+/**
+ * The simulation's Web Worker (spec §11). It paces the engine in real time, posts snapshots of what the UI watches at
+ * most every 250 ms, and saves and loads the simulation's half of a game.
+ */
+
+const SNAPSHOT_MS = 250;
+const TICK_MS = 50;
+
+let engine: Engine | undefined;
+let listener: ((snapshot: Snapshot) => void) | undefined;
+let speed = 0;
+let watched: number[] = [];
+let carry = 0;
+let last = performance.now();
+let posted = 0;
+let dirty = false;
+let revision = 0;
+let events: EngineEvent[] = [];
+/** Each watched company's last 20 closes before today, for sparklines. */
+const sparks = new Map<number, { day: number; closes: number[] }>();
+
+function tick(): void {
+  const now = performance.now();
+  // After a stall (a save, a busy tab) the clock carries on rather than racing to catch up.
+  const elapsed = Math.min(250, now - last);
+  last = now;
+  if (engine && speed) {
+    carry += (elapsed / 1000) * minutesPerSecond(engine.time, speed);
+    // A tick never runs past the end of the phase: a weekend's pace would otherwise skip Monday's pre-market.
+    const left = phaseEnd(engine.time) - engine.time;
+    const minutes = Math.min(Math.floor(carry), left);
+    carry = minutes === left ? 0 : carry - minutes;
+    if (minutes > 0) {
+      engine.advance(minutes);
+      dirty = true;
+    }
+  }
+  if (dirty && now - posted >= SNAPSHOT_MS) post();
+}
+
+function spark(e: Engine, id: number, last: number): number[] {
+  const day = dayOf(e.time);
+  let cached = sparks.get(id);
+  if (cached?.day !== day) {
+    const closes = e.bars(id, '1M').filter((b) => b.time < day * 86_400).slice(-19).map((b) => b.close);
+    sparks.set(id, (cached = { day, closes }));
+  }
+  return [...cached.closes, last];
+}
+
+function post(): void {
+  const e = engine;
+  if (!e || !listener) return;
+  posted = performance.now();
+  dirty = false;
+  events.push(...e.drainEvents());
+  if (events.some((ev) => ev.kind !== 'halt')) revision++;
+  const quotes: Snapshot['quotes'] = {};
+  const live: Snapshot['live'] = { [INDEX]: e.live(INDEX) };
+  for (const id of watched) {
+    const quote = e.quote(id);
+    quotes[id] = { ...quote, spark: spark(e, id, quote.last) };
+    live[id] = e.live(id);
+  }
+  listener({
+    time: e.time,
+    phase: e.phase,
+    holiday: e.holiday(),
+    halted: e.halted,
+    speed,
+    index: e.indexQuote(),
+    quotes,
+    live,
+    account: e.account(),
+    positions: e.positions(),
+    openOrders: e.openOrders(),
+    revision,
+    events,
+  });
+  events = [];
+}
+
+function changed<T>(result: T): T {
+  revision++;
+  dirty = true;
+  posted = 0;
+  return result;
+}
+
+function start(e: Engine) {
+  engine = e;
+  carry = 0;
+  sparks.clear();
+  e.watch(watched);
+  changed(undefined);
+  return { directory: e.directory(), seed: e.seed, firmName: e.firmName };
+}
+
+const game = () => {
+  if (!engine) throw new Error('No game is running.');
+  return engine;
+};
+
+const api = {
+  /** Receives snapshots from now on. */
+  connect(callback: (snapshot: Snapshot) => void): void {
+    listener = callback;
+    dirty = true;
+  },
+
+  newGame(options: NewGameOptions) {
+    return start(Engine.newGame(options));
+  },
+
+  /** Loads a .d98 file: the simulation resumes here, and the UI's half of the game goes back to the caller. */
+  load(bytes: Uint8Array) {
+    const documents = migrate(unpackSave(bytes));
+    return { ...start(Engine.restore(documents.sim as SimState)), game: documents.game, manifest: documents.manifest };
+  },
+
+  /** A .d98 file's manifest, once checked to be a save this version can load. */
+  inspect(bytes: Uint8Array): Manifest {
+    const { manifest } = unpackSave(bytes, true);
+    checkManifest(manifest);
+    return manifest;
+  },
+
+  /** A .d98 file of the running game plus the UI's state. The clock stands still while this runs (spec §18). */
+  save(name: string, ui: unknown): { bytes: Uint8Array; manifest: Manifest } {
+    const e = game();
+    const manifest: Manifest = {
+      format: SAVE_FORMAT,
+      version: SAVE_VERSION,
+      name,
+      firmName: e.firmName,
+      gameTime: e.time,
+      netWorth: e.netWorth(),
+      savedAt: Date.now(),
+    };
+    const bytes = packSave({ manifest, sim: e.exportState(), game: ui });
+    return Comlink.transfer({ bytes, manifest }, [bytes.buffer]);
+  },
+
+  setSpeed(value: number): void {
+    speed = value;
+    dirty = true;
+  },
+
+  skipToNextOpen(): void {
+    game().skipToNextOpen();
+    carry = 0;
+    changed(undefined);
+  },
+
+  /** Companies to quote in snapshots and to keep 5-minute bars for (watchlists, open quote windows). */
+  watch(ids: number[]): void {
+    watched = [...new Set(ids)];
+    engine?.watch(watched);
+    dirty = true;
+  },
+
+  placeOrder: (request: OrderRequest) => changed(game().placeOrder(request)),
+  cancelOrder: (id: number) => changed(game().cancelOrder(id)),
+  estimate: (request: OrderRequest) => game().estimate(request),
+  bars: (id: number, timeframe: Timeframe) => game().bars(id, timeframe),
+  details: (id: number) => game().details(id),
+  ledger: () => game().ledger(),
+  orders: () => game().orders(),
+  closedPositions: () => game().closedPositions(),
+  stats: () => game().stats(),
+};
+
+export type SimulationApi = typeof api;
+
+setInterval(tick, TICK_MS);
+Comlink.expose(api);

@@ -1,11 +1,21 @@
 import { create } from 'zustand';
 import { APPS, type AppId } from '../apps/catalog';
+import type { ChartType } from '../charts/PriceChart';
+import type { Timeframe } from '../sim/types';
 
 export interface Bounds {
   x: number;
   y: number;
   width: number;
   height: number;
+}
+
+/** What a window shows: the company of a quote window, the panel My Computer opens on. */
+export interface WindowParams {
+  company?: number;
+  view?: string;
+  timeframe?: Timeframe;
+  chart?: ChartType;
 }
 
 export interface WindowState {
@@ -16,6 +26,9 @@ export interface WindowState {
   z: number;
   minimized: boolean;
   maximized: boolean;
+  params?: WindowParams;
+  /** Replaces the app's title: quote windows show their company. */
+  title?: string;
 }
 
 interface WindowsStore {
@@ -27,12 +40,14 @@ interface WindowsStore {
   zCounter: number;
   idCounter: number;
 
-  open(appId: AppId): string;
+  /** Opens a window, or focuses the app's open one (for a quote window: the one showing the same company). */
+  open(appId: AppId, params?: WindowParams, title?: string): string;
   close(id: string): void;
   focus(id: string): void;
   minimize(id: string): void;
   toggleMaximize(id: string): void;
   setBounds(id: string, bounds: Bounds): void;
+  setParams(id: string, params: WindowParams): void;
   /** Taskbar button behaviour: restore if minimised, minimise if active, otherwise focus. */
   taskbarClick(id: string): void;
   setArea(width: number, height: number): void;
@@ -69,15 +84,16 @@ export const useWindows = create<WindowsStore>()((set, get) => {
     zCounter: 0,
     idCounter: 0,
 
-    open(appId) {
+    open(appId, params, title) {
       const { windows, lastBounds, area, idCounter } = get();
       const app = APPS[appId];
-      if (!app.multiInstance) {
-        const existing = windows.find((w) => w.appId === appId);
-        if (existing) {
-          raise(existing.id);
-          return existing.id;
-        }
+      const existing = windows.find(
+        (w) => w.appId === appId && (!app.multiInstance || (params?.company !== undefined && w.params?.company === params.company)),
+      );
+      if (existing) {
+        raise(existing.id);
+        if (params) update(existing.id, () => ({ params }));
+        return existing.id;
       }
 
       const last = lastBounds[appId];
@@ -109,7 +125,7 @@ export const useWindows = create<WindowsStore>()((set, get) => {
       set({
         idCounter: idCounter + 1,
         zCounter: z,
-        windows: [...windows, { id, appId, bounds, z, minimized: false, maximized: false }],
+        windows: [...windows, { id, appId, bounds, z, minimized: false, maximized: false, params, title }],
       });
       return id;
     },
@@ -144,6 +160,10 @@ export const useWindows = create<WindowsStore>()((set, get) => {
       if (!w) return;
       update(id, () => ({ bounds }));
       set((s) => ({ lastBounds: { ...s.lastBounds, [w.appId]: bounds } }));
+    },
+
+    setParams(id, params) {
+      update(id, (w) => ({ params: { ...w.params, ...params } }));
     },
 
     taskbarClick(id) {

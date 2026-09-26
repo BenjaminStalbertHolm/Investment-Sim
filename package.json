@@ -13,9 +13,14 @@
   },
   "dependencies": {
     "@noble/hashes": "^2.4.0",
+    "@tanstack/react-virtual": "^3.14.13",
     "@thi.ng/bitstream": "^2.4.55",
     "98.css": "^0.1.21",
+    "comlink": "^4.4.2",
+    "fflate": "^0.8.3",
+    "idb-keyval": "^6.3.0",
     "js-crc": "^0.3.1",
+    "lightweight-charts": "^5.2.1",
     "pure-rand": "^8.4.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -26,6 +31,8 @@
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "fake-indexeddb": "^6.2.5",
+    "fast-check": "^4.10.2",
     "typescript": "^5.9.3",
     "vite": "^8.3.1",
     "vitest": "^5.0.2"

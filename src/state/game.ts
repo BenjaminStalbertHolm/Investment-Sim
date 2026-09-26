@@ -1,0 +1,236 @@
+import * as Comlink from 'comlink';
+import { useEffect, useState } from 'react';
+import { create } from 'zustand';
+import type { AppId } from '../apps/catalog';
+import { formatDate, dayOf } from '../sim/calendar';
+import { simulation } from '../sim/client';
+import type { NewGameOptions } from '../sim/engine';
+import { DIFFICULTIES } from '../sim/settings';
+import type { Directory, Snapshot } from '../sim/types';
+import { cleanUp, listSaves, nextAutosave, readSave, writeSave, type SaveSlot } from './saves';
+import { useShell, type Speed } from './shell';
+import { newTradeState, useTrade, type TradeTab, type Watchlist } from './trade';
+import { useWindows, type Bounds, type WindowState } from './windows';
+
+/** The running game as the UI sees it: the market from the worker's snapshots, and the save slot in use. */
+interface GameStore {
+  ready: boolean;
+  /** What the game is busy doing ("Saving…"), shown in the tray. */
+  busy?: string;
+  /** Latest broker or system notice, shown briefly in the tray. */
+  notice?: { text: string; at: number };
+  /** An error for a message box. */
+  alert?: string;
+  /** Slot the game was loaded from or last saved to; Ctrl+S saves there. */
+  slot?: { id: string; name: string };
+  seed: string;
+  firmName: string;
+  directory: Directory;
+  snapshot?: Snapshot;
+}
+
+export const useGame = create<GameStore>()(() => ({
+  ready: false,
+  seed: '',
+  firmName: '',
+  directory: { tickers: [], names: [], industries: [] },
+}));
+
+/** The UI's half of a save (spec §18 GameState): windows, desktop, tray and the Trade app's watchlists. */
+export interface GameState {
+  windows: { windows: WindowState[]; lastBounds: Partial<Record<AppId, Bounds>>; zCounter: number; idCounter: number };
+  shell: { iconPositions: Record<string, { x: number; y: number }>; speed: Speed; tickerTape: boolean };
+  trade: { watchlists: Watchlist[]; active: string; tab: TradeTab };
+}
+
+export function gameState(): GameState {
+  const { windows, lastBounds, zCounter, idCounter } = useWindows.getState();
+  const { iconPositions, speed, tickerTape } = useShell.getState();
+  const { watchlists, active, tab } = useTrade.getState();
+  return { windows: { windows, lastBounds, zCounter, idCounter }, shell: { iconPositions, speed, tickerTape }, trade: { watchlists, active, tab } };
+}
+
+const notify = (text: string) => useGame.setState({ notice: { text, at: Date.now() } });
+export const showError = (error: unknown) => useGame.setState({ alert: error instanceof Error ? error.message : String(error) });
+
+/** A fresh world seed. Seeds are shareable text; only the choice of a new one uses the platform's randomness. */
+export const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0].toString(36).toUpperCase().padStart(7, '0');
+
+let connected = false;
+let booting: Promise<void> | undefined;
+
+/** Power on: continue the most recent save, or start a new game if there is none (spec §18 quick-load). */
+export function boot(): Promise<void> {
+  // One boot at a time (React's StrictMode runs effects twice in development).
+  return (booting ??= start().finally(() => (booting = undefined)));
+}
+
+async function start(): Promise<void> {
+  useGame.setState({ ready: false });
+  if (!connected) {
+    connected = true;
+    void simulation().connect(Comlink.proxy(receive));
+    useTrade.subscribe(syncWatch);
+    useWindows.subscribe(syncWatch);
+  }
+  await cleanUp().catch(() => undefined);
+  const latest = (await listSaves().catch(() => [])).sort((a, b) => b.savedAt - a.savedAt)[0];
+  if (latest) {
+    try {
+      return await loadGame(latest.id);
+    } catch (error) {
+      showError(error);
+    }
+  }
+  await newGame({ seed: randomSeed(), settings: DIFFICULTIES.medium, firmName: 'Garage Capital' });
+}
+
+export async function newGame(options: NewGameOptions): Promise<void> {
+  useGame.setState({ busy: 'Installing market…' });
+  const started = await simulation().newGame(options);
+  useWindows.getState().closeAll();
+  useTrade.setState(newTradeState());
+  useGame.setState({ ...started, ready: true, busy: undefined, slot: undefined, snapshot: undefined });
+  resume();
+}
+
+export async function loadGame(id: string): Promise<void> {
+  useGame.setState({ busy: 'Loading…' });
+  try {
+    const loaded = await simulation().load(await readSave(id));
+    const ui = loaded.game as GameState;
+    useWindows.setState(ui.windows);
+    useShell.setState(ui.shell);
+    useTrade.setState({ ...ui.trade, ticket: newTradeState().ticket });
+    // Ctrl+S goes back to a manual slot; after loading an autosave it starts a new one.
+    const saved = (await listSaves()).find((s) => s.id === id);
+    const { directory, seed, firmName } = loaded;
+    useGame.setState({ directory, seed, firmName, ready: true, slot: saved && !saved.auto ? { id, name: saved.name } : undefined });
+    resume();
+  } finally {
+    useGame.setState({ busy: undefined });
+  }
+}
+
+/**
+ * Saves the game (spec §18): to the slot given, else the one in use (Ctrl+S), else a new one named after the firm
+ * and the game date. The worker stops the clock while it packs the file.
+ */
+export async function saveGame(target?: { id: string; name: string }): Promise<SaveSlot | undefined> {
+  const { firmName, snapshot } = useGame.getState();
+  const slot = target ??
+    useGame.getState().slot ?? { id: `save-${Date.now()}`, name: `${firmName} ${formatDate(dayOf(snapshot?.time ?? 0))}` };
+  const saved = await write(slot.id, slot.name, false);
+  if (saved) {
+    useGame.setState({ slot });
+    notify(`Game saved to C:\\Saves\\${slot.name}`);
+  }
+  return saved;
+}
+
+/** Every game week (spec §18): into the oldest of the three autosave slots. */
+async function autosave(): Promise<void> {
+  const id = nextAutosave(await listSaves());
+  await write(id, `Autosave ${id.slice(-1)}`, true);
+}
+
+async function write(id: string, name: string, auto: boolean): Promise<SaveSlot | undefined> {
+  if (useGame.getState().busy) return undefined;
+  useGame.setState({ busy: 'Saving…' });
+  try {
+    const { bytes, manifest } = await simulation().save(name, gameState());
+    const { savedAt, gameTime, firmName, netWorth } = manifest;
+    return await writeSave({ id, name, auto, savedAt, gameTime, firmName, netWorth }, bytes);
+  } catch (error) {
+    showError(error);
+    return undefined;
+  } finally {
+    useGame.setState({ busy: undefined });
+  }
+}
+
+/** Adds a .d98 file (from the file picker or dropped on the desktop) to C:\Saves\ and loads it. */
+export async function importSave(file: File): Promise<void> {
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const manifest = await simulation().inspect(bytes);
+    const id = `import-${Date.now()}`;
+    const { gameTime, firmName, netWorth } = manifest;
+    const name = file.name.replace(/\.d98$/i, '') || manifest.name;
+    await writeSave({ id, name, auto: false, savedAt: Date.now(), gameTime, firmName, netWorth }, bytes);
+    await loadGame(id);
+  } catch (error) {
+    showError(error instanceof Error && /zip|invalid/i.test(error.message) ? 'This is not a Majorsoft Doors 98 saved game.' : error);
+  }
+}
+
+/** Downloads a slot as a .d98 file (spec §18). */
+export async function exportSave(slot: SaveSlot): Promise<void> {
+  const url = URL.createObjectURL(new Blob([(await readSave(slot.id)) as BlobPart], { type: 'application/octet-stream' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${slot.name.replace(/[\\/:*?"<>|]/g, '_')}.d98`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+export function setSpeed(speed: Speed): void {
+  useShell.getState().setSpeed(speed);
+  void simulation().setSpeed(speed);
+}
+
+export const skipToNextOpen = () => void simulation().skipToNextOpen();
+
+/** Opens a company's quote window (spec §12.1). */
+export function openQuote(company: number): void {
+  const { tickers, names } = useGame.getState().directory;
+  useWindows.getState().open('quote', { company }, `${tickers[company]} — ${names[company]}`);
+}
+
+/** Data fetched from the worker (ledger, order history…), refetched whenever the account changes. */
+export function useAccountData<T>(fetch: () => Promise<T>): T | undefined {
+  const revision = useGame((s) => s.snapshot?.revision);
+  const [data, setData] = useState<T>();
+  useEffect(() => {
+    let current = true;
+    void fetch().then((d) => current && setData(d));
+    return () => {
+      current = false;
+    };
+    // The fetch function is recreated on every render; the revision says when to call it.
+  }, [revision]);
+  return data;
+}
+
+function resume(): void {
+  lastWatch = '';
+  syncWatch();
+  void simulation().setSpeed(useShell.getState().speed);
+}
+
+function receive(snapshot: Snapshot): void {
+  useGame.setState({ snapshot });
+  const { tickers } = useGame.getState().directory;
+  for (const event of snapshot.events) {
+    if (event.kind === 'close' && event.weekEnd) void autosave();
+    else if (event.kind === 'halt') notify('Trading halted: the MAJOR 500 is down 10% today.');
+    else if (event.kind === 'fill') {
+      const verb = event.side === 'buy' ? 'Bought' : 'Sold';
+      notify(`${verb} ${event.shares.toLocaleString('en-US')} ${tickers[event.company]} at $${event.price.toFixed(2)}`);
+    }
+  }
+}
+
+let lastWatch = '';
+
+/** Tells the worker which companies to quote: watchlists, open quote windows and the order ticket's. */
+function syncWatch(): void {
+  const { watchlists, ticket } = useTrade.getState();
+  const ids = new Set(watchlists.flatMap((w) => w.companies));
+  for (const w of useWindows.getState().windows) if (w.params?.company !== undefined) ids.add(w.params.company);
+  if (ticket.company !== undefined) ids.add(ticket.company);
+  const key = [...ids].sort((a, b) => a - b).join();
+  if (key === lastWatch || !useGame.getState().ready) return;
+  lastWatch = key;
+  void simulation().watch([...ids]);
+}

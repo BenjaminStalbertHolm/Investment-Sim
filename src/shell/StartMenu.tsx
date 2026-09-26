@@ -1,9 +1,10 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { PROGRAMS, type AppId } from '../apps/catalog';
 import { Icon, type IconName } from '../art/icons';
-import { useWindows } from '../state/windows';
+import { useTrade } from '../state/trade';
+import { useWindows, type WindowParams } from '../state/windows';
 
-// My Computer panels (§17); each opens My Computer until the panels exist.
+// My Computer panels (§17), opened on the panel of the same name.
 const SETTINGS = ['Display', 'Sounds', 'Game', 'Firm', 'Saves'];
 
 export function StartMenu({ onClose }: { onClose(): void }) {
@@ -22,9 +23,14 @@ export function StartMenu({ onClose }: { onClose(): void }) {
     };
   }, [onClose]);
 
-  const launch = (id: AppId) => () => {
+  const launch = (id: AppId, params?: WindowParams) => () => {
     onClose();
-    useWindows.getState().open(id);
+    useWindows.getState().open(id, params);
+  };
+  // Find: the Trade app's symbol lookup (the full screener comes later).
+  const find = () => {
+    useTrade.getState().setTab('quotes');
+    launch('trade')();
   };
 
   return (
@@ -43,10 +49,10 @@ export function StartMenu({ onClose }: { onClose(): void }) {
         </Item>
         <Item icon="settings" label="Settings">
           {SETTINGS.map((s) => (
-            <Item key={s} icon="computer" label={s} small onClick={launch('mycomputer')} />
+            <Item key={s} icon="computer" label={s} small onClick={launch('mycomputer', { view: s.toLowerCase() })} />
           ))}
         </Item>
-        <Item icon="find" label="Find" onClick={launch('trade')} />
+        <Item icon="find" label="Find" onClick={find} />
         <Item icon="help" label="Help" onClick={launch('help')} />
         <Item icon="run" label="Run…" onClick={launch('run')} />
         <li className="menu-separator" />

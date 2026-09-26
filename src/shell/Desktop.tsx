@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Rnd } from 'react-rnd';
 import { DESKTOP_ICONS, type DesktopIconDef } from '../apps/catalog';
 import { Icon } from '../art/icons';
+import { importSave } from '../state/game';
 import { useShell } from '../state/shell';
+import { useTrade } from '../state/trade';
 import { activeWindowId, useWindows } from '../state/windows';
 import { Window } from './Window';
 
@@ -25,7 +27,18 @@ export function Desktop() {
   const perColumn = Math.max(1, Math.floor(area.height / CELL));
 
   return (
-    <div className="desktop" ref={ref} onMouseDown={(e) => e.target === e.currentTarget && setSelected(undefined)}>
+    <div
+      className="desktop"
+      ref={ref}
+      onMouseDown={(e) => e.target === e.currentTarget && setSelected(undefined)}
+      // A .d98 file dropped on the desktop is imported and loaded (spec §18).
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        if (file) void importSave(file);
+      }}
+    >
       {DESKTOP_ICONS.map((icon, i) => (
         <DesktopIcon
           key={icon.id}
@@ -50,7 +63,10 @@ function DesktopIcon(props: {
 }) {
   const { icon, selected, onSelect } = props;
   const position = useShell((s) => s.iconPositions[icon.id]) ?? props.fallback;
-  const open = () => useWindows.getState().open(icon.opens);
+  const open = () => {
+    if (icon.tab) useTrade.getState().setTab(icon.tab);
+    useWindows.getState().open(icon.opens);
+  };
 
   return (
     <Rnd

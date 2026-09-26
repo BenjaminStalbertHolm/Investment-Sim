@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { APPS, type AppId } from '../catalog';
 import { Icon } from '../../art/icons';
+import { openQuote, useGame } from '../../state/game';
 import { useWindows } from '../../state/windows';
 import type { AppProps } from '../types';
 
@@ -9,8 +10,15 @@ export function resolveRunTarget(input: string): AppId | undefined {
   const q = input.trim().toLowerCase();
   if (!q) return undefined;
   if (/^https?:\/\/|^www\.|\.(com|net|org|gov)\b/.test(q)) return 'browser';
-  const apps = Object.values(APPS).filter((a) => !a.dialog);
+  // Quote windows need a company: they open from a ticker instead.
+  const apps = Object.values(APPS).filter((a) => !a.dialog && a.id !== 'quote');
   return (apps.find((a) => a.id === q) ?? apps.find((a) => a.title.toLowerCase().startsWith(q)))?.id;
+}
+
+/** The company whose ticker was typed, if any. */
+export function findTicker(tickers: readonly string[], input: string): number | undefined {
+  const i = tickers.indexOf(input.trim().toUpperCase());
+  return i < 0 ? undefined : i;
 }
 
 export default function RunDialog({ windowId }: AppProps) {
@@ -19,13 +27,15 @@ export default function RunDialog({ windowId }: AppProps) {
   const { open, close } = useWindows.getState();
 
   const run = () => {
-    const target = resolveRunTarget(text);
-    if (!target) {
+    const company = findTicker(useGame.getState().directory.tickers, text);
+    const target = company === undefined ? resolveRunTarget(text) : undefined;
+    if (company === undefined && !target) {
       setError(`Cannot find '${text}'. Make sure you typed the name correctly, and then try again.`);
       return;
     }
     close(windowId);
-    open(target);
+    if (company !== undefined) openQuote(company);
+    else open(target!);
   };
 
   return (
@@ -38,7 +48,7 @@ export default function RunDialog({ windowId }: AppProps) {
     >
       <div className="dialog-row">
         <Icon name="run" />
-        <p>Type the name of a program, and Doors will open it for you.</p>
+        <p>Type the name of a program or a ticker symbol, and Doors will open it for you.</p>
       </div>
       <div className="field-row">
         <label htmlFor={`${windowId}-open`}>Open:</label>

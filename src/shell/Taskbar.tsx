@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { APPS } from '../apps/catalog';
 import { Icon } from '../art/icons';
+import { formatClock } from '../sim/calendar';
+import { setSpeed, skipToNextOpen, useGame } from '../state/game';
 import { useShell, type Speed } from '../state/shell';
 import { activeWindowId, useWindows } from '../state/windows';
 import { StartMenu } from './StartMenu';
@@ -24,10 +26,10 @@ export function Taskbar() {
             key={w.id}
             className={`taskbar-window${w.id === activeId ? ' pressed' : ''}`}
             onClick={() => useWindows.getState().taskbarClick(w.id)}
-            title={APPS[w.appId].title}
+            title={w.title ?? APPS[w.appId].title}
           >
             <Icon name={APPS[w.appId].icon} size={16} />
-            <span>{APPS[w.appId].title}</span>
+            <span>{w.title ?? APPS[w.appId].title}</span>
           </button>
         ))}
       </div>
@@ -44,11 +46,33 @@ const SPEEDS: { speed: Speed; label: string }[] = [
   { speed: 20, label: '20×' },
 ];
 
-// Static for Phase 1: the game clock and market status go live with the engine in Phase 3.
+/** Game clock, market status light, speed controls and ticker toggle (spec §4). */
 function Tray() {
   const speed = useShell((s) => s.speed);
+  const tickerTape = useShell((s) => s.tickerTape);
+  const snapshot = useGame((s) => s.snapshot);
+  const busy = useGame((s) => s.busy);
+  const phase = snapshot?.halted ? 'halted' : snapshot?.phase;
+  const light = phase === 'open' ? 'open' : phase === 'pre' ? 'pre' : 'closed';
+  const status =
+    phase === 'halted'
+      ? 'Trading halted until tomorrow'
+      : phase === 'open'
+        ? 'Market open'
+        : phase === 'pre'
+          ? 'Pre-market: orders wait for the open'
+          : `Market closed${snapshot?.holiday ? ` for ${snapshot.holiday}` : ''}`;
+
   return (
     <div className="tray status-bar-field">
+      {busy ? <span className="tray-busy">{busy}</span> : <Notice />}
+      <button
+        className={`tray-icon${tickerTape ? ' pressed' : ''}`}
+        title="Ticker tape"
+        onClick={() => useShell.getState().toggleTickerTape()}
+      >
+        <Icon name="trade" size={16} />
+      </button>
       <button className="tray-icon" title="Outbox Express — no new mail" onClick={() => useWindows.getState().open('mail')}>
         <Icon name="mail" size={16} />
       </button>
@@ -57,16 +81,33 @@ function Tray() {
           <button
             key={s.speed}
             className={speed === s.speed ? 'pressed' : ''}
-            onClick={() => useShell.getState().setSpeed(s.speed)}
+            onClick={() => setSpeed(s.speed)}
             title={s.speed === 0 ? 'Pause' : `${s.speed}× speed`}
           >
             {s.label}
           </button>
         ))}
-        <button disabled title="Skip to next open">⏭</button>
+        <button disabled={!snapshot || !!busy} onClick={skipToNextOpen} title="Skip to next open">
+          ⏭
+        </button>
       </div>
-      <span className="market-light open" title="Market open" />
-      <span className="tray-clock">Mon 05 Jan 1998 10:42</span>
+      <span className={`market-light ${light}`} title={status} />
+      <span className="tray-clock" title={status}>
+        {snapshot ? formatClock(snapshot.time) : 'Starting…'}
+      </span>
     </div>
   );
+}
+
+/** The latest fill or save message, for a few seconds. */
+function Notice() {
+  const notice = useGame((s) => s.notice);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!notice) return;
+    setVisible(true);
+    const timer = setTimeout(() => setVisible(false), 5000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+  return visible && notice ? <span className="tray-notice">{notice.text}</span> : null;
 }
