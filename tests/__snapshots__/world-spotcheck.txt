@@ -1,0 +1,879 @@
+Software — 618 companies
+  IMB  IMB                                    IT Services                New York, United States          Mega   $230.7B   $138.24   Adaeze Diop, 47, suitAndTie            lightning on turquoiseNavy
+  SFRC Salesfarce                             Enterprise Software        San Francisco, United States     Mega   $252.6B   $149.37   Heidi Ozturk, 61, suitAndTie           chip on purpleGold
+  HYPR Hypercore                              Security                   Austin, United States            Large   $38.9B   $101.41   Suresh Collins, 46, suitAndTie         gear on blackWhite
+  DGPL Digiplex                               Security                   Sao Paulo, Brazil                Large   $29.7B   $140.94   Victoria Fox, 55, powerSuit            chip on walnutGold
+  BYTK Bytetek                                Databases                  Sao Paulo, Brazil                Mid      $8.2B    $22.40   Ivan Williamson, 43, flannel           globe on steelGrey
+  CMPC Compucore Consulting                   Security                   Seattle, United States           Mid      $3.7B    $50.51   Roger Hayashi, 63, polo                arrowUp on plumSilver
+  DGTC Digitech                               Enterprise Software        San Francisco, United States     Mid      $3.9B    $26.92   Jane Ito, 49, turtleneck               owl on petrolCream
+  CDTN Codetek Networks                       Databases                  Seattle, United States           Mid      $2.5B    $31.13   Victoria Iyer, 43, suitAndTie          arrowUp on cobaltOrange
+  CGNC Cognicom Corp.                         Consumer Software          Austin, United States            Small    $1.3B    $34.63   Lucia Spencer, 39, turtleneck          globe on tealWhite
+  VRMS VRM Solutions                          Security                   San Jose, United States          Small    $885M    $11.60   Montgomery Chambers, 61, suspenders    arrowUp on graphiteYellow
+  HYPL Hypernet Labs                          Consumer Software          London, United Kingdom           Small    $375M    $26.66   Priya Horton, 46, fleeceVest           owl on chocolateCream
+  UNQL Universal Quantum Labs                 Enterprise Software        San Jose, United States          Micro    $242M    $13.94   Henry Park, 39, suitAndTie             star on magentaBlack
+  GGLN Gigalink                               Developer Tools            San Francisco, United States     Micro    $208M     $3.56   Elif Pedersen, 50, fleeceVest          star on navyGold
+  NTDC National Data Consulting               Consumer Software          Seattle, United States           Micro    $166M    $13.67   Rafael Ortiz, 49, threePiece           star on tealBlack
+  BMBN BMB Networks                           Security                   Austin, United States            Micro    $171M     $6.68   Wendy Price, 49, fleeceVest            lightning on seafoamGrey
+  GKI  Great Kernel International             Enterprise Software        Dallas, United States            Micro    $132M    $11.26   Judith Iyer, 39, turtleneck            arrowUp on aquaPurple
+  ADMS Advanced Micro Solutions               Databases                  Seattle, United States           Micro     $95M    $22.62   Aroha Leung, 35, suitAndTie            atom on turquoiseNavy
+  HLVS Hallvard Software                      Databases                  Houston, United States           Micro     $53M     $2.74   Mikael Sullivan, 37, turtleneck        gear on denimCream
+  DVT  DVT Software                           Enterprise Software        San Jose, United States          Nano      $13M     $8.93   Eleni Day, 42, cardigan                atom on slateCyan
+  RLN  Reliable Nexus Inc.                    Developer Tools            Boston, United States            Nano       $6M     $2.37   Daniel Bowman, 52, suitAndTie          owl on silverNavy
+
+Semiconductors — 307 companies
+  AMCD Advanced Macro Devices                 Chip Design                San Jose, United States          Mega   $293.7B   $172.72   Beatriz Barker, 58, suitAndTie         drop on whiteBlack
+  LAMB Lamb Research                          Equipment                  San Jose, United States          Mega   $132.1B   $176.09   Heather Wisniewski, 32, turtleneck     star on emeraldWhite
+  INCS Ionchip Systems                        Microcontrollers           Taipei, Taiwan                   Mid      $9.9B    $70.20   Sven Blair, 35, polo                   chip on forestGold
+  SMDY Semidyne                               Equipment                  San Jose, United States          Mid      $9.9B    $40.82   Alice Kato, 33, turtleneck             lightning on steelGrey
+  DHT  Dahl Technologies                      Foundry                    Eindhoven, Netherlands           Mid      $4.1B    $55.11   Wanjiru Malone, 55, hoodie             gear on navyWhite
+  KCHC Koch Circuits                          Microcontrollers           Hsinchu, Taiwan                  Small    $2.0B     $9.56   Amir Gilbert, 59, threePiece           chip on cherryNavy
+  CHPX Chipix                                 Foundry                    Seoul, South Korea               Small    $1.8B    $84.38   Olivia Iyer, 40, hoodie                gear on walnutGold
+  OPTN Optonics                               Microcontrollers           Stockholm, Sweden                Small    $1.5B     $6.68   Yoko Eriksson, 57, turtleneck          atom on navyWhite
+  HWRD Howard Corp.                           Analog                     Dallas, United States            Small    $1.3B    $37.78   Zainab Ferreira, 58, suitAndTie        gear on denimCream
+  SGNL Signaltronics                          Analog                     Helsinki, Finland                Small    $912M     $5.00   George Norton, 43, turtleneck          drop on jadeGold
+  NVI  Novak Instruments                      Equipment                  Eindhoven, Netherlands           Small    $423M    $22.40   Timo Bowman, 32, hoodie                gear on leatherCream
+  GRHM Graham Corp.                           Chip Design                San Jose, United States          Micro    $119M     $1.79   Ryan Jansen, 39, powerSuit             chip on tealBlack
+  GGTS Gigatec Semiconductors                 Equipment                  Montreal, Canada                 Micro     $77M     $3.92   Lauren Montgomery, 46, suitAndTie      chip on tealWhite
+  LGSL Logisil                                Chip Design                Austin, United States            Micro     $47M    $17.93   Timo Herrera, 43, polo                 atom on denimCream
+  DMMT Dominion Micro Technologies            Memory                     Nuuk, Greenland                  Micro     $60M    $16.12   Giulia Boone, 54, turtleneck           gear on charcoalSilver
+  CLIL Colonial Ion Labs                      Chip Design                Cairo, Egypt                     Micro     $46M    $10.73   Heike Meijer, 33, hoodie               star on graphiteYellow
+  GGLM Gigalogic Microelectronics             Equipment                  Eindhoven, Netherlands           Micro     $35M    $11.16   Russell Volkov, 32, suitAndTie         chip on inkCream
+  ISS  Intercontinental Silicon Semiconductors Foundry                    Tulsa, United States             Micro     $32M     $3.36   Aino Andrews, 41, threePiece           lightning on indigoOrange
+  CSSE Coastal Signal Electronics             Analog                     Boise, United States             Micro     $23M    $26.15   Fang Barnett, 50, threePiece           drop on oliveTan
+  PCTD Picotron Devices                       Equipment                  Taipei, Taiwan                   Nano       $3M     $1.43   Satoshi Stone, 49, turtleneck          star on royalSilver
+
+Computer Hardware — 221 companies
+  DTCA Datatec                                Printers                   New York, United States          Large   $85.3B   $188.44   Betty Garcia, 44, hawaiian             star on cyanMagenta
+  GRC  Garcia Computer                        Printers                   Taipei, Taiwan                   Large   $45.3B   $112.81   Albert Wu, 41, fleeceVest              key on greyRed
+  DTK  Datatek                                Printers                   Austin, United States            Mid      $8.8B     $7.57   Jeffrey Cohen, 33, turtleneck          gear on cobaltOrange
+  STNM Standard Micro Inc.                    Networking                 Tokyo, Japan                     Mid      $9.2B    $22.40   Barbara Yilmaz, 53, fleeceVest         star on aquaPurple
+  DRDS Drivedisk Data Systems                 Networking                 Melbourne, Australia             Mid      $4.9B     $7.29   Stephanie Lopez, 38, cardigan          star on oxbloodSilver
+  SNPL Sonoplex                               Peripherals                New York, United States          Mid      $5.7B    $66.24   Wendy Pearson, 62, fleeceVest          star on cobaltOrange
+  CMD  Compudyne Devices                      Personal Computers         San Jose, United States          Small    $1.9B    $36.70   Nancy Hogan, 41, suitAndTie            chip on midnightCyan
+  DTRN Datatronix                             Consumer Electronics       Singapore, Singapore             Small    $1.1B    $21.55   Harold Ivanov, 49, hoodie              star on petrolCream
+  DGS  Digistar                               Peripherals                Los Angeles, United States       Small    $580M    $23.74   Kofi Kaiser, 56, hoodie                lightning on inkCream
+  VDP  Videocom Peripherals                   Personal Computers         Austin, United States            Small    $499M     $5.89   Imran Harmon, 42, polo                 lightning on denimCream
+  SNTR Sonotron Inc.                          Peripherals                Rotterdam, Netherlands           Small    $456M    $40.04   Crystal Wheeler, 40, hoodie            lightning on cherryNavy
+  ERDT ERD Technologies                       Peripherals                Minneapolis, United States       Small    $470M    $45.41   Biff Carter, 48, hoodie                lightning on slateCyan
+  BYTR Bytetron Inc.                          Storage                    Austin, United States            Micro    $149M     $6.12   Siobhan Miles, 58, suitAndTie          gear on greyRed
+  MRS  Moreau Systems                         Storage                    Johannesburg, South Africa       Micro    $116M     $5.61   Goran Hoffmann, 59, hoodie             chip on tealWhite
+  BROD BRO Data Systems                       Personal Computers         Taipei, Taiwan                   Micro    $106M     $7.80   Leila Njoroge, 42, polo                lightning on royalSilver
+  OMWN OMW Networks                           Storage                    Mumbai, India                    Micro     $65M     $4.85   Evelyn Dixon, 45, threePiece           star on tealBlack
+  SVPE Sovereign Printer Electronics          Peripherals                Tokyo, Japan                     Micro     $29M    $14.92   Daniel McKenzie, 62, suitAndTie        globe on silverNavy
+  NPTC NPT Computer Corp.                     Consumer Electronics       Edinburgh, United Kingdom        Nano      $15M     $1.50   Gary Lau, 54, turtleneck               star on graphiteYellow
+  TRDS Teradisk Inc.                          Consumer Electronics       Rotterdam, Netherlands           Nano       $8M     $1.58   Skip Cho, 63, hoodie                   gear on tealBlack
+  CDBM Consolidated Drive Business Machines   Networking                 Monterrey, Mexico                Nano       $4M     $0.94   Ashley Underwood, 55, turtleneck       gear on tealBlack
+
+Internet — 303 companies
+  BABL Alibabble                              E-commerce                 Hangzhou, China                  Mega   $397.1B   $158.31   Tiffany Papadopoulos, 42, threePiece   wave on navyGold
+  MTLC Mutual Chat.com                        E-commerce                 Hangzhou, China                  Large   $18.6B    $44.11   Yoko Hosseini, 41, turtleneck          globe on silverNavy
+  YDL  Yodelzilla                             Portals                    Shanghai, China                  Mid      $8.0B     $9.02   Keith Ruiz, 44, turtleneck             globe on siennaOlive
+  ZPMN Zipmania                               Online Services            Cleveland, United States         Mid      $3.9B    $10.84   Anil Gilbert, 55, suitAndTie           owl on eggplantCream
+  PXHB Pixehub.com                            Online Services            Calgary, Canada                  Mid      $2.3B    $21.97   Luis Aguilar, 38, windbreaker          arrowUp on honeyWhite
+  PRTS Portaster                              Social                     San Francisco, United States     Small    $1.2B    $12.53   Gerald Teo, 44, fleeceVest             owl on magentaBlack
+  SRFY Surfify                                Online Services            Washington, United States        Small    $898M    $27.18   Blake Wu, 36, threePiece               wave on royalSilver
+  NBIO NBI Online                             Web Hosting                Hangzhou, China                  Small    $820M    $30.24   Penelope Hart, 62, turtleneck          globe on goldBlack
+  TORO TOR Online                             Online Services            San Jose, United States          Small    $645M     $7.29   Elif Armstrong, 41, turtleneck         arrowUp on royalSilver
+  RYII Royal Info Interactive                 Online Services            New York, United States          Small    $363M     $3.74   Kelly Whitmore, 37, threePiece         wave on violetWhite
+  PCCG PCG.com                                Social                     Atlanta, United States           Small    $410M    $16.92   Angus Palmer, 49, turtleneck           globe on amberBrown
+  IBP  IBP Internet                           Social                     New York, United States          Small    $369M    $22.18   Dennis Parata, 43, polo                owl on champagneBurgundy
+  ASCN Associated Net Group                   E-commerce                 Shanghai, China                  Micro    $269M    $21.97   Meera Bowman, 49, turtleneck           globe on purpleGold
+  LNKH Linkhub                                Online Services            Seattle, United States           Micro     $89M    $23.06   Michael Chan, 58, suspenders           owl on lavenderNavy
+  PXNT Pixenet                                E-commerce                 San Francisco, United States     Micro     $71M    $14.77   Thaddeus Wisniewski, 39, suitAndTie    arrowUp on whiteBlack
+  SKM  Seekmania                              Social                     New York, United States          Nano      $18M     $4.85   Isabel Carvalho, 62, fleeceVest        star on tealBlack
+  ERBI ERB Internet                           Online Services            San Jose, United States          Nano      $14M     $2.59   Betty Kobayashi, 60, polo              owl on royalSilver
+  SPDL Spidely Holdings                       Social                     San Francisco, United States     Nano       $5M     $2.39   Howard Kapoor, 53, hoodie              wave on ochreTeal
+  SJKW SJK Web Services                       Online Services            Austin, United States            Nano       $4M     $1.37   Heather Powers, 55, polo               wave on magentaBlack
+  NTLN Netland                                Web Hosting                Shenzhen, China                  Nano       $3M     $2.05   Carl Moyo, 46, cardigan                owl on siennaOlive
+
+Telecom — 181 companies
+  SVRC Sovereign Communications               Long Distance              Vienna, Austria                  Mid      $7.6B   $112.81   Tatiana Townsend, 47, cardigan         globe on inkCream
+  CSTT Cascade Telephone & Telegraph          Wireless                   Tokyo, Japan                     Small    $1.4B     $2.93   Amanda Okafor, 47, threePiece          star on violetWhite
+  DMEW Diamond Echo Wireless                  Pagers                     Dallas, United States            Small    $1.5B     $7.22   Eleni Thorsen, 54, tuxedo              star on purpleGold
+  HRTC Heritage Communications                Pagers                     New York, United States          Small    $1.1B    $39.27   Anders Cannon, 43, threePiece          lightning on navyGold
+  RYTT Royal Telephone & Telegraph            Cable                      Stockholm, Sweden                Small    $998M    $11.05   Svetlana Webster, 58, powerSuit        globe on kellyYellow
+  HRP  Heritage Paging                        Long Distance              Dallas, United States            Small    $784M    $21.97   Giuseppe Beck, 44, hawaiian            wave on steelGrey
+  DST  Dominion Signal Telephone & Telegraph  Local Exchange             San Francisco, United States     Small    $706M     $9.93   Lauren Okafor, 45, suitAndTie          tower on blackWhite
+  ATDT Atlas Dial Telephone                   Local Exchange             Tokyo, Japan                     Small    $522M    $26.41   Jacqueline Lucas, 41, suspenders       wave on silverNavy
+  SPLC Superior Link Cable                    Wireless                   Austin, United States            Small    $303M    $33.31   Ruth Singh, 61, turtleneck             wave on maroonCream
+  STNT Standard Telephone                     Local Exchange             Stockholm, Sweden                Micro    $294M    $12.05   Sanne Mendoza, 51, threePiece          globe on tealWhite
+  TRN  Transcontinental Group                 Cable                      St. Petersburg, Russia           Micro    $299M     $6.74   Hannah Korhonen, 54, suitAndTie        lightning on brickGrey
+  DTT  Dakota Telephone & Telegraph           Wireless                   Denver, United States            Micro    $202M    $23.74   Pedro Caldwell, 61, hoodie             globe on lavenderNavy
+  ESEW Eastern Echo Wireless                  Local Exchange             Montreal, Canada                 Micro    $196M    $23.06   Francesca Sharma, 51, fleeceVest       lightning on inkCream
+  TLN  Telnet                                 Pagers                     Tokyo, Japan                     Micro    $132M     $3.63   Klaus Braun, 49, suspenders            star on midnightCyan
+  CMTT Compass Telephone & Telegraph          Cable                      Dallas, United States            Micro     $99M     $3.77   Malcolm Ngata, 47, suitAndTie          wave on rustCream
+  AERT AER Telecom                            Long Distance              Tokyo, Japan                     Micro     $94M     $8.26   Catherine Buchanan, 41, suitAndTie     tower on midnightCyan
+  MSTT Modern Spectrum Telephone & Telegraph  Wireless                   Jakarta, Indonesia               Micro     $83M    $13.54   Angela Hopkins, 60, windbreaker        lightning on purpleGold
+  CMLN Comlink                                Pagers                     Vancouver, Canada                Micro     $63M    $41.62   Evelyn Marshall, 32, suitAndTie        tower on charcoalSilver
+  WVNT Wavenet                                Pagers                     San Jose, United States          Nano      $12M     $4.40   Jean Briggs, 49, suitAndTie            star on aquaPurple
+  ECHW Echowave                               Long Distance              Dallas, United States            Nano       $9M     $4.24   Susan Fields, 56, threePiece           lightning on oxbloodSilver
+
+Banks — 696 companies
+  CBNK Commonwealth Bonk                      Regional                   Sydney, Australia                Mega   $153.6B   $294.15   Julia Farmer, 56, fleeceVest           coin on brickGrey
+  WSTB Western Banking Co.                    Regional                   Hangzhou, China                  Large   $42.6B   $193.99   Laura Cunningham, 37, suitAndTie       coin on charcoalSilver
+  ALNB Allen Banking Corp.                    Regional                   Toronto, Canada                  Mid      $2.9B    $16.27   Fernanda Howell, 48, suspenders        coin on emeraldWhite
+  CHSB Chesapeake Bancorp                     Investment Banking         Zurich, Switzerland              Small    $1.2B    $17.41   Samantha Stevenson, 32, threePiece     tower on rustCream
+  WHSB Walker & Hallvard Savings Bank         Community Banking          New York, United States          Small    $1.1B     $7.57   Mei Kulkarni, 41, suitAndTie           pillar on eggplantCream
+  ERKF Eriksson Financial                     Money Center               Miami, United States             Small    $968M    $20.14   Boris Ngata, 48, threePiece            key on honeyWhite
+  HDSB Hudson Bancshares                      Private Banking            Frankfurt, Germany               Small    $940M    $15.36   Gwendolyn Kimura, 37, turtleneck       coin on hunterCream
+  HRFS Hernandez Federal Savings              Private Banking            Tokyo, Japan                     Small    $484M    $25.65   Yannis Tanaka, 42, flannel             lion on emeraldWhite
+  OSSB Old Superior Savings Bank              Investment Banking         Tulsa, United States             Small    $449M    $28.53   Linda Tesfaye, 61, cardigan            crown on mustardNavy
+  KMIB Kim Bancshares                         Private Banking            Tokyo, Japan                     Small    $347M     $5.14   Imran Townsend, 56, suitAndTie         key on navyGold
+  ZNSL Zenith Savings & Loan                  Savings & Loan             New York, United States          Micro    $174M     $3.85   Ute Morton, 55, suitAndTie             lion on indigoOrange
+  HREF Heritage Exchange Financial            Investment Banking         Charlotte, United States         Micro     $98M     $6.36   Irina Mutasa, 53, suitAndTie           tower on steelGrey
+  KNB  King Banking Corp.                     Private Banking            New York, United States          Micro     $92M    $34.29   Jun Durand, 34, threePiece             key on silverNavy
+  LWBT Lewis Bank & Trust                     Savings & Loan             Indianapolis, United States      Micro     $75M     $6.61   Nicole Dean, 51, suspenders            tower on goldBlack
+  GNKT Gonzalez & Kobayashi Trust             Community Banking          Atlanta, United States           Micro     $71M    $17.41   Olaf Lewis, 35, suitAndTie             pillar on indigoOrange
+  NRSB Northern Security Banking Co.          Regional                   Zurich, Switzerland              Micro     $62M     $7.08   Nikos Parks, 52, threePiece            lion on midnightCyan
+  SHFS Southern Heritage Federal Savings      Investment Banking         Detroit, United States           Micro     $48M     $5.19   Ingrid Horvat, 38, suitAndTie          eagle on midnightCyan
+  OWST Owusu & Thorsen                        Money Center               Frankfurt, Germany               Micro     $36M     $6.42   Yuki Brewer, 44, threePiece            eagle on blackWhite
+  STPB Southern Piedmont Banking Co.          Community Banking          Zurich, Switzerland              Nano      $16M     $3.29   Sophia Thackeray, 53, suitAndTie       pillar on inkCream
+  ELSB Ellis Savings Bank                     Community Banking          Charlotte, United States         Nano      $15M     $2.59   Jack Rowe, 44, suitAndTie              pillar on amberBrown
+
+Insurance — 295 companies
+  IGI  Intercontinental Guardian Insurance    Property & Casualty        Cleveland, United States         Mid      $8.6B    $54.58   Jian Brown, 32, cardigan               pillar on crimsonBlack
+  SLVM Silverlake Mutual                      Health                     Hartford, United States          Mid      $8.0B    $18.10   Joshua Manning, 47, powerSuit          anchor on pineBrown
+  RSOH Ross & Henderson                       Title                      Gothenburg, Sweden               Mid      $7.2B    $27.45   Heidi Wilkins, 35, suitAndTie          pillar on whiteBlack
+  PNLC Pinnacle Life & Casualty               Health                     Hartford, United States          Mid      $4.5B    $23.51   Jun Moyo, 57, flannel                  eagle on petrolCream
+  ADL  Adams & Lund                           Life                       New York, United States          Mid      $4.3B    $23.28   Albert Tembo, 35, turtleneck           rock on oliveTan
+  CMNI Commonwealth Insurance Co.             Health                     Des Moines, United States        Mid      $2.8B   $138.24   Sylvie Korhonen, 54, suitAndTie        owl on greyRed
+  HRSC Harrison Casualty                      Life                       New York, United States          Small    $1.5B     $5.78   Jacqueline Higgins, 49, turtleneck     anchor on crimsonBlack
+  CRTM Carter Mutual                          Reinsurance                Philadelphia, United States      Small    $808M    $17.08   Ivan Powers, 52, suspenders            key on maroonCream
+  STAI Standard Anchor Indemnity              Brokers                    London, United Kingdom           Small    $695M    $46.75   Olivier Hopkins, 55, hoodie            rock on crimsonBlack
+  SVKI Sovereign Keystone Indemnity           Property & Casualty        Munich, Germany                  Small    $685M    $11.60   Beatrice Cross, 36, powerSuit          rock on pineBrown
+  CSTI Costa Indemnity                        Title                      London, United Kingdom           Small    $563M    $23.06   Julie Karimi, 36, suspenders           eagle on tealBlack
+  ILI  Ivanov Life Insurance                  Title                      Edinburgh, United Kingdom        Micro    $218M     $2.44   Tendai Lim, 63, suspenders             eagle on brickGrey
+  HRLI Harbor Life Insurance                  Property & Casualty        Hartford, United States          Micro    $168M     $7.57   Gary Carson, 53, threePiece            pillar on turquoiseNavy
+  OKI  Oakmont Insurance Co.                  Health                     Philadelphia, United States      Micro    $136M     $5.00   Imran Foster, 38, polo                 tower on cobaltOrange
+  KRHI Korhonen Insurance Group               Reinsurance                Toulouse, France                 Micro     $95M     $9.19   Farhan Pearson, 39, suitAndTie         pillar on emeraldWhite
+  VLKU Volkov Underwriters                    Life                       Osaka, Japan                     Micro     $56M     $3.70   Irina Goh, 50, threePiece              tower on slateCyan
+  DLG  Dlamini Guaranty                       Brokers                    Hamburg, Germany                 Micro     $28M     $2.54   Barnaby Bos, 49, hawaiian              tower on cobaltOrange
+  DMR  Diamond Re                             Reinsurance                Munich, Germany                  Micro     $23M     $3.77   Imogen Haile, 37, suitAndTie           pillar on greyRed
+  CRLI Crown Life Insurance                   Health                     Tokyo, Japan                     Micro     $23M     $9.46   Declan Webster, 36, suitAndTie         rock on mustardNavy
+  LRNM Laurent Mutual                         Health                     Zurich, Switzerland              Nano      $14M     $1.97   Jomo Jung, 35, polo                    eagle on scarletWhite
+
+Asset Management — 218 companies
+  GCF  Global Crest Fund Management           Wealth Management          Hong Kong, Hong Kong             Mid      $4.6B     $8.26   Fernanda Ashby, 44, threePiece         tower on inkCream
+  EMCM Empire Capital Markets                 Exchanges                  Mumbai, India                    Mid      $5.4B    $34.96   Janice Kapoor, 60, suitAndTie          arrowUp on maroonCream
+  PRKA Park Advisors                          Wealth Management          Basel, Switzerland               Mid      $3.7B     $3.59   Sanjay Santos, 50, suitAndTie          tower on tealWhite
+  ALNH Allen & Haddad                         Brokerage                  Tokyo, Japan                     Mid      $3.0B    $16.27   Sooah Sims, 59, suitAndTie             lion on rustCream
+  DLMH Dlamini & Hoffmann                     Mutual Funds               Bangalore, India                 Small    $1.9B     $3.42   Tane Fairbanks, 63, cardigan           pillar on royalSilver
+  KMP  Kumar & Pedersen                       Mutual Funds               Boston, United States            Small    $1.1B    $13.94   Alejandro Perkins, 40, suspenders      tower on purpleGold
+  CLMA Columbia Advisors                      Exchanges                  Hong Kong, Hong Kong             Small    $716M    $10.63   Thiago Lefebvre, 63, suspenders        owl on oxbloodSilver
+  BRKK Brooks & Karimi                        Exchanges                  New York, United States          Small    $491M    $18.46   Timo Parker, 59, threePiece            owl on limeBlack
+  DNCE Duncan Exchange                        Private Equity             Chicago, United States           Small    $449M     $9.56   Jun Jung, 47, powerSuit                arrowUp on navyWhite
+  KLNI Klondike Investors                     Wealth Management          Beijing, China                   Small    $392M     $4.90   Svetlana Watts, 52, suitAndTie         pillar on seafoamGrey
+  ZMRI Zimmermann Investors                   Exchanges                  Zurich, Switzerland              Small    $327M    $53.02   Grace Nielsen, 54, fleeceVest          lion on graphiteYellow
+  SNDE Sanders Exchange                       Exchanges                  Vienna, Austria                  Small    $303M     $9.28   Sophia Norton, 53, suitAndTie          arrowUp on eggplantCream
+  FSCD Fischer & DeVries                      Mutual Funds               Sydney, Australia                Small    $308M     $8.59   Ryan Aguilar, 41, threePiece           coin on denimCream
+  ICE  Imperial Crest Exchange                Mutual Funds               Boston, United States            Micro    $273M    $38.15   Hugh Chatterjee, 32, suitAndTie        pillar on greyRed
+  MAM  Mensah Asset Management                Private Equity             London, United Kingdom           Micro     $98M     $3.46   Amber Horton, 35, suitAndTie           owl on purpleGold
+  WLT  Wolf & Tran                            Brokerage                  New York, United States          Micro     $57M    $12.65   Farhan Cunningham, 46, powerSuit       pillar on maroonCream
+  VLLC Volkov & Lewis Capital                 Exchanges                  Edinburgh, United Kingdom        Micro     $34M     $3.39   Frank Wright, 40, suspenders           owl on midnightCyan
+  KNF  Kingsbridge Financial                  Wealth Management          Boston, United States            Nano      $11M     $5.95   Boris Tehrani, 39, suitAndTie          coin on greyRed
+  GBSI Gibson Investments                     Wealth Management          Rio de Janeiro, Brazil           Nano       $6M     $6.94   Pedro Wallace, 60, labCoat             coin on greyRed
+  MRWS Martin & Watson Securities             Wealth Management          Amsterdam, Netherlands           Nano       $2M    $10.43   Kofi Kealoha, 43, powerSuit            bull on mustardNavy
+
+Payments — 141 companies
+  FMRC FMR Card Co.                           Money Transfer             Charlotte, United States         Small    $1.8B     $8.93   Eero Rossi, 32, suitAndTie             lightning on navyGold
+  CNPN Coinpoint                              Card Networks              London, United Kingdom           Small    $1.7B    $58.40   Nikolai King, 50, suitAndTie           star on cyanMagenta
+  MNXP Monexpress                             Money Transfer             Hong Kong, Hong Kong             Small    $1.7B     $9.19   Jean Sims, 51, threePiece              globe on crimsonBlack
+  SWPT Swipetronix                            Card Networks              San Francisco, United States     Small    $1.2B    $13.80   Claude Tehrani, 41, flannel            globe on burgundyGold
+  MMT  Moneway Money Transfer                 Payment Processors         New York, United States          Small    $1.0B    $12.17   Jomo Beck, 41, suitAndTie              coin on brickGrey
+  TTNE Titan Express                          Consumer Finance           Dubai, United Arab Emirates      Small    $1.1B     $9.37   Janice Yoshida, 40, suspenders         lightning on chocolateCream
+  BCKC Buckcard Credit Corp.                  Money Transfer             Atlanta, United States           Small    $749M    $17.41   Evelyn Richards, 47, suspenders        coin on brickGrey
+  TNDC Tendecard                              Payment Processors         Omaha, United States             Small    $506M    $10.43   Garrett Wilson, 56, threePiece         lightning on turquoiseNavy
+  MHG  MHG Networks                           Card Networks              Omaha, United States             Small    $470M    $56.19   Ming Carson, 51, suspenders            star on goldBlack
+  DMTP Dominion Teller Processing             Consumer Finance           London, United Kingdom           Small    $416M    $13.67   Keiko Chan, 54, suitAndTie             globe on brickGrey
+  FDDE Federal Dollar Express                 Payment Processors         Atlanta, United States           Small    $392M    $31.43   Tendai Hartmann, 39, powerSuit         arrowUp on cobaltOrange
+  FNDS Fundtronix Systems                     Consumer Finance           Stockholm, Sweden                Small    $317M    $29.37   Yusuf Smit, 57, suitAndTie             key on rustCream
+  FNMT Fundpoint Money Transfer               Payment Processors         San Francisco, United States     Micro    $205M    $14.35   Amber Grant, 35, suitAndTie            arrowUp on oxbloodSilver
+  MNL  Monelink                               Payment Processors         Hartford, United States          Micro    $101M     $3.85   Giuseppe Tembo, 47, suspenders         star on steelGrey
+  WKJ  WKJ Payments                           Consumer Finance           London, United Kingdom           Micro     $50M    $43.68   Olga Bakker, 37, suitAndTie            globe on emeraldWhite
+  CHRP Chargepay Processing                   Card Networks              New York, United States          Micro     $54M    $13.41   Fergus Ross, 42, suitAndTie            arrowUp on brickGrey
+  NRTS Northern Systems                       Money Transfer             Austin, United States            Micro     $45M    $28.26   Khalid Clark, 61, suitAndTie           coin on cobaltOrange
+  LDGS Ledgepoint Systems                     Money Transfer             London, United Kingdom           Micro     $45M     $1.43   Yoko Newton, 61, fleeceVest            lightning on skyNavy
+  DMMN Dominion Money Networks                Payment Processors         Atlanta, United States           Nano       $6M     $1.92   Lars Boone, 45, polo                   lightning on brickGrey
+  HRLF Heritage Ledger Financial              Card Networks              San Francisco, United States     Nano       $4M     $0.94   Kwame Andrews, 61, threePiece          lightning on limeBlack
+
+Pharma — 226 companies
+  YNL  Young Laboratories                     Generics                   Philadelphia, United States      Large   $21.0B    $36.70   Akira Hamilton, 36, labCoat            atom on navyGold
+  RSLH Russell Health                         Specialty Pharma           Mumbai, India                    Mid      $6.3B    $25.65   Bruce Kahale, 51, cardigan             atom on tealWhite
+  MNDL Mendoza Labs                           Generics                   Indianapolis, United States      Mid      $2.2B    $10.53   Harold Lawson, 42, suitAndTie          leaf on siennaOlive
+  YMDM Yamada Medical                         Consumer Health            Copenhagen, Denmark              Small    $1.4B    $26.41   Vikram Newton, 58, fleeceVest          star on turquoiseNavy
+  TRE  Transcontinental Elixir Corp.          Consumer Health            London, United Kingdom           Small    $1.4B    $13.03   Mikael Potter, 34, cardigan            star on royalSilver
+  HLCW Holmes Chemical Works                  Generics                   Montreal, Canada                 Small    $1.2B     $9.37   Juan Guo, 47, cardigan                 pillar on midnightCyan
+  MLC  Mueller & Chen                         Specialty Pharma           Basel, Switzerland               Small    $1.4B    $22.84   Daniel Barrett, 56, suitAndTie         leaf on maroonCream
+  BLYJ Bailey & Johansson                     Animal Health              Las Vegas, United States         Small    $1.2B    $24.92   Themba Curtis, 54, powerSuit           atom on oliveTan
+  NLSH Nielsen Healthcare                     Animal Health              Philadelphia, United States      Small    $1.1B    $16.12   Dieter Morrison, 34, turtleneck        leaf on oxbloodSilver
+  CRNU Curion                                 Specialty Pharma           Calgary, Canada                  Small    $1.1B     $6.18   Bernard Vaughn, 53, turtleneck         owl on limeBlack
+  MWNW Mwangi & Wagner                        Specialty Pharma           Philadelphia, United States      Small    $885M     $6.61   Ruth Koch, 37, windbreaker             star on cherryNavy
+  TNOP Tonion Pharma                          Animal Health              Copenhagen, Denmark              Small    $580M    $76.59   Emily Ribeiro, 38, turtleneck          drop on aquaPurple
+  GJT  GJT Therapeutics                       Generics                   Auckland, New Zealand            Small    $607M    $41.22   Sooah Dunn, 59, suitAndTie             owl on purpleGold
+  PCP  Paramount Cure Pharma                  Specialty Pharma           Copenhagen, Denmark              Small    $322M    $44.11   Yan Okonkwo, 40, suitAndTie            star on eggplantCream
+  ZNT  Zenacure Therapeutics                  Big Pharma                 Kyiv, Ukraine                    Micro    $261M     $5.45   Giulia Laurent, 50, windbreaker        owl on graphiteYellow
+  GLEM Golden Elixir Medical                  Animal Health              Omaha, United States             Micro    $190M    $14.35   Martha Adams, 40, labCoat              drop on sageCharcoal
+  RDYE Reddy & Evans                          Specialty Pharma           London, United Kingdom           Micro     $43M     $3.36   Reginald Okafor, 48, suitAndTie        owl on scarletWhite
+  WLFD Wolf Drug Co.                          Big Pharma                 London, United Kingdom           Micro     $34M     $3.66   Susan Dean, 58, powerSuit              drop on aquaPurple
+  SLRH Salora Healthcare                      Animal Health              Dallas, United States            Micro     $24M     $6.94   Joshua Nkosi, 59, threePiece           star on forestGold
+  THRH Thorsen Healthcare                     Big Pharma                 New York, United States          Nano      $10M     $2.32   Thabo Zhao, 58, windbreaker            pillar on denimCream
+
+Biotech — 686 companies
+  VXT  Vaxitex                                Vaccines                   Boston, United States            Mid      $8.1B    $21.34   Arthur Gutierrez, 32, threePiece       star on violetWhite
+  GNM  Genomics                               Neurology                  San Diego, United States         Mid      $6.4B    $25.90   Biff Cummings, 32, windbreaker         star on emeraldWhite
+  PPTB Peptigene BioPharma                    Diagnostics                San Francisco, United States     Mid      $5.6B    $21.97   Imran Knight, 44, flannel              leaf on navyGold
+  MYMP Myomune Pharmaceuticals                Gene Therapy               Basel, Switzerland               Mid      $3.2B    $44.11   Tatiana Maxwell, 35, suitAndTie        flame on royalSilver
+  THP  Theromics Pharmaceuticals              Neurology                  San Francisco, United States     Mid      $2.7B    $17.93   Gerald Taylor, 37, turtleneck          star on aquaPurple
+  ZYTC Zytocell                               Gene Therapy               Basel, Switzerland               Mid      $2.5B    $41.22   Margaret Malone, 62, threePiece        atom on jadeGold
+  BLG  Biologic                               Neurology                  Dallas, United States            Mid      $2.1B   $105.42   William Diaz, 39, threePiece           leaf on aquaPurple
+  GNTH Genothera                              Oncology                   Copenhagen, Denmark              Small    $1.8B    $80.39   Tomasz Banks, 32, suspenders           drop on purpleGold
+  BCL  Biocell                                Vaccines                   San Diego, United States         Small    $1.7B    $39.65   Johan Banerjee, 42, suitAndTie         owl on forestGold
+  NCLT Nucletex                               Gene Therapy               San Diego, United States         Small    $1.7B    $23.97   Lucia Parker, 43, turtleneck           drop on royalSilver
+  TPS  Transcontinental Protein Sciences      Neurology                  Boston, United States            Small    $912M    $18.82   Diane Wong, 49, suitAndTie             star on skyNavy
+  IMNB Immunex Biologics                      Gene Therapy               Basel, Switzerland               Small    $685M    $14.21   Irina Blair, 60, threePiece            star on brickGrey
+  XNT  Xenovance Therapeutics                 Rare Diseases              Copenhagen, Denmark              Small    $635M     $7.01   Ashley Bowman, 39, suitAndTie          owl on sageCharcoal
+  GRCL Great Codon Labs                       Oncology                   Warsaw, Poland                   Small    $491M     $3.26   Selam O'Brien, 38, threePiece          owl on jadeGold
+  HMV  Hemovance                              Gene Therapy               Copenhagen, Denmark              Small    $303M    $10.63   Tomasz Wright, 63, turtleneck          drop on steelGrey
+  AMB  Amplitex Biosystems                    Vaccines                   San Diego, United States         Small    $313M    $55.11   Brock Owusu, 59, threePiece            star on royalSilver
+  PPTL Peptitex Labs                          Antibodies                 Chicago, United States           Micro     $59M    $18.28   Nomvula Thomas, 48, suitAndTie         leaf on silverNavy
+  RJNL RJN Labs                               Diagnostics                Dhahran, Saudi Arabia            Micro     $30M    $25.65   Wayne Hogan, 55, labCoat               atom on lavenderNavy
+  NLML NLM Labs                               Oncology                   Basel, Switzerland               Micro     $23M    $12.90   Mehmet Gilbert, 62, suitAndTie         drop on navyGold
+  LBAB Liberty Antibody Biologics             Neurology                  Zurich, Switzerland              Nano       $3M     $2.93   Katherine Moyo, 57, labCoat            flame on eggplantCream
+
+Medical Devices — 375 companies
+  SPRS Superior Sensor Inc.                   Imaging                    Chicago, United States           Mid      $7.2B    $28.53   Thomas Ross, 36, powerSuit             drop on jadeGold
+  VSC  Vascocore                              Orthopaedics               Boston, United States            Mid      $3.9B    $41.22   Lauren Ward, 54, powerSuit             atom on navyGold
+  CRDD Cardiodyne Diagnostics                 Cardiovascular             London, United Kingdom           Mid      $3.2B    $24.44   Chip Neumann, 60, powerSuit            gear on limeBlack
+  SRGM Surgimed                               Surgical                   Minneapolis, United States       Mid      $2.7B    $11.26   Jessica Tran, 40, cardigan             atom on cobaltOrange
+  ART  Arthrodyne                             Cardiovascular             Dublin, Ireland                  Mid      $2.3B    $40.43   Mariana Fisher, 52, cardigan           drop on sageCharcoal
+  MRMS Martin Medical Systems                 Diagnostics                Los Angeles, United States       Small    $1.7B    $23.97   Thaddeus Garrett, 55, flannel          gear on charcoalSilver
+  WNGO Wang Orthopaedics                      Imaging                    Paris, France                    Small    $1.8B    $22.18   Kari Schmidt, 53, labCoat              lightning on skyNavy
+  ENDI Endodyne Instruments                   Orthopaedics               Atlanta, United States           Small    $1.2B     $9.46   James Rossi, 43, labCoat               drop on brickGrey
+  JLOM JLO Medical Systems                    Cardiovascular             Boston, United States            Small    $954M     $4.32   Donna Takahashi, 40, suitAndTie        lightning on inkCream
+  VSMS Vascotech Medical Systems              Imaging                    Dublin, Ireland                  Small    $808M    $31.43   Rahul Asante, 46, labCoat              star on sageCharcoal
+  PPS  Premier Pulse Surgical                 Imaging                    Chicago, United States           Small    $598M    $12.90   Amanda Lindgren, 57, windbreaker       lightning on petrolCream
+  DNTV Dentovision Corp.                      Surgical                   Minneapolis, United States       Small    $347M    $28.53   Clifford Wade, 37, turtleneck          star on scarletWhite
+  ORTS Orthomed Surgical                      Cardiovascular             Houston, United States           Small    $303M    $17.58   Tane Romero, 44, cardigan              drop on limeBlack
+  STI  Stericare Imaging                      Surgical                   Denver, United States            Micro    $257M     $2.64   Carolyn Nash, 38, labCoat              drop on tealBlack
+  DNO  Dentocore Orthopaedics                 Orthopaedics               Minneapolis, United States       Micro    $253M    $32.36   Harold Thomas, 43, polo                lightning on charcoalSilver
+  TTMI Titan Monitor Instruments              Surgical                   Philadelphia, United States      Micro    $179M    $12.41   Ulrich Horton, 36, suitAndTie          atom on forestGold
+  DPGS DPG Surgical                           Dental                     Melbourne, Australia             Micro     $37M     $2.61   Tatiana Korhonen, 49, cardigan         drop on oliveTan
+  GUGL GUG Labs                               Diagnostics                Chicago, United States           Nano      $16M     $4.45   Connor Meyer, 34, windbreaker          lightning on denimCream
+  PWI  Powell Imaging                         Imaging                    Minneapolis, United States       Nano       $7M     $6.61   Barnaby Cross, 49, threePiece          gear on limeBlack
+  FNTI Fontaine Instruments                   Dental                     Santiago, Chile                  Nano       $3M     $9.74   Gregory Fairbanks, 43, cardigan        star on steelGrey
+
+Healthcare Services — 296 companies
+  ALH  Advanced Life Health Plans             Nursing Homes              Calgary, Canada                  Large  $103.8B    $63.11   Amanda Banks, 51, cardigan             sun on navyGold
+  SDN  SDN Laboratories                       Pharmacies                 Hartford, United States          Large   $28.8B   $146.51   Angus Williamson, 63, cardigan         drop on jadeGold
+  NKO  NKO Care Group                         Hospitals                  Rotterdam, Netherlands           Mid      $4.2B    $20.53   Philippa Conti, 32, suitAndTie         sun on oxbloodSilver
+  PIE  PIE Health Plans                       Laboratories               Edinburgh, United Kingdom        Mid      $4.5B    $34.96   Heather Michel, 47, suitAndTie         pillar on leatherCream
+  SVH  Sovereign Health                       Pharmacies                 Hamburg, Germany                 Mid      $3.5B   $164.56   Amara Keller, 56, powerSuit            pillar on denimCream
+  CLHH Colonial Harmony Healthcare            Pharmacies                 San Francisco, United States     Mid      $2.4B    $63.11   Lars Joshi, 57, polo                   sun on midnightCyan
+  UHMO United HMO                             Laboratories               Nashville, United States         Small    $1.8B    $83.56   Minjun Kowalski, 58, cardigan          leaf on cobaltOrange
+  NSRH Nasser Healthcare                      Managed Care               Hartford, United States          Small    $1.3B    $27.72   Ryan Bekele, 63, labCoat               sun on crimsonBlack
+  CMFC Commonwealth Family Care Group         Managed Care               Tehran, Iran                     Small    $738M    $44.54   Cornelius Webster, 54, suitAndTie      drop on navyWhite
+  ADVF Advanced Family Inc.                   Pharmacies                 Mumbai, India                    Small    $392M    $18.46   Rachel Nelson, 48, suitAndTie          star on tealBlack
+  APXH Apex Hospitals                         Managed Care               Hamburg, Germany                 Small    $337M     $3.46   Thanh Bailey, 32, suitAndTie           leaf on steelGrey
+  ERPH ERP Health Systems                     Hospitals                  Paris, France                    Small    $398M    $13.94   Rose Chikore, 52, labCoat              drop on midnightCyan
+  GLHP Golden Life Health Plans               Pharmacies                 Turin, Italy                     Micro    $299M     $8.03   Takeshi Blair, 37, cardigan            drop on forestGold
+  SPFH Superior Family Healthcare             Pharmacies                 New York, United States          Micro    $269M     $5.19   Amir Hodges, 45, polo                  star on cherryNavy
+  HRIL HRI Laboratories                       Laboratories               Hartford, United States          Micro    $156M     $1.37   Peter Joshi, 34, suspenders            pillar on cobaltOrange
+  WTNH Watanabe Healthcare                    Pharmacies                 Taipei, Taiwan                   Micro    $125M     $2.85   Gerhard Sherman, 38, hoodie            drop on midnightCyan
+  VNGH Vanguard Healthcare                    Managed Care               Minneapolis, United States       Micro     $26M     $7.36   Miguel Carson, 60, suitAndTie          leaf on royalSilver
+  SWM  SWM Care Group                         Pharmacies                 Indianapolis, United States      Nano      $14M     $1.46   Rupert Kahale, 45, labCoat             star on navyGold
+  JTCH JTC Hospitals                          Nursing Homes              Indianapolis, United States      Nano       $9M     $0.91   Reginald Nwosu, 32, suitAndTie         leaf on cherryNavy
+  ULHS Universal Life Health Systems          Laboratories               Indianapolis, United States      Nano       $3M     $1.92   Pedro Dawson, 63, suspenders           leaf on kellyYellow
+
+Oil & Gas — 377 companies
+  NTNP National Pipeline                      Pipelines                  Anchorage, United States         Large   $58.5B    $41.62   Kazuo Buchanan, 37, powerSuit          drop on amberBrown
+  OLE  Oilstone Energy                        Drilling                   Luxembourg, Luxembourg           Mid      $9.9B    $70.88   Agnieszka Baker, 39, threePiece        star on maroonCream
+  CNOP Central Oil Petroleum Corp.            Pipelines                  Stavanger, Norway                Mid      $6.6B    $25.90   James Greco, 51, suitAndTie            star on honeyWhite
+  MRNG Modern Rig Natural Gas                 Drilling                   Philadelphia, United States      Mid      $6.2B    $70.88   Mikael Kaya, 56, cardigan              star on graphiteYellow
+  GPO  Golden Petroleum Oilfield Services     Natural Gas                Stavanger, Norway                Mid      $3.2B    $34.96   Deepa Wallace, 50, suspenders          flame on midnightCyan
+  PCOS Pecos Oilfield Services                Integrated                 San Francisco, United States     Small    $1.3B    $23.97   Cheryl Papadopoulos, 43, powerSuit     eagle on brickGrey
+  ETU  ETU Pipeline                           Pipelines                  Taipei, Taiwan                   Small    $1.4B    $36.70   Sigrid Casey, 40, windbreaker          drop on whiteBlack
+  ALBG Alberta Gas Co.                        Integrated                 Calgary, Canada                  Small    $858M    $22.84   Arthur Cummings, 52, suspenders        sun on limeBlack
+  BRNG Bernard Natural Gas                    Natural Gas                Melbourne, Australia             Small    $416M     $7.36   Ambrose Fontaine, 34, threePiece       flame on whiteBlack
+  DRCP Derrickport Petroleum Corp.            Natural Gas                Manchester, United Kingdom       Micro    $211M     $5.95   Cornelius Burton, 53, powerSuit        star on turquoiseNavy
+  CPGP Capital Gusher Petroleum               Drilling                   Stavanger, Norway                Micro    $218M     $5.00   Fernanda Neumann, 40, suitAndTie       tower on mustardNavy
+  CPD  Continental Petroleum Drilling         Integrated                 Gothenburg, Sweden               Micro    $141M     $9.46   Lawrence Werner, 40, suitAndTie        sun on cobaltOrange
+  MTPP Mutual Permian Pipeline Co.            Drilling                   Shanghai, China                  Micro     $84M    $19.37   Petra Yates, 39, threePiece            tower on maroonCream
+  JNSP Jansen Petroleum                       Oilfield Services          Chicago, United States           Micro     $62M     $7.65   Anil Watanabe, 58, suitAndTie          tower on maroonCream
+  WLDE Wildcathaven Exploration               Oilfield Services          Tulsa, United States             Micro     $64M     $5.35   Anthony Ng, 54, windbreaker            flame on umberGreen
+  RDO  Ridgegusher Oil Co.                    Integrated                 Salisbury, Rhodesia              Micro     $47M     $4.67   Gabriela Desai, 35, suitAndTie         drop on charcoalSilver
+  DMGP Diamond Gulf Pipeline                  Oilfield Services          Aberdeen, United Kingdom         Micro     $62M     $5.00   Nicholas Ruiz, 50, suitAndTie          sun on blackWhite
+  CLO  Cleargulf Oil Co.                      Drilling                   Chicago, United States           Micro     $50M     $4.32   Rajesh Powell, 42, fleeceVest          sun on midnightCyan
+  BRPD Bearpetroleum Drilling                 Drilling                   Warsaw, Poland                   Micro     $30M    $15.81   Percival Lawson, 37, suitAndTie        sun on goldBlack
+  LROS Laurent Oilfield Services              Pipelines                  Miami, United States             Micro     $26M     $5.29   Philippa Summers, 61, threePiece       eagle on champagneBurgundy
+
+Refining — 115 companies
+  CSTF Castillo Fuels                         Refiners                   Rotterdam, Netherlands           Large   $58.5B   $172.72   Stephen Mitchell, 35, turtleneck       tower on honeyWhite
+  UNTR United Refineries                      Fuel Marketing             Seoul, South Korea               Mid      $9.9B    $29.95   Marilyn Shelton, 47, suitAndTie        star on petrolCream
+  INTE Integrated Energy                      Petrochemicals             Rotterdam, Netherlands           Mid      $5.9B    $35.65   Barnaby Reddy, 46, polo                tower on midnightCyan
+  SBNE Sabine Energy                          Refiners                   Shanghai, China                  Mid      $5.2B   $291.32   Suresh Hudson, 57, suitAndTie          star on rustCream
+  CSR  Coastal Refineries                     Refiners                   Rotterdam, Netherlands           Mid      $5.2B    $53.02   Leonard Meyer, 34, suspenders          flame on violetWhite
+  DMLO Dominion Lubricant Oil Co.             Petrochemicals             Austin, United States            Small    $1.7B    $14.92   Thomas Francis, 40, suitAndTie         flame on mustardNavy
+  BYE  Bayou Energy                           Refiners                   Singapore, Singapore             Small    $1.4B    $22.18   Chad Hampton, 33, powerSuit            drop on amberBrown
+  FHLE FHL Energy                             Lubricants                 Minneapolis, United States       Small    $1.5B    $44.54   Imogen Barnes, 48, suspenders          gear on amberBrown
+  DLTR Delta Refining                         Lubricants                 Mumbai, India                    Small    $1.1B     $3.20   Isabel Nieminen, 39, powerSuit         tower on eggplantCream
+  INPF Integrated Petroleum Fuels             Refiners                   New Orleans, United States       Small    $598M    $44.54   Piotr Makinen, 51, suitAndTie          flame on silverNavy
+  SBNO Sabine Oil Co.                         Fuel Marketing             Vancouver, Canada                Small    $392M     $9.84   Angela Hall, 57, suitAndTie            star on graphiteYellow
+  BYL  Bayou Lubricants                       Petrochemicals             Houston, United States           Small    $410M     $9.10   Kathleen Kamau, 37, flannel            tower on yellowCharcoal
+  KYR  Keystone Refineries                    Petrochemicals             Sao Paulo, Brazil                Micro    $145M     $9.74   Svetlana Underwood, 55, flannel        tower on emeraldWhite
+  SHJF SHJ Fuels                              Lubricants                 Madrid, Spain                    Micro     $35M     $5.04   Linh Holt, 41, suitAndTie              flame on skyNavy
+  PBBO PBB Oil                                Refiners                   Munich, Germany                  Micro     $29M     $4.20   Sylvie Hoffmann, 56, powerSuit         flame on chocolateCream
+  FOO  Frontier Octane Oil                    Refiners                   Dublin, Ireland                  Micro     $33M     $7.29   Yoko Spencer, 51, suitAndTie           tower on graphiteYellow
+  ESTO Eastern Oil Co.                        Fuel Marketing             Singapore, Singapore             Micro     $22M     $6.74   Ahmet Tanaka, 49, suitAndTie           gear on blackWhite
+  GRFR Grand Fuel Refineries                  Lubricants                 Tulsa, United States             Nano      $12M     $2.61   Thaddeus Hampton, 59, fleeceVest       star on royalSilver
+  LBP  Liberty Petroleum                      Petrochemicals             Singapore, Singapore             Nano      $10M     $3.36   Amber Yang, 40, suitAndTie             tower on brassMaroon
+  CSRM Coastal Refining & Marketing           Fuel Marketing             Beijing, China                   Nano       $8M     $0.90   Abebe West, 48, threePiece             gear on ochreTeal
+
+Utilities — 217 companies
+  SVEE Sovereign Energy Electric Co.          Electric                   Dusseldorf, Germany              Large   $40.7B    $45.85   Reginald Burke, 45, suitAndTie         wave on seafoamGrey
+  EMPG Empire Gas Co.                         Nuclear                    Chicago, United States           Large   $13.1B    $87.71   John Underwood, 35, suitAndTie         tower on royalSilver
+  LEEP Liberty Energy Electric Power          Electric                   Dusseldorf, Germany              Mid      $8.2B    $26.41   Dmitri Tesfaye, 38, threePiece         flame on limeBlack
+  SNRG Sonoran Gas Co.                        Electric                   Beijing, China                   Mid      $8.1B   $116.13   Tane Williams, 60, suitAndTie          drop on oliveTan
+  SPGE Supreme Gas & Electric                 Gas                        Charlotte, United States         Mid      $3.7B    $37.05   Anna Otieno, 63, suitAndTie            drop on brickGrey
+  IGPS Imperial Grid Public Service           Nuclear                    Richmond, United States          Mid      $2.9B    $40.82   Yannis Nielsen, 33, suitAndTie         lightning on cobaltOrange
+  PTME Potomac Energy                         Gas                        Shanghai, China                  Mid      $2.5B    $36.34   Bjorn Zhou, 32, suitAndTie             tower on royalSilver
+  CNPW Central Power Water Co.                Nuclear                    Cleveland, United States         Small    $1.7B    $27.45   Sanjay Lund, 36, suitAndTie            wave on yellowCharcoal
+  IMPE Imperial Electric                      Nuclear                    Richmond, United States          Small    $1.3B    $32.99   Garrett Webster, 40, suitAndTie        sun on brickGrey
+  AMEP Amalgamated Energy Power               Nuclear                    Dusseldorf, Germany              Small    $998M    $21.97   Jose Birch, 33, threePiece             flame on brickGrey
+  PWW  Paramount Water Works                  Water                      Paris, France                    Small    $885M    $13.28   Natalie Njoroge, 61, powerSuit         tower on cherryNavy
+  TGE  Tahoe Gas & Electric                   Nuclear                    New York, United States          Small    $820M    $19.18   Layla Nwosu, 45, powerSuit             drop on forestGold
+  SPS  Shenandoah Public Service              Electric                   Eindhoven, Netherlands           Small    $563M    $10.23   Jose Ivanov, 33, suspenders            wave on rustCream
+  PNCE Pioneer Current Electric               Electric                   Atlanta, United States           Small    $342M     $4.62   Lindiwe O'Brien, 56, suspenders        lightning on limeBlack
+  SVE  Sovereign Energy                       Electric                   Cairo, Egypt                     Small    $303M    $20.73   Douglas Magnusson, 37, suitAndTie      wave on emeraldWhite
+  STGE Southern Gas Electric                  Electric                   Chicago, United States           Micro     $43M     $6.49   Edward Dubois, 48, suitAndTie          lightning on graphiteYellow
+  RLE  Reliable Energy                        Electric                   Chicago, United States           Micro     $23M     $6.12   Gloria Dahl, 42, flannel               tower on denimCream
+  CUWW Crown Utility Water Works              Electric                   Amsterdam, Netherlands           Micro     $20M     $3.66   Alexander Harrison, 47, turtleneck     sun on midnightCyan
+  BNPL Banda Power & Light                    Water                      Dusseldorf, Germany              Nano      $15M     $1.12   Abebe Jacobs, 35, suitAndTie           sun on brickGrey
+  CGE  Crown Gas & Electric                   Nuclear                    Chicago, United States           Nano      $14M    $10.23   Ravi Barnes, 33, turtleneck            tower on ochreTeal
+
+Renewables — 177 companies
+  ECTR Ecotron Inc.                           Geothermal                 Madrid, Spain                    Large   $46.0B    $16.12   Bjorn Neumann, 40, powerSuit           lightning on aquaPurple
+  NTPR National Photon Renewables             Solar                      Hamburg, Germany                 Large   $36.1B    $21.13   Helmut Fontaine, 54, suspenders        sun on limeBlack
+  SLDP Soldyne Power                          Wind                       Cincinnati, United States        Mid      $7.6B    $51.00   Tane Lawson, 36, hoodie                drop on denimCream
+  CLCP Colonial Current Power                 Fuel Cells                 Seattle, United States           Small    $1.5B    $42.85   Jacqueline Mulder, 53, turtleneck      gear on aquaPurple
+  SSW  Standard Sun Wind Power                Solar                      Denver, United States            Small    $1.5B     $4.53   Naoko Dunn, 56, suitAndTie             gear on maroonCream
+  SVGE Sovereign Green Energy                 Wind                       Hamburg, Germany                 Small    $625M    $15.50   Nigel Green, 55, windbreaker           drop on tealWhite
+  ARE  Aurora Energy                          Fuel Cells                 Edinburgh, United Kingdom        Small    $635M    $37.42   Luca Kimura, 44, turtleneck            leaf on oliveTan
+  HGHW Highland Wind                          Wind                       Hamburg, Germany                 Small    $514M     $4.32   Tendai Gonzalez, 37, fleeceVest        leaf on seafoamGrey
+  ARPW Aeropower                              Hydro                      Sealand, Principality of Sealand Small    $470M     $5.78   Linda Glover, 44, suitAndTie           sun on midnightCyan
+  SNY  Sunnydyne                              Geothermal                 Shanghai, China                  Small    $380M    $21.76   Faisal Gallo, 52, windbreaker          wave on limeBlack
+  ABW  Associated Breeze Wind                 Fuel Cells                 Austin, United States            Small    $303M    $83.56   Winifred Lambert, 60, turtleneck       leaf on navyWhite
+  ZPHY Zephyrergy                             Fuel Cells                 Los Angeles, United States       Micro    $182M     $9.10   Albert Nagy, 57, fleeceVest            drop on steelGrey
+  ARVP Aerovolt Power                         Hydro                      Omaha, United States             Micro    $141M    $14.07   Brock Kapoor, 63, suspenders           drop on ochreTeal
+  CSSS Colonial Sun Solar Systems             Geothermal                 Denver, United States            Micro     $91M     $4.24   Raymond Bates, 48, cardigan            lightning on skyNavy
+  LBST Liberty Sun Technologies               Wind                       Houston, United States           Micro     $45M    $13.54   Nils Dlamini, 41, turtleneck           gear on midnightCyan
+  MHSS Mohawk Solar Systems                   Solar                      San Francisco, United States     Micro     $34M     $2.66   Friedrich Baldwin, 62, suitAndTie      wave on oliveTan
+  TMPS TMP Solar Systems                      Geothermal                 Copenhagen, Denmark              Micro     $27M     $6.18   Stephen Little, 35, hoodie             leaf on cyanMagenta
+  BCNW Beacon Wind                            Hydro                      Copenhagen, Denmark              Nano      $10M     $6.00   Jose Esposito, 50, windbreaker         drop on cobaltOrange
+  VLWP Voltawatt Wind Power                   Wind                       Basel, Switzerland               Nano       $2M     $6.24   Sandra Sims, 39, suitAndTie            leaf on jadeGold
+  OSKF OSK Fuel Cells                         Hydro                      Berlin, Germany                  Nano       $2M     $3.11   Goran Howell, 33, windbreaker          drop on mustardNavy
+
+Mining — 295 companies
+  SDBM Sudbury Mines                          Coal                       Melbourne, Australia             Large   $22.0B   $280.25   Moira Flores, 43, polo                 pickaxe on terracottaSand
+  CNVS Central Vein Smelting                  Zinc & Lead                Mumbai, India                    Mid      $5.3B    $15.36   Angela Barton, 57, powerSuit           gear on yellowCharcoal
+  ADVE Advanced Exploration                   Nickel                     Melbourne, Australia             Mid      $4.7B    $72.97   Terry Smith, 40, suitAndTie            pickaxe on oxbloodSilver
+  VNSE Veinside Exploration                   Diversified                Chicago, United States           Mid      $3.8B    $27.72   Imogen Diaz, 61, powerSuit             pickaxe on greyRed
+  CHRM Chromeburn Mining Co.                  Iron Ore                   New York, United States          Mid      $3.8B    $70.20   Ralph Shimizu, 46, cardigan            rock on goldBlack
+  CNSS Consolidated Shaft Corp.               Nickel                     Perth, Australia                 Mid      $2.8B    $13.15   Arthur Rizzo, 48, flannel              pickaxe on scarletWhite
+  INZE Integrated Zinc Exploration            Coal                       Dallas, United States            Small    $1.6B    $32.05   Walter Barker, 45, powerSuit           flame on terracottaSand
+  ORFM Oreford Mines                          Coal                       Denver, United States            Small    $1.5B    $14.21   Tiffany Francis, 57, flannel           mountain on terracottaSand
+  LDBM Lodebrook Mining Co.                   Diversified                Houston, United States           Small    $727M    $75.12   Kai Allen, 50, flannel                 mountain on umberGreen
+  TRVM Transcontinental Vein Metals           Nickel                     Santiago, Chile                  Small    $716M     $8.11   Trent Tran, 48, powerSuit              gear on umberGreen
+  KTNE Katanga Exploration                    Coal                       Santiago, Chile                  Small    $563M    $15.81   Fergus Aguilar, 36, flannel            pickaxe on burgundyGold
+  MSBS Mesabi Smelting                        Diversified                Vancouver, Canada                Small    $392M    $17.08   Benjamin Spencer, 61, cardigan         rock on leatherCream
+  VNSR Veinstone Resources                    Iron Ore                   Melbourne, Australia             Small    $327M    $29.09   Chester Asante, 34, windbreaker        rock on goldBlack
+  NSSR NSS Resources                          Diversified                Denver, United States            Small    $313M    $43.26   Beverly Mills, 57, flannel             mountain on silverNavy
+  KYSL Keystone Lode Corp.                    Coal                       Johannesburg, South Africa       Small    $322M   $115.01   Sarah Hill, 52, fleeceVest             mountain on inkCream
+  DMTM Dominion Tin Mines                     Nickel                     Denver, United States            Micro    $159M     $7.65   Heike Durand, 39, powerSuit            rock on terracottaSand
+  IHP  IHP Mining                             Nickel                     Vancouver, Canada                Micro     $58M    $22.84   Eero Holmes, 35, flannel               gear on indigoOrange
+  ESTV Eastern Vein Holdings                  Zinc & Lead                Toronto, Canada                  Micro     $33M    $10.32   John Yates, 57, turtleneck             flame on grapeLime
+  TTNR Titan Resources                        Copper                     Dhahran, Saudi Arabia            Micro     $21M     $4.04   Harriet Vaughn, 32, suitAndTie         gear on greyRed
+  LDR  Lodewold Resources                     Zinc & Lead                Melbourne, Australia             Nano       $8M     $2.66   Diana Andrews, 63, flannel             rock on royalSilver
+
+Precious Metals — 217 companies
+  SST  SST Gold Corp.                         Silver                     Perth, Australia                 Large   $93.4B    $31.13   Ming Bowman, 61, suitAndTie            sun on brownTan
+  KHRR Khoury Royalty Corp.                   Royalties & Streaming      Denver, United States            Mid      $4.5B    $38.52   Paul Kapoor, 40, flannel               pickaxe on chocolateCream
+  WSLB Western Lode Bullion                   Royalties & Streaming      Calgary, Canada                  Mid      $2.7B    $75.12   Robert Rowe, 43, flannel               coin on whiteBlack
+  CPRE Cooper Exploration                     Platinum                   Salisbury, Rhodesia              Mid      $2.7B     $7.29   Minjun Kuznetsov, 50, suitAndTie       star on slateCyan
+  BNZE Bonanzahaven Exploration               Silver                     Brussels, Belgium                Small    $1.5B    $29.95   Constance Stewart, 41, suitAndTie      coin on champagneBurgundy
+  MAGM Midwest Argent Gold Mines              Platinum                   San Francisco, United States     Small    $1.5B    $17.41   Laura Rivera, 46, suitAndTie           star on champagneBurgundy
+  ERKR Eureka Royalty Corp.                   Platinum                   Vancouver, Canada                Small    $968M     $6.12   Giuseppe Svoboda, 52, suitAndTie       sun on whiteBlack
+  REME REM Exploration                        Gold                       Denver, United States            Small    $912M    $39.27   Chad Kang, 43, flannel                 coin on brownTan
+  SPBG Supreme Bullion Gold                   Gold                       Salisbury, Rhodesia              Small    $635M    $16.27   Donald Holmes, 35, suitAndTie          crown on blackWhite
+  ESEB Eastern Eldorado Bullion               Silver                     Brussels, Belgium                Small    $645M    $41.62   Andrew Cummings, 53, flannel           star on umberGreen
+  ESAE Eastern Argent Exploration             Gold                       Houston, United States           Small    $470M    $17.75   Gregory Ong, 58, flannel               pickaxe on indigoOrange
+  GLAM Golden Argent Mining                   Platinum                   Osaka, Japan                     Small    $456M    $22.40   Sylvie Dekker, 59, flannel             pickaxe on silverNavy
+  CRSR Crown Silver Royalty Corp.             Royalties & Streaming      Toronto, Canada                  Small    $369M    $11.48   Wei Nieminen, 54, suitAndTie           pickaxe on silverNavy
+  DNGM Dunn Gold Mines                        Royalties & Streaming      Nashville, United States         Small    $303M    $17.58   Evelyn Graves, 42, turtleneck          mountain on ochreTeal
+  PRIR Premier Ingot Royalty Corp.            Gold                       Berlin, Germany                  Micro    $134M     $3.49   Javier Ruiz, 62, cardigan              pickaxe on mustardNavy
+  IBR  Integrated Bullion Royalty Corp.       Royalties & Streaming      San Francisco, United States     Micro     $76M     $6.12   Katherine Holt, 38, windbreaker        sun on whiteBlack
+  NVDM Nevada Mining                          Platinum                   Salisbury, Rhodesia              Micro     $34M    $11.82   Lauren Lane, 55, suitAndTie            coin on scarletWhite
+  RLSG RLS Goldfields                         Platinum                   Toronto, Canada                  Micro     $23M     $4.08   Howard Lane, 52, threePiece            pickaxe on charcoalSilver
+  BNPM Bonanza Precious Metals                Royalties & Streaming      Los Angeles, United States       Nano       $6M     $2.24   Rebecca Fitzgerald, 42, fleeceVest     coin on brownTan
+  LNG  Lindqvist Goldfields                   Platinum                   Vancouver, Canada                Nano       $2M     $3.63   Wei Rogers, 50, turtleneck             mountain on leatherCream
+
+Chemicals — 218 companies
+  WSPI Western Polymer Industries             Fertilisers                Basel, Switzerland               Mid      $8.8B    $34.96   Sylvie Mori, 36, fleeceVest            drop on kellyYellow
+  ESL  Eastern Laboratories                   Paints & Coatings          San Francisco, United States     Mid      $2.7B    $24.92   Tafadzwa Bowen, 41, cardigan           gear on plumSilver
+  FLXC Fluex Chemical                         Fertilisers                Chicago, United States           Small    $1.4B    $13.15   Margaret Banks, 49, threePiece         gear on steelGrey
+  MDPL Modern Polymer Laboratories            Industrial Gases           Gothenburg, Sweden               Small    $1.0B    $30.24   Chad Chandler, 43, labCoat             flame on greyRed
+  CTI  Catium Industries                      Specialty Chemicals        Philadelphia, United States      Small    $772M    $36.34   Mariana Haddad, 61, suitAndTie         atom on rustCream
+  TNP  Tanaka Polymers                        Fertilisers                Winnipeg, Canada                 Small    $363M    $11.94   Nicole Romano, 55, suspenders          atom on magentaBlack
+  LBCC Liberty Chlorine Chemical              Specialty Chemicals        Sydney, Australia                Micro    $190M     $6.55   Louis Logan, 61, hoodie                gear on indigoOrange
+  AFP  Allied Fluorine Polymers               Commodity Chemicals        Sydney, Australia                Micro    $149M    $13.67   Marco Wood, 53, suitAndTie             gear on lavenderNavy
+  STCP Southern Carbon Plastics               Commodity Chemicals        Cleveland, United States         Micro    $116M     $3.59   Cornelius Pearce, 62, turtleneck       leaf on blackWhite
+  ALKN Alkine Corp.                           Plastics                   Basel, Switzerland               Micro     $88M     $8.84   Arjun Holmes, 57, labCoat              leaf on oliveTan
+  LIF  Liu Fertiliser                         Commodity Chemicals        Calgary, Canada                  Micro     $89M     $1.24   Oluwaseun Kowalski, 51, powerSuit      gear on grapeLime
+  ACM  Advanced Carbon Materials              Commodity Chemicals        Philadelphia, United States      Micro     $76M     $5.19   Jennifer Rogers, 51, labCoat           leaf on scarletWhite
+  SLFF Sulfene Fertiliser                     Commodity Chemicals        Rotterdam, Netherlands           Micro     $56M     $4.45   Tendai Foster, 51, powerSuit           atom on brickGrey
+  HYDC Hydron Coatings                        Plastics                   Basel, Switzerland               Micro     $53M     $6.68   Oluwaseun Schulz, 62, labCoat          drop on emeraldWhite
+  CRBP Carbite Polymers                       Commodity Chemicals        Rotterdam, Netherlands           Micro     $25M     $2.19   Betty Magnusson, 59, threePiece        gear on oxbloodSilver
+  PRAC Prairie Coatings                       Specialty Chemicals        Bangalore, India                 Micro     $26M     $8.67   Benjamin Demir, 56, labCoat            drop on graphiteYellow
+  NRG  Northern Gases                         Specialty Chemicals        Houston, United States           Micro     $20M     $2.32   Emily Malhotra, 32, fleeceVest         gear on navyGold
+  SNTL Sentinel Laboratories                  Specialty Chemicals        Rotterdam, Netherlands           Nano       $7M     $2.32   Zoran Norton, 54, threePiece           leaf on pineBrown
+  UNFC Universal Fluorine Chemical            Commodity Chemicals        Shenzhen, China                  Nano       $4M     $6.12   Jane Ozturk, 38, hawaiian              flame on steelGrey
+  NTRX Nitrex Corp.                           Commodity Chemicals        Basel, Switzerland               Nano       $3M     $4.85   Thiago Nguyen, 59, threePiece          leaf on slateCyan
+
+Steel — 138 companies
+  NTKS NTK Steel Corp.                        Specialty Alloys           Osaka, Japan                     Mid      $9.7B    $86.02   Tomasz Romano, 42, turtleneck          tower on cherryNavy
+  CIW  Cruciblegate Iron Works                Mini-Mills                 Milan, Italy                     Small    $1.8B     $7.87   Jiri McCarthy, 58, powerSuit           tower on walnutGold
+  FRGF Forgebrook Foundries                   Scrap Metal                Riyadh, Saudi Arabia             Small    $2.0B    $57.84   Mehmet Vu, 40, suitAndTie              pickaxe on slateCyan
+  CRCA Crucibleford Alloys                    Integrated Mills           Boston, United States            Small    $1.5B    $36.70   Stephen Kealoha, 55, threePiece        rock on maroonCream
+  PWLT Powell Tube Co.                        Integrated Mills           Cleveland, United States         Small    $912M    $27.98   Haruto Carter, 59, powerSuit           tower on steelGrey
+  DNCA Duncan Alloys                          Mini-Mills                 Mumbai, India                    Small    $846M    $90.29   Karen Hardy, 42, suitAndTie            flame on scarletWhite
+  CRM  Crescent Mills                         Mini-Mills                 Sao Paulo, Brazil                Small    $820M     $5.83   Olga Werner, 60, powerSuit             bridge on aquaPurple
+  DOAI DOA Ironworks                          Mini-Mills                 London, United Kingdom           Small    $695M     $5.95   Hiroshi Ferguson, 42, powerSuit        gear on silverNavy
+  ANVF Anviline Foundries                     Mini-Mills                 Des Moines, United States        Small    $416M    $27.45   Marilyn Ferguson, 51, hawaiian         flame on cherryNavy
+  MDRM Modern Mills                           Scrap Metal                Toronto, Canada                  Micro    $261M    $17.75   Yan Schulz, 41, hoodie                 flame on inkCream
+  JALA JAL Alloys                             Integrated Mills           Detroit, United States           Micro    $294M     $6.18   Sandra Chan, 40, suspenders            bridge on khakiBrown
+  HRM  Harbor Mills                           Scrap Metal                Perth, Australia                 Micro    $143M     $1.92   Penelope Fowler, 42, suitAndTie        tower on charcoalSilver
+  MDWI Midwest Ironworks                      Pipe & Tube                Mumbai, India                    Micro     $95M     $7.72   Alessandro Berg, 45, windbreaker       bridge on greyRed
+  FRM  Furnacecreek Mills                     Mini-Mills                 Mumbai, India                    Micro     $62M     $5.83   Ivan Saunders, 50, suitAndTie          rock on walnutGold
+  DRI  Durand Ironworks                       Mini-Mills                 Osaka, Japan                     Micro     $61M     $7.65   Karen Swanson, 38, suspenders          pickaxe on slateCyan
+  MSF  Missouri Forge                         Pipe & Tube                Cleveland, United States         Micro     $42M     $6.88   Satoshi Walsh, 49, suitAndTie          bridge on navyGold
+  BTNM Boateng Metals                         Integrated Mills           Mumbai, India                    Micro     $26M     $5.00   Linh Osborne, 46, tuxedo               flame on leatherCream
+  MRIW Moreau Iron Works                      Scrap Metal                Frankfurt, Germany               Micro     $26M    $13.54   Roy Oliver, 51, suspenders             tower on skyNavy
+  ANVM Anvilmont Mills                        Pipe & Tube                Cleveland, United States         Micro     $20M    $17.41   Roy Ellis, 44, suspenders              tower on graphiteYellow
+  HGHF Highland Forge                         Mini-Mills                 Shanghai, China                  Nano      $12M     $7.50   Giuseppe Fontaine, 58, suitAndTie      bridge on royalSilver
+
+Logging & Forestry — 123 companies
+  BYSL Bayside Lumber Co.                     Pulp                       Guangzhou, China                 Mid      $9.9B    $53.53   Beverly Wright, 32, powerSuit          leaf on khakiBrown
+  CDRF Cedarholm Forestry                     Wood Products              Boise, United States             Mid      $6.5B    $27.98   Ralph Townsend, 54, flannel            leaf on ochreTeal
+  ESTL Eastlumber Lumber Co.                  Sawmills                   Minneapolis, United States       Mid      $4.3B    $21.97   Svetlana Njoroge, 52, flannel          tree on royalSilver
+  PMWP Parker & Moretti Wood Products         Sawmills                   Tacoma, United States            Mid      $2.7B   $152.29   Naoko Sokolov, 38, threePiece          mountain on forestGold
+  PDFP Pedersen Forest Products               Timberland                 New York, United States          Mid      $2.1B    $69.52   Olivia Bianchi, 50, threePiece         mountain on slateCyan
+  STWR Stewart & Ross                         Sawmills                   Kyoto, Japan                     Small    $1.6B     $2.90   Hannah Wheeler, 54, flannel            leaf on khakiBrown
+  PWVL PWV Lumber Co.                         Timberland                 Stockholm, Sweden                Small    $1.6B    $12.90   Boris Rahimi, 57, fleeceVest           mountain on leatherCream
+  VPTL VPT Lumber                             Timberland                 Tacoma, United States            Small    $1.3B     $8.03   Natasha Cunningham, 43, suitAndTie     tree on aquaPurple
+  YMTT Yamamoto & Thomas                      Wood Products              Helsinki, Finland                Small    $1.2B    $42.43   Fang Walker, 37, suitAndTie            tree on siennaOlive
+  PRPS Paramount Poplar Sawmills              Timberland                 Edinburgh, United Kingdom        Small    $940M    $19.00   Sergei Montgomery, 43, suitAndTie      leaf on midnightCyan
+  WSFP Westredwood Forest Products            Pulp                       Tacoma, United States            Small    $998M    $16.43   Laura Lawson, 40, suitAndTie           tree on brownTan
+  ALGT Allegheny Timberlands                  Wood Products              Vancouver, Canada                Small    $1.1B     $6.24   Shirley Inoue, 32, suitAndTie          mountain on khakiBrown
+  LKHL Lakehemlock Logging Co.                Timberland                 Boise, United States             Small    $858M    $29.37   Rafael Watts, 46, flannel              leaf on indigoOrange
+  FRSM Frostredwood Mills                     Sawmills                   Boise, United States             Small    $607M     $8.59   Timothy Asante, 60, suitAndTie         leaf on emeraldWhite
+  ESTS Eastbirch Sawmills                     Timberland                 Houston, United States           Small    $685M    $54.05   Chester Gilbert, 41, suitAndTie        mountain on cyanMagenta
+  DNAT Dunn & Almeida Timber Corp.            Pulp                       Kyiv, Ukraine                    Small    $607M    $10.03   Miguel Reese, 37, suitAndTie           tree on cherryNavy
+  LRCL Larchcreek Logging Co.                 Sawmills                   London, United Kingdom           Micro    $231M     $1.34   Marco Fuller, 45, powerSuit            tree on limeBlack
+  WPPL WPP Logging Co.                        Sawmills                   Vancouver, Canada                Micro     $50M     $2.88   Deepa Marshall, 48, suitAndTie         tree on walnutGold
+  MJFF MJF Forestry                           Pulp                       Portland, United States          Nano       $8M     $3.81   Rachel Moyo, 49, flannel               leaf on siennaOlive
+  FRDT Firdale Timberlands                    Sawmills                   Charlotte, United States         Nano       $3M     $8.67   Liv Cheung, 49, cardigan               leaf on emeraldWhite
+
+Paper & Packaging — 138 companies
+  CNTC Continental Container Corp.            Paper Mills                Stockholm, Sweden                Large   $93.4B    $29.37   Khalid Weber, 43, cardigan             wave on chocolateCream
+  MSEC Mesa Container Corp.                   Tissue                     Stockholm, Sweden                Large   $39.5B    $80.39   Jomo Pratt, 45, powerSuit              tree on plumSilver
+  WSTT Westbrook Tissue Co.                   Containerboard             New York, United States          Large   $17.5B    $51.00   Walter Mensah, 50, cardigan            leaf on midnightCyan
+  VGP  Vogel Paperboard                       Containerboard             Richmond, United States          Mid      $7.4B   $111.72   Heidi Zhu, 61, suitAndTie              gear on oliveTan
+  CLRP Clearpulp Packaging                    Labels                     Montreal, Canada                 Mid      $7.3B    $10.84   Megan Poole, 63, flannel               drop on royalSilver
+  PLPP Pulpbrook Pulp & Paper                 Paper Mills                Portland, United States          Mid      $6.6B    $42.85   Luis Chambers, 49, suitAndTie          wave on steelGrey
+  HRB  Harbor Box Co.                         Packaging                  Melbourne, Australia             Mid      $5.9B    $23.97   Chiara Ivanov, 39, turtleneck          tree on graphiteYellow
+  RPP  Riverside Pulp & Paper                 Containerboard             Kyoto, Japan                     Mid      $4.9B    $41.62   Soren Ionescu, 40, suitAndTie          drop on midnightCyan
+  KRPP Kraftport Pulp & Paper                 Packaging                  New Delhi, India                 Mid      $2.3B    $27.72   Jennifer Flores, 50, flannel           tree on siennaOlive
+  GRNP Greenbox Packaging Corp.               Paper Mills                Richmond, United States          Small    $1.7B    $13.94   Emeka Cunningham, 38, powerSuit        tree on limeBlack
+  SMTP Summit Paper                           Paper Mills                Stockholm, Sweden                Small    $706M    $38.15   David Herrera, 50, suitAndTie          tree on kellyYellow
+  HRWF Heritage Wrap Fibre                    Packaging                  New York, United States          Small    $738M    $13.54   Jerry Das, 39, cardigan                wave on slateCyan
+  MPP  Modern Pulp & Paper                    Containerboard             Montreal, Canada                 Small    $695M    $27.45   Eero Benson, 54, suitAndTie            leaf on blackWhite
+  CSTP Coastal Tissue Paperboard              Containerboard             Helsinki, Finland                Small    $538M    $40.04   Percival Horvath, 43, polo             gear on siennaOlive
+  FBRP Fibregate Paper                        Containerboard             Helsinki, Finland                Small    $380M    $23.51   Cornelius Reddy, 38, flannel           leaf on leatherCream
+  RLC  Reliable Container Corp.               Packaging                  Atlanta, United States           Micro    $218M     $8.26   Ayse Kulkarni, 43, flannel             leaf on charcoalSilver
+  MDKP Modern Kraft Paper Co.                 Tissue                     Atlanta, United States           Micro    $149M    $10.43   William Marsh, 58, suitAndTie          drop on sageCharcoal
+  STPM Standard Paper Mills                   Labels                     New York, United States          Micro     $72M     $7.57   Shirley Meijer, 53, threePiece         wave on silverNavy
+  GRPC Grand Paper Corrugated                 Labels                     Portland, United States          Micro     $41M    $17.08   Kathryn Wilkins, 44, suitAndTie        drop on blackWhite
+  NRPP Northern Parcel Paper                  Packaging                  Atlanta, United States           Micro     $35M     $6.49   Roy Thackeray, 35, flannel             leaf on inkCream
+
+Agriculture — 138 companies
+  CSDF CSD Farms                              Seeds                      Minneapolis, United States       Mid      $6.1B    $24.20   Hiroshi Johnson, 49, flannel           leaf on chocolateCream
+  BRNI Barnbrook Implements                   Farm Equipment             Chicago, United States           Mid      $2.0B     $9.10   Hao Miles, 33, powerSuit               sun on honeyWhite
+  CHSA Chesapeake Agriculture                 Seeds                      Calgary, Canada                  Small    $1.0B    $13.41   Biff Chen, 61, cardigan                leaf on chocolateCream
+  SNPA Sunbelt Prairie Agricultural Co.       Fertiliser Distribution    Sao Paulo, Brazil                Small    $317M    $19.56   Sigrid Lange, 37, flannel              sun on turquoiseNavy
+  MSI  Missouri Implements                    Fertiliser Distribution    Chicago, United States           Small    $313M    $29.09   Louis Patterson, 33, windbreaker       wheat on champagneBurgundy
+  PLG  Ploughwood Growers                     Farmland                   Sao Paulo, Brazil                Micro    $190M     $4.36   Rahul Phiri, 52, polo                  bull on sageCharcoal
+  ESAP Eastwind Agri-Products                 Farmland                   Rotterdam, Netherlands           Micro     $89M    $21.13   Fergus Floyd, 46, polo                 sun on oliveTan
+  WHH  Wheatbridge Harvesters                 Farm Equipment             New York, United States          Micro     $77M     $4.40   Seoyeon Kamau, 44, fleeceVest          tree on indigoOrange
+  GGSG GGS Grain Co.                          Grain Merchants            Chicago, United States           Micro     $68M     $4.81   Boris Riley, 56, suitAndTie            bull on cyanMagenta
+  CRNR Cornfield Ranches                      Livestock                  Omaha, United States             Micro     $50M    $11.60   Eleni Garner, 39, hawaiian             sun on maroonCream
+  SGA  Sunbelt Grain Agricultural Co.         Seeds                      Des Moines, United States        Micro     $40M     $2.37   Hao Chevalier, 61, windbreaker         tree on siennaOlive
+  CNSG Consolidated Grain Co.                 Farmland                   Munich, Germany                  Micro     $41M    $14.07   Ayesha Mills, 39, suitAndTie           bull on oliveTan
+  GFAP Great Field Agri-Products              Livestock                  Boston, United States            Micro     $31M     $9.56   Timothy Kealoha, 54, powerSuit         wheat on oliveTan
+  WGFG Wagner Feed & Grain                    Livestock                  Kyiv, Ukraine                    Micro     $23M     $3.23   Angela Francis, 44, windbreaker        wheat on chocolateCream
+  ABG  Allied Barn Grain Co.                  Grain Merchants            Boston, United States            Nano      $18M     $0.97   Jose Dunn, 32, threePiece              sun on chocolateCream
+  ZNTA Zenith Agricultural Co.                Farm Equipment             Stavanger, Norway                Nano       $9M     $2.39   Pavel Barrett, 60, cardigan            sun on walnutGold
+  HRAP Harrison Agri-Products                 Seeds                      Omaha, United States             Nano       $3M     $4.12   Bernadette Bekele, 57, polo            bull on siennaOlive
+  RVRI Riverside Implements                   Livestock                  Minneapolis, United States       Nano       $2M    $11.82   Carmen Moore, 39, polo                 sun on ochreTeal
+  PLWI PLW Implements                         Fertiliser Distribution    Houston, United States           Nano       $2M     $4.28   Samuel Leung, 60, flannel              wheat on goldBlack
+  SFG  Sonoran Feed & Grain                   Farmland                   Denver, United States            Nano       $2M     $1.99   Duncan Hayes, 43, windbreaker          bull on walnutGold
+
+Food & Beverage — 301 companies
+  PGBL Proctor & Gambol                       Household Products         Cincinnati, United States        Mega   $357.3B   $126.71   Gwendolyn Vargas, 36, turtleneck       wheat on skyNavy
+  MOO  Kweichow Mootai                        Brewers & Distillers       Shanghai, China                  Mega   $160.7B   $108.52   Chip Carson, 60, powerSuit             drop on cobaltOrange
+  AMLB Amalgamated Bakeries                   Household Products         Minneapolis, United States       Small    $1.5B     $7.95   Dmitri Francis, 58, powerSuit          wheat on pineBrown
+  ALB  Allegheny Bakeries                     Soft Drinks                Atlanta, United States           Small    $1.6B    $24.92   Olaf Kang, 45, threePiece              teacup on navyWhite
+  GHP  Golden Household Products              Soft Drinks                Cincinnati, United States        Small    $1.6B    $19.00   Ivan Howell, 56, hoodie                leaf on walnutGold
+  DKRH Dekker & Hill                          Soft Drinks                Atlanta, United States           Small    $1.6B    $35.99   Trevor Ruiz, 60, threePiece            wheat on midnightCyan
+  CNDM Candyholm Mills                        Brewers & Distillers       Barcelona, Spain                 Small    $1.4B    $15.06   Samantha Wheeler, 33, suitAndTie       star on yellowCharcoal
+  CJD  Central Juice Distillers               Household Products         Manchester, United Kingdom       Small    $1.0B    $73.68   Lucia Gibson, 39, suitAndTie           leaf on champagneBurgundy
+  DMJF Diamond Juice Food Co.                 Household Products         Dallas, United States            Small    $1.1B    $17.75   Charles Lombardi, 34, fleeceVest       wheat on umberGreen
+  FZDI Fizzade                                Packaged Foods             Atlanta, United States           Small    $846M    $21.34   Pavel Nair, 35, suitAndTie             teacup on denimCream
+  PRMF Premier Food Co.                       Household Products         Minneapolis, United States       Micro    $218M     $8.34   Preston Ito, 47, threePiece            leaf on honeyWhite
+  RDED Reed Dairy                             Brewers & Distillers       Auckland, New Zealand            Micro    $208M    $49.06   Dolores Gonzalez, 34, suitAndTie       star on brassMaroon
+  MNCH Munchbits                              Soft Drinks                Sydney, Australia                Micro    $101M     $0.85   Ignatius Ngata, 41, suitAndTie         sun on navyWhite
+  ADVB Advanced Brewing Co.                   Confectionery              Atlanta, United States           Micro     $38M    $11.82   Graham Dunn, 43, fleeceVest            sun on limeBlack
+  SPWB Soapwater Brands                       Confectionery              Amsterdam, Netherlands           Micro     $31M    $13.28   Jiwoo Hardy, 34, polo                  wheat on forestGold
+  MHWF Mohawk Food Co.                        Household Products         Boston, United States            Nano      $20M     $3.42   Farhan Vu, 33, flannel                 teacup on sageCharcoal
+  ICC  Imperial Candy Confectionery           Soft Drinks                Madrid, Spain                    Nano      $10M    $10.53   Christine Myers, 44, suitAndTie        drop on goldBlack
+  OKNK Okonkwo & Kumar                        Packaged Foods             Chicago, United States           Nano      $11M    $10.32   Seoyeon Kumar, 36, polo                wheat on maroonCream
+  RCIB Ricci Bottling Co.                     Confectionery              Geneva, Switzerland              Nano       $4M     $2.30   Piotr Cho, 62, cardigan                wheat on rustCream
+  MDBS Modern Brew Soda Co.                   Household Products         Atlanta, United States           Nano       $2M     $7.80   Preston Oliveira, 63, suitAndTie       sun on walnutGold
+
+Tobacco — 101 companies
+  ABC  Allied Burley Cigars                   Leaf Tobacco               Cincinnati, United States        Large   $80.3B   $536.09   Naoko Butler, 43, suitAndTie           leaf on chocolateCream
+  CRC  Crown Cigar Co.                        Cigarettes                 Seoul, South Korea               Large   $19.5B    $51.00   Reza Carroll, 41, threePiece           lion on rustCream
+  WRNM Werner & Mancini                       Pipe Tobacco               Frankfurt, Germany               Mid      $6.3B     $6.74   Robert Barnett, 35, suitAndTie         eagle on emeraldWhite
+  NACC NAC Cigars                             Cigars                     Beijing, China                   Mid      $4.4B    $31.43   Ayesha Holloway, 48, polo              flame on chocolateCream
+  SLLT Salisbury Leaf Tobacco                 Leaf Tobacco               San Francisco, United States     Mid      $4.4B    $67.53   Wanjiru Desai, 59, tuxedo              flame on maroonCream
+  CPRF Cooper & Ferreira                      Cigarettes                 Nashville, United States         Mid      $2.7B    $55.11   Henrik Hansen, 44, threePiece          flame on leatherCream
+  FFT  Frontier Filter Tobacco Co.            Pipe Tobacco               London, United Kingdom           Mid      $2.3B    $18.28   Francesca Diop, 47, threePiece         leaf on burgundyGold
+  WNC  Winston Cigar Co.                      Leaf Tobacco               Turin, Italy                     Small    $1.1B    $54.58   Scott Hampton, 32, suitAndTie          lion on amberBrown
+  TDT  Tidewater Tobacco Co.                  Leaf Tobacco               New York, United States          Small    $871M    $21.34   Seoyeon Chapman, 60, suitAndTie        eagle on limeBlack
+  PRYW Perry & Werner                         Cigarettes                 Boston, United States            Small    $514M     $4.00   Julie Wisniewski, 37, suitAndTie       flame on leatherCream
+  TNSB Tennessee Brands                       Cigarettes                 Houston, United States           Small    $358M    $61.90   Freya Ross, 55, suitAndTie             leaf on amberBrown
+  BLYB Bailey Brands                          Pipe Tobacco               Washington, United States        Micro    $228M     $1.72   Chip Johansson, 38, suitAndTie         lion on ochreTeal
+  DRHT Durham Tobacco                         Leaf Tobacco               London, United Kingdom           Micro    $193M     $2.05   Boris TanHarper, 58, polo              leaf on champagneBurgundy
+  APR  APR Brands                             Cigarettes                 Richmond, United States          Micro     $84M     $5.45   Bruce Kaya, 54, threePiece             flame on emeraldWhite
+  LBLC Liberty Leaf Cigar Co.                 Cigars                     London, United Kingdom           Micro     $72M     $5.40   Cheryl Bos, 47, tuxedo                 flame on silverNavy
+  LIB  Liu Blenders                           Cigars                     Nashville, United States         Micro     $75M     $7.72   Charles Fleming, 58, suitAndTie        flame on pineBrown
+  KRLB Karlsson & Brooks                      Pipe Tobacco               Nashville, United States         Micro     $49M    $64.34   Tomasz Potter, 35, suitAndTie          leaf on sageCharcoal
+  PRLT Parker Leaf Tobacco                    Cigars                     Richmond, United States          Micro     $43M     $4.36   Kathryn Holland, 45, powerSuit         lion on siennaOlive
+  CRZM Cruz & Meyer                           Cigars                     Atlanta, United States           Micro     $46M     $8.18   Roger Cruz, 58, polo                   lion on oxbloodSilver
+  SLVD Sullivan & Dvorak                      Leaf Tobacco               Richmond, United States          Nano       $3M     $2.93   Jian Keller, 44, threePiece            crown on ochreTeal
+
+Retail — 376 companies
+  WMK  Walmark                                Discount Stores            Little Rock, United States       Mega   $643.3B   $491.36   Pablo Atkins, 48, suitAndTie           key on steelGrey
+  WSTW Western Wholesale                      Grocery                    Frankfurt, Germany               Large  $106.9B    $66.88   Teresa Werner, 59, polo                sun on indigoOrange
+  BYCT Buycity                                Department Stores          Toronto, Canada                  Large   $10.6B    $30.53   Sanjay Qureshi, 43, powerSuit          coin on skyNavy
+  RSFD Ross Five & Dime                       Department Stores          New York, United States          Mid      $3.3B    $14.92   Tatiana Novak, 33, windbreaker         key on brassMaroon
+  KYSE Keystone Emporium                      Department Stores          Chicago, United States           Mid      $2.8B   $161.40   Boris Zimmermann, 35, windbreaker      arrowUp on scarletWhite
+  ASCO Associated Outlet                      Grocery                    Dallas, United States            Mid      $2.0B    $41.62   Keiko Thackeray, 34, suitAndTie        crown on plumSilver
+  SLVW Silverlake Warehouse                   Electronics Retail         Seattle, United States           Small    $1.5B    $13.80   Maarten Taylor, 63, suitAndTie         coin on honeyWhite
+  VLZN Valuezone                              Electronics Retail         Atlanta, United States           Small    $470M    $19.56   Emeka DeBoer, 52, cardigan             star on tealWhite
+  CLMD Coleman & Dvorak                       Catalogue                  Atlanta, United States           Small    $442M     $6.18   Linh Yoshida, 50, cardigan             star on kellyYellow
+  VGPR VGP Retail Group                       Home Improvement           Rome, Italy                      Small    $449M    $19.56   Vladimir Holland, 63, suspenders       coin on ochreTeal
+  TKNO TKN Outlet                             Discount Stores            New York, United States          Small    $337M     $2.26   Christine Korhonen, 57, windbreaker    sun on yellowCharcoal
+  LBFD Liberty Five & Dime                    Specialty Retail           San Jose, United States          Micro    $174M     $8.59   Roy Bautista, 47, tuxedo               star on pineBrown
+  KRMO Karimi Outlet                          Catalogue                  Little Rock, United States       Micro    $156M    $40.04   Khalid Copeland, 38, hawaiian          arrowUp on kellyYellow
+  UNTW United Warehouse                       Home Improvement           Houston, United States           Micro     $68M     $9.56   Paul Carroll, 48, polo                 coin on violetWhite
+  MNSN Mensah & Nilsson                       Grocery                    Little Rock, United States       Micro     $59M     $3.42   Raymond Parata, 32, suitAndTie         star on royalSilver
+  DLZ  Dealzone                               Home Improvement           New York, United States          Micro     $56M     $6.94   Liam Peters, 48, polo                  key on mustardNavy
+  HSKF HSK Five & Dime                        Discount Stores            Las Vegas, United States         Micro     $26M     $9.28   Stephen Hubbard, 60, cardigan          crown on yellowCharcoal
+  HWRR Howard Retail Group                    Discount Stores            Detroit, United States           Micro     $20M     $5.45   Pieter Holland, 45, polo               coin on cherryNavy
+  APLS APL Supermarkets                       Catalogue                  Chicago, United States           Nano       $6M     $3.88   Heidi Fisher, 37, suitAndTie           star on cherryNavy
+  OKFK Okafor & Kamau                         Grocery                    Minneapolis, United States       Nano       $4M     $5.29   Elena Otieno, 43, polo                 coin on blackWhite
+
+Apparel — 180 companies
+  DMS  Demir Shoe Co.                         Accessories                Paris, France                    Large  $105.3B   $333.60   Arjun Herrera, 51, tuxedo              lion on burgundyGold
+  RMC  Romano & Carter                        Sportswear                 Hartford, United States          Mid      $9.2B    $54.05   Femke Lane, 43, suitAndTie             arrowUp on skyNavy
+  YNO  Young Outfitters                       Luxury                     New York, United States          Mid      $5.0B    $44.54   Ivan Kato, 41, fleeceVest              leaf on lavenderNavy
+  ARF  Aurora Fashions                        Sportswear                 Dallas, United States            Mid      $4.3B    $24.44   Ashley Pereira, 45, suitAndTie         lion on petrolCream
+  LXS  Luxista                                Sportswear                 Geneva, Switzerland              Mid      $3.4B    $41.22   Heidi Carter, 54, labCoat              leaf on honeyWhite
+  MYOC Moyo Couture                           Department Labels          San Jose, United States          Mid      $3.3B    $44.97   Edward Xu, 33, hawaiian                arrowUp on midnightCyan
+  KPRN Kapoor & Ndlovu                        Luxury                     Atlanta, United States           Mid      $2.0B    $54.58   Thiago Moore, 52, turtleneck           star on skyNavy
+  MSEF Mesa Fashions                          Luxury                     Hong Kong, Hong Kong             Small    $2.0B    $28.26   Katarzyna Oliveira, 52, suitAndTie     crown on silverNavy
+  DNG  Dunn & Gomez                           Luxury                     Cape Town, South Africa          Small    $1.9B     $8.84   Jun Newton, 35, suitAndTie             crown on brownTan
+  BRGD Bergstrom Denim Co.                    Department Labels          New York, United States          Small    $1.4B     $7.43   Akiko Khoury, 33, suitAndTie           leaf on midnightCyan
+  IVNG Ivanov Garments                        Accessories                Portland, United States          Small    $327M     $6.18   Janet Krueger, 46, suspenders          star on skyNavy
+  RTCT RTC Tailors                            Luxury                     Los Angeles, United States       Micro    $154M     $5.24   Vladimir Quinn, 60, powerSuit          leaf on yellowCharcoal
+  ZHS  Zhang Sportswear                       Department Labels          Hartford, United States          Micro    $152M    $10.63   Patricia Diop, 57, fleeceVest          star on violetWhite
+  BUT  BUT Clothing Co.                       Sportswear                 Los Angeles, United States       Micro     $78M     $3.23   Jack Marshall, 42, cardigan            arrowUp on plumSilver
+  SLQO Solique                                Sportswear                 Portland, United States          Micro     $63M    $10.63   Thiago Pearson, 59, suspenders         leaf on maroonCream
+  HNSA Hansen Apparel                         Luxury                     New Delhi, India                 Micro     $71M     $3.39   Petra Harmon, 42, turtleneck           arrowUp on champagneBurgundy
+  SLK  Silva & Kobayashi                      Denim                      Paris, France                    Micro     $65M    $10.94   Constance Day, 50, suitAndTie          leaf on terracottaSand
+  MLKM Mulder Knitting Mills                  Department Labels          Portland, United States          Micro     $39M    $11.71   Brian Riley, 44, suitAndTie            arrowUp on greyRed
+  PRKE Parker & Edwards                       Department Labels          Lyon, France                     Micro     $30M    $10.43   Winifred Jimenez, 57, threePiece       lion on indigoOrange
+  BRDF Bradley Fashions                       Luxury                     Portland, United States          Nano       $9M     $7.29   Kimberly Haynes, 44, threePiece        lion on violetWhite
+
+Restaurants — 179 companies
+  SPFR Spencer Family Restaurants             Coffee Houses              Milan, Italy                     Mid      $5.2B    $59.55   Jurgen Shah, 47, flannel               star on kellyYellow
+  CGDI Capital Grill Drive-Ins                Fast Food                  Hong Kong, Hong Kong             Mid      $4.1B    $67.53   Akiko Barrett, 57, polo                teacup on mustardNavy
+  CFR  Coffearama                             Pizza                      Cincinnati, United States        Mid      $3.5B    $26.66   Emeka Brown, 57, polo                  sun on magentaBlack
+  IMK  Imperial Kitchens                      Fast Food                  Chicago, United States           Small    $1.2B    $16.75   Ashley Hernandez, 53, suitAndTie       crown on mustardNavy
+  APT  APT Franchise Corp.                    Fast Food                  Dallas, United States            Small    $858M    $19.56   Heather Manning, 40, hawaiian          crown on plumSilver
+  BFR  Becker Family Restaurants              Fast Food                  Miami, United States             Small    $706M     $8.93   Jane Cooper, 61, powerSuit             crown on emeraldWhite
+  PZXP Pizzexpress                            Fast Food                  Seattle, United States           Small    $898M    $15.21   Lindiwe Siddiqui, 43, suitAndTie       saucepan on amberBrown
+  GRL  Grillexpress                           Coffee Houses              London, United Kingdom           Small    $695M     $6.61   Moira Romero, 38, polo                 crown on rustCream
+  SPK  Superior Kitchens                      Fast Food                  Atlanta, United States           Small    $772M     $5.19   Sooah Ryan, 59, windbreaker            flame on goldBlack
+  ABP  ABP Grill                              Coffee Houses              Dallas, United States            Small    $463M    $70.88   Luca Michel, 45, windbreaker           teacup on burgundyGold
+  SRIC Sierra Coffee Co.                      Coffee Houses              San Francisco, United States     Small    $308M    $18.46   Ahmet Guo, 52, polo                    sun on kellyYellow
+  PDD  Piedmont Diners                        Pizza                      San Jose, United States          Small    $317M    $14.77   Janet Carson, 60, suitAndTie           star on limeBlack
+  ISP  Integrated Shake Pizza Co.             Pizza                      Dublin, Ireland                  Micro    $202M     $9.10   Sigrid Carpenter, 48, polo             crown on rustCream
+  MSFS Mesa Food Systems                      Fast Food                  Auckland, New Zealand            Micro    $193M     $2.15   Anjali Hogan, 36, labCoat              sun on yellowCharcoal
+  PZVL Pizzaville                             Pizza                      Chicago, United States           Micro     $59M    $13.94   Michelle Young, 56, suitAndTie         crown on sageCharcoal
+  SBFS Standard Burger Food Systems           Fast Food                  Chicago, United States           Micro     $52M     $6.36   Imran Hussain, 59, suitAndTie          crown on scarletWhite
+  MKE  MKE Kitchens                           Coffee Houses              Nashville, United States         Micro     $28M     $1.81   Joao Berg, 39, hawaiian                sun on walnutGold
+  LDI  Lindgren Drive-Ins                     Steakhouses                San Jose, United States          Micro     $28M     $5.40   Oluwaseun Leonard, 62, windbreaker     sun on walnutGold
+  RVDI Rivera Drive-Ins                       Steakhouses                Washington, United States        Nano       $2M     $8.18   Brenda Owen, 59, hawaiian              sun on seafoamGrey
+  HRTE Heritage Eateries                      Coffee Houses              Barcelona, Spain                 Nano       $2M     $5.35   Timothy Shah, 62, windbreaker          flame on mustardNavy
+
+Autos — 219 companies
+  EPMC EPM Coachworks                         Tyres                      Turin, Italy                     Mid      $4.4B    $20.33   Cornelius Volkov, 59, threePiece       lion on champagneBurgundy
+  JAP  Johnson Auto Parts                     Motorcycles                Cairo, Egypt                     Small    $1.7B    $36.34   Anders Gutierrez, 39, suitAndTie       lightning on steelGrey
+  THMW Tahoe Motor Works                      Trucks                     Zurich, Switzerland              Small    $1.0B    $71.57   Raymond Mwangi, 38, threePiece         arrowUp on champagneBurgundy
+  HRSA Harrison Automobile Co.                Tyres                      Nagoya, Japan                    Small    $796M    $29.37   Thanh Harrington, 52, cardigan         lightning on maroonCream
+  OLVA Oliveira Automotive                    Automakers                 Singapore, Singapore             Small    $685M    $14.49   Michael Malone, 32, suitAndTie         lightning on jadeGold
+  OBTM OBT Motor Works                        Motorcycles                Munich, Germany                  Small    $392M    $25.90   Zoran TanHarper, 34, suitAndTie        lion on burgundyGold
+  NRSC Northern Speed Carriage Co.            Tyres                      New York, United States          Micro    $104M    $23.51   Walter Harvey, 35, windbreaker         lightning on blackWhite
+  INAC Integrated Axle Carriage Co.           Automakers                 Munich, Germany                  Micro     $77M     $4.12   Isabelle Mueller, 45, windbreaker      arrowUp on goldBlack
+  SNTI Sentinel Industries                    Automakers                 London, United Kingdom           Micro     $85M    $18.28   Lindiwe Johansson, 45, suitAndTie      star on champagneBurgundy
+  JNTR Jansen Tyre & Rubber                   Tyres                      Detroit, United States           Micro     $68M    $10.43   Nicholas Nagy, 37, windbreaker         lightning on crimsonBlack
+  LCLA LCL Automotive                         Trucks                     Turin, Italy                     Micro     $36M    $10.03   Buck Webster, 62, cardigan             gear on mustardNavy
+  RDVB Roadvale Brothers                      Trucks                     Amsterdam, Netherlands           Micro     $38M     $4.62   Kai Dunn, 47, suitAndTie               gear on charcoalSilver
+  SFBC SFB Coachworks                         Auto Parts                 Turin, Italy                     Micro     $33M    $18.64   James Rodriguez, 62, powerSuit         lion on siennaOlive
+  NRN  NRN Automobile Co.                     Auto Parts                 San Diego, United States         Micro     $30M    $10.13   Charles Pedersen, 58, suitAndTie       lightning on maroonCream
+  TKHD Takahashi Dealer Group                 Trucks                     Hsinchu, Taiwan                  Micro     $29M     $1.33   Betty Guo, 53, suitAndTie              lightning on skyNavy
+  PWTA PWT Auto Parts                         Automakers                 Seoul, South Korea               Micro     $24M     $9.46   Crystal Fontaine, 40, windbreaker      gear on ochreTeal
+  PRRM PRR Motor Co.                          Automakers                 New Orleans, United States       Nano      $13M     $8.03   Magnus Iyer, 58, cardigan              star on champagneBurgundy
+  KJFA KJF Automotive                         Automakers                 Nagoya, Japan                    Nano      $11M     $3.23   Laurent Wilkins, 32, fleeceVest        arrowUp on cobaltOrange
+  UNMW United Motor Works                     Tyres                      Detroit, United States           Nano       $5M     $3.77   Leonard Lindgren, 38, windbreaker      lightning on rustCream
+  KNTR Kingsbridge Tyre & Rubber              Automakers                 Cincinnati, United States        Nano       $3M     $5.72   Sergei Eze, 40, suitAndTie             lion on brownTan
+
+Airlines — 123 companies
+  FRAT Frontier Air Transport                 Legacy Carriers            Hangzhou, China                  Mid      $4.6B    $19.94   Brock DeBoer, 58, tuxedo               sun on navyGold
+  PAL  Polar Air Lines                        Low-Cost Carriers          Dallas, United States            Mid      $3.3B    $32.99   Malcolm Karlsson, 59, suitAndTie       sun on charcoalSilver
+  ARWN Airwing                                Low-Cost Carriers          Miami, United States             Mid      $2.5B    $19.00   Steven Johnson, 52, powerSuit          sun on brickGrey
+  USJ  United Swift Jet Service               Regional                   Cairo, Egypt                     Small    $1.7B     $7.08   Suresh Neumann, 43, windbreaker        star on jadeGold
+  SWFA Swiftbus Air                           Low-Cost Carriers          Miami, United States             Small    $1.3B    $60.13   Fatima Boone, 48, suitAndTie           wave on cherryNavy
+  ATSA Atlas Sky Airlift                      Legacy Carriers            Chicago, United States           Small    $1.4B    $12.65   Sophia Armstrong, 57, windbreaker      globe on turquoiseNavy
+  CJS  Cooper Jet Service                     Air Cargo                  Atlanta, United States           Small    $1.1B     $9.56   Beatriz Menon, 38, suitAndTie          star on oxbloodSilver
+  CRAL Caribbean Air Lines                    Legacy Carriers            Dallas, United States            Small    $1.3B     $6.81   Amir Lowe, 32, suitAndTie              globe on slateCyan
+  CMTA Cometline Airways                      Legacy Carriers            Mumbai, India                    Small    $442M    $44.97   Alessandro Mann, 42, windbreaker       star on champagneBurgundy
+  JTAT Jetflyer Air Transport                 Regional                   London, United Kingdom           Small    $491M    $21.13   Anna Evans, 55, cardigan               wave on navyGold
+  GLS  Gulf Skyways                           Legacy Carriers            Winnipeg, Canada                 Small    $392M     $5.83   Paola Nilsson, 53, suitAndTie          sun on champagneBurgundy
+  HAT  Horizon Air Transport                  Regional                   Dhahran, Saudi Arabia            Small    $410M    $18.46   Freya Cruz, 56, suitAndTie             globe on rustCream
+  SLA  Silverwing Airlines                    Low-Cost Carriers          Monterrey, Mexico                Micro    $253M     $9.65   Winifred Nielsen, 47, powerSuit        sun on brickGrey
+  CSTA Coastal Airlift                        Legacy Carriers            Houston, United States           Micro    $269M     $5.72   Tomasz Wilson, 52, flannel             globe on royalSilver
+  PPA  Papadopoulos Air                       Low-Cost Carriers          Houston, United States           Micro    $211M     $7.22   Sandra Walters, 42, suspenders         star on amberBrown
+  UNCA United Comet Airlift                   Regional                   Boston, United States            Micro    $176M     $6.06   Douglas Santos, 39, threePiece         sun on mustardNavy
+  ALHA Aloha Aviation                         Legacy Carriers            Miami, United States             Micro    $134M    $21.13   Bernard Floyd, 43, threePiece          wave on aquaPurple
+  WNAC Wingstar Air Cargo                     Regional                   Chicago, United States           Micro    $143M     $6.18   Jonathan Baker, 61, suitAndTie         arrowUp on eggplantCream
+  MTSA Mutual Star Aviation                   Legacy Carriers            Miami, United States             Micro     $58M    $47.20   Miguel Harrison, 42, windbreaker       eagle on jadeGold
+  ARJ  Airjet                                 Legacy Carriers            Perth, Australia                 Nano       $3M    $13.94   Daniel Makinen, 45, suitAndTie         eagle on navyWhite
+
+Aerospace & Defence — 181 companies
+  GEA  General Elektrik Aero                  Jet Engines                Cincinnati, United States        Mega   $245.1B    $76.59   Sergei Vogel, 57, threePiece           arrowUp on inkCream
+  FLCA Falcodyne Aviation                     Jet Engines                Sydney, Australia                Mid      $5.9B    $18.10   Bruce Makinen, 39, suitAndTie          star on slateCyan
+  SNA  Sentinel Aerospace                     Avionics                   Sao Paulo, Brazil                Mid      $2.6B    $43.26   Colin Bennett, 41, powerSuit           arrowUp on charcoalSilver
+  JSS  Jones Space Systems                    Space                      New York, United States          Small    $1.9B     $9.28   Pamela Krause, 49, polo                flame on graphiteYellow
+  TTDS Titandynamics Defence Systems          Avionics                   Washington, United States        Small    $1.9B    $13.80   Bruce Young, 33, powerSuit             eagle on brickGrey
+  EVRD Evergreen Dynamics                     Defence Contractors        Seattle, United States           Small    $1.4B    $97.56   Tiffany Young, 37, suitAndTie          star on slateCyan
+  NRA  Northgate Aerospace                    Aircraft                   New York, United States          Small    $738M    $38.15   Ingrid Popov, 60, suitAndTie           flame on denimCream
+  ARSP Aerospace                              Components                 Washington, United States        Small    $589M    $22.62   Pekka Oliver, 38, polo                 lightning on oxbloodSilver
+  RFD  Royal Falcon Defence Systems           Jet Engines                Seattle, United States           Small    $546M    $44.54   Luca Mensah, 44, suitAndTie            globe on crimsonBlack
+  PTHD PTH Defence Systems                    Avionics                   Los Angeles, United States       Small    $375M     $3.88   Deepa Sasaki, 34, tuxedo               eagle on midnightCyan
+  KMSS Keystone Meteor Space Systems          Jet Engines                Tokyo, Japan                     Small    $386M    $29.95   Hassan Hallvard, 49, windbreaker       arrowUp on denimCream
+  MNCD Mancini Dynamics                       Defence Contractors        San Diego, United States         Small    $332M     $9.93   Elena Weber, 36, cardigan              arrowUp on steelGrey
+  UNWA United Wing Aeronautics                Jet Engines                Luxembourg, Luxembourg           Micro    $253M    $15.21   Sven Sparks, 57, threePiece            star on ochreTeal
+  SODS Supreme Orbit Defence Systems          Avionics                   Sydney, Australia                Micro    $281M    $34.29   Gunnar DeVries, 32, suspenders         flame on oxbloodSilver
+  ORBC Orbicraft                              Components                 Los Angeles, United States       Micro     $48M     $7.01   Priscilla Reed, 32, suitAndTie         eagle on royalSilver
+  FLC  Falcodynamics                          Jet Engines                Washington, United States        Micro     $34M     $3.02   Trevor Li, 39, suitAndTie              arrowUp on navyWhite
+  STAA Southern Aero Aircraft                 Avionics                   Munich, Germany                  Micro     $28M    $15.06   Harold Scott, 52, polo                 globe on silverNavy
+  RBEA RBE Aeronautics                        Components                 Boston, United States            Micro     $30M    $23.74   Helmut Meijer, 41, polo                eagle on rustCream
+  GCJA GCJ Aerospace                          Jet Engines                Los Angeles, United States       Micro     $28M    $22.62   Isabel Holmes, 35, flannel             flame on yellowCharcoal
+  DHLD Dahl Dynamics                          Jet Engines                Pittsburgh, United States        Nano      $16M     $1.79   Paul Hampton, 57, polo                 globe on slateCyan
+
+Shipping & Logistics — 177 companies
+  COS  Central Ocean Steamship Co.            Parcel Delivery            Singapore, Singapore             Large   $63.1B    $96.62   Percival Moretti, 35, fleeceVest       globe on slateCyan
+  CNYS Canyon Shipping                        Trucking                   New Orleans, United States       Mid      $4.2B    $77.33   Diane Khumalo, 41, suitAndTie          arrowUp on burgundyGold
+  SNTS Santos Steamship Co.                   Dry Bulk                   Atlanta, United States           Mid      $4.1B    $47.66   Ambrose Hodges, 59, suitAndTie         ship on slateCyan
+  BCT  Becker Tankers                         Trucking                   Houston, United States           Mid      $3.3B    $42.02   Joyce Powers, 59, suitAndTie           globe on turquoiseNavy
+  CHSL Chesapeake Logistics                   Trucking                   New Orleans, United States       Mid      $2.2B    $57.28   Fiona Kaya, 53, cardigan               globe on seafoamGrey
+  SMM  Summit Maritime                        Trucking                   Dallas, United States            Small    $1.6B     $4.58   Grace Lane, 48, suitAndTie             arrowUp on tealWhite
+  CMNL Commonwealth Lines                     Trucking                   New Orleans, United States       Small    $1.4B     $4.24   Fang Rousseau, 44, suitAndTie          globe on cherryNavy
+  MHN  Mehta Navigation                       Tankers                    Hong Kong, Hong Kong             Small    $1.1B    $12.65   Linda Logan, 61, windbreaker           ship on tealWhite
+  RYCM Royal Convoy Marine                    Parcel Delivery            Copenhagen, Denmark              Small    $926M     $9.37   Yoko Carr, 61, suitAndTie              ship on navyGold
+  NVKF Novak Freight                          Dry Bulk                   Portland, United States          Small    $358M    $27.72   Kwame Graham, 48, suitAndTie           anchor on midnightCyan
+  CMUT CMU Tankers                            Freight Forwarding         Auckland, New Zealand            Small    $369M    $18.82   Amy Yoshida, 46, turtleneck            anchor on blackWhite
+  ACT  Allied Cargo Trucking                  Parcel Delivery            Singapore, Singapore             Micro    $235M     $9.28   Thiago Torres, 35, threePiece          star on blackWhite
+  IVNM Ivanov Maritime                        Tankers                    Boston, United States            Micro    $159M    $15.81   Vladimir Mueller, 54, cardigan         star on cobaltOrange
+  TTKM Titan Keel Maritime                    Container Shipping         Hamburg, Germany                 Micro    $141M     $4.95   Mette Martinez, 59, windbreaker        globe on navyGold
+  NPF  NPF Tankers                            Container Shipping         Hong Kong, Hong Kong             Micro     $53M     $7.36   Omar Ellsworth, 50, suitAndTie         wave on skyNavy
+  WTKE Watkins Express                        Container Shipping         Zurich, Switzerland              Micro     $40M     $8.18   Astrid Barton, 51, suitAndTie          ship on cobaltOrange
+  EMCL Empire Container Lines                 Freight Forwarding         Zurich, Switzerland              Micro     $25M     $7.57   Emeka Asante, 45, suspenders           wave on royalSilver
+  MRLE Morales Express                        Tankers                    Copenhagen, Denmark              Nano      $10M     $1.93   Sharon Clark, 56, labCoat              ship on crimsonBlack
+  BLE  Bailey & Ellis                         Parcel Delivery            Gothenburg, Sweden               Nano       $4M     $1.79   Reginald Solberg, 61, windbreaker      anchor on whiteBlack
+  CNTL Central Lines                          Trucking                   Bangalore, India                 Nano       $3M     $5.29   Alexander Scott, 40, windbreaker       globe on cobaltOrange
+
+Railroads — 99 companies
+  PRRS Perry Rail System                      Passenger Rail             Moscow, Russia                   Large   $67.0B    $45.85   Blake Lawson, 59, turtleneck           bridge on royalSilver
+  SBSL Southern Bayside Short Line            Short Lines                Montreal, Canada                 Large   $16.5B    $45.41   Sven Rizzo, 35, suspenders             arrowUp on maroonCream
+  KNSL Kingsbridge Short Line                 Short Lines                Kyiv, Ukraine                    Mid      $5.2B    $66.88   Diane Floyd, 63, suitAndTie            eagle on scarletWhite
+  NCSL Northern Chesapeake Short Line         Railcar Leasing            Montreal, Canada                 Mid      $5.6B   $105.42   Reza Hopkins, 33, suitAndTie           bridge on denimCream
+  ESTR Eastwind Rail Corp.                    Class I Railroads          Mexico City, Mexico              Mid      $2.7B    $24.20   Thabo Francis, 48, polo                star on maroonCream
+  NRSR Northern Southport Railroad Co.        Short Lines                Omaha, United States             Mid      $2.6B   $132.99   Beatrice Volkov, 62, suitAndTie        gear on silverNavy
+  CHRL Chevalier Rail Lines                   Class I Railroads          Montreal, Canada                 Mid      $2.2B     $7.01   Tariq Hodges, 49, suitAndTie           mountain on denimCream
+  SCR  Southport & Cascade Rail Co.           Railcar Leasing            Tokyo, Japan                     Small    $1.4B     $3.85   Daniel Lopez, 39, cardigan             arrowUp on siennaOlive
+  MKRS Midland Klondike Rail System           Short Lines                Hong Kong, Hong Kong             Small    $410M    $35.99   Dennis Schmidt, 54, suitAndTie         eagle on crimsonBlack
+  TBR  Texas Bluewater Rail Corp.             Short Lines                Chicago, United States           Micro    $224M    $25.90   Melissa Owusu, 54, threePiece          gear on silverNavy
+  MHRL Meridian & Highland Rail Lines         Railcar Leasing            Calgary, Canada                  Micro    $154M    $12.90   Thanh Krueger, 34, powerSuit           star on navyWhite
+  KRLR Karlsson Railway                       Railcar Leasing            Chicago, United States           Micro    $128M     $2.79   Tiffany Palmer, 44, suitAndTie         arrowUp on scarletWhite
+  CPSL Cascade & Pacific Short Line           Short Lines                St. Louis, United States         Micro     $84M    $19.56   Winifred Almeida, 56, suspenders       star on skyNavy
+  KSR  Keystone & Silverlake Rail Corp.       Class I Railroads          Omaha, United States             Micro     $96M     $6.94   Biff Thornton, 44, suitAndTie          star on walnutGold
+  BCR  Beacon Rail Corp.                      Railcar Leasing            Hong Kong, Hong Kong             Micro     $51M     $2.28   Kathleen Wagner, 37, powerSuit         eagle on cobaltOrange
+  APXR Apex Rail Co.                          Short Lines                Calgary, Canada                  Nano      $11M     $1.24   Nicole Lin, 39, fleeceVest             star on seafoamGrey
+  OARL Ontario & Aurora Rail Lines            Passenger Rail             Brussels, Belgium                Nano       $9M     $3.85   Magnus Watts, 46, suitAndTie           gear on rustCream
+  PNRR Pioneer Railroad Co.                   Passenger Rail             Milan, Italy                     Nano       $6M     $1.05   Joao Dunn, 60, suitAndTie              mountain on oxbloodSilver
+  ERL  Evergreen Rail Lines                   Passenger Rail             Calgary, Canada                  Nano       $5M     $1.59   Kevin Wilkins, 47, suspenders          eagle on navyWhite
+  TXMR Texas Missouri Railcar Co.             Passenger Rail             Shenzhen, China                  Nano       $3M     $3.39   Fatima McCarthy, 56, suitAndTie        star on scarletWhite
+
+Construction & Materials — 257 companies
+  RCBP Richardson Building Products           Cement & Aggregates        Denver, United States            Mid      $2.0B    $33.96   Luis Morales, 56, suitAndTie           mountain on greyRed
+  PPHM Pipehill Machinery                     Heavy Machinery            Dallas, United States            Small    $1.6B    $48.59   Laura Luo, 47, polo                    rock on brownTan
+  FREB Ferreira Builders                      Homebuilders               Denver, United States            Small    $1.0B    $23.97   Ahmet Bradley, 40, threePiece          bridge on champagneBurgundy
+  GLDB Golden Builders                        Building Products          Barcelona, Spain                 Small    $885M     $2.66   Philip West, 44, windbreaker           tower on scarletWhite
+  CGN  CGN Construction                       Homebuilders               Paris, France                    Small    $858M    $11.05   Louis Rousseau, 38, threePiece         bridge on terracottaSand
+  PSJB PSJ Building Products                  Heavy Machinery            Atlanta, United States           Small    $727M    $10.03   Anil Wheeler, 34, suspenders           mountain on crimsonBlack
+  HNC  Hansen Construction Co.                Building Products          Dallas, United States            Small    $538M    $11.05   Heike Kaiser, 33, polo                 gear on amberBrown
+  SHC  Shah Construction                      Engineering & Construction Munich, Germany                  Small    $416M    $11.82   Imran Higgins, 47, suitAndTie          gear on maroonCream
+  IUFC IUF Contractors                        Cement & Aggregates        Chicago, United States           Small    $327M     $7.80   Diego Okafor, 58, windbreaker          mountain on champagneBurgundy
+  HLAC Haile Contractors                      Engineering & Construction Atlanta, United States           Small    $303M     $6.61   Sipho Eze, 56, suspenders              tower on ochreTeal
+  ASPA Asphaltpoint Aggregates                Heavy Machinery            Boston, United States            Micro    $273M    $34.29   Hassan Larsen, 50, windbreaker         mountain on graphiteYellow
+  ALGC Allied Gravel Contractors              Homebuilders               Atlanta, United States           Micro    $130M     $6.30   Julia Khoury, 53, flannel              gear on brickGrey
+  MTCE Mitchell Engineering                   Engineering & Construction Seattle, United States           Micro     $85M     $9.10   Pablo Brady, 46, threePiece            tower on brownTan
+  FRC  Frontier Cement                        Homebuilders               Munich, Germany                  Micro     $71M     $4.28   Femke Aguilar, 37, suitAndTie          bridge on amberBrown
+  GLPH Golden Pipe Homes                      Heavy Machinery            Munich, Germany                  Micro     $38M     $6.81   Tariq Demir, 59, suitAndTie            bridge on goldBlack
+  HMRA Hammerburn Aggregates                  Building Products          Paris, France                    Micro     $31M     $3.33   Bjorn Smit, 59, hoodie                 gear on crimsonBlack
+  DZBP Dozerline Building Products            Homebuilders               Sydney, Australia                Micro     $29M    $54.58   Betty Wisniewski, 62, suitAndTie       rock on slateCyan
+  RCKB Rockland Builders                      Engineering & Construction Dallas, United States            Micro     $29M     $1.33   Heather Rousseau, 52, suitAndTie       gear on siennaOlive
+  TJMM TJM Materials                          Cement & Aggregates        Dallas, United States            Micro     $22M     $7.36   Meera Lyons, 47, threePiece            gear on purpleGold
+  RYLB Royal Builders                         Building Products          Denver, United States            Nano       $3M    $11.16   Stephen Kaiser, 38, cardigan           tower on khakiBrown
+
+Real Estate — 452 companies
+  RLRT Realtyland Realty Trust                Retail REITs               Miami, United States             Large   $51.1B   $169.40   Olaf Worthington, 62, polo             pillar on graphiteYellow
+  MBV  MBV Realty Trust                       Residential                Hong Kong, Hong Kong             Mid      $5.7B    $45.85   Connor Brady, 58, hoodie               tree on amberBrown
+  PRKD Parkside Development                   Residential                Taipei, Taiwan                   Mid      $2.5B    $38.15   Louis Medina, 58, powerSuit            key on honeyWhite
+  PRSE Pearson Estates                        Industrial                 Vienna, Austria                  Small    $1.7B    $46.75   Chester Berg, 47, suitAndTie           bridge on chocolateCream
+  MTR  Modern Terrace REIT                    Residential                Miami, United States             Small    $1.4B    $18.64   Femke Yang, 43, threePiece             tower on denimCream
+  SVRE Sovereign Real Estate                  Residential                Hangzhou, China                  Small    $1.2B    $11.71   Cheryl Montgomery, 42, powerSuit       tree on umberGreen
+  NNKR NNK Real Estate                        Developers                 Singapore, Singapore             Small    $695M     $5.29   Martha Santos, 57, powerSuit           tower on brassMaroon
+  OWSL Owusu Land Co.                         Retail REITs               New Orleans, United States       Small    $654M    $30.53   Maarten Sullivan, 46, suspenders       key on navyGold
+  CLPR Colonial Plaza Realty                  Office REITs               Miami, United States             Small    $530M    $70.20   Mehmet Qureshi, 59, tuxedo             tower on greyRed
+  WSRE Westbrook Real Estate                  Self Storage               Denver, United States            Small    $470M    $26.41   Yusuf Herrera, 52, powerSuit           key on cobaltOrange
+  SFED SFE Development                        Developers                 San Francisco, United States     Small    $449M    $60.71   Kofi Birch, 54, suitAndTie             bridge on brassMaroon
+  APOR APO REIT                               Self Storage               Singapore, Singapore             Micro    $246M     $9.10   Frank Watkins, 60, powerSuit           key on terracottaSand
+  PRCP Price Properties                       Retail REITs               Dublin, Ireland                  Micro    $163M    $16.27   Akira Rizzo, 48, hawaiian              pillar on silverNavy
+  LBE  Liberty Estates                        Industrial                 Miami, United States             Micro    $163M    $25.16   Chinedu Khan, 54, powerSuit            tree on cobaltOrange
+  FRRE Ferreira Real Estate                   Office REITs               Chicago, United States           Micro     $58M     $8.93   Ingrid Sanders, 35, powerSuit          tree on khakiBrown
+  NGRE Nagy Real Estate                       Self Storage               Singapore, Singapore             Micro     $41M     $4.90   Eleni West, 49, windbreaker            tower on midnightCyan
+  TRRT Terraceburn Realty Trust               Residential                Singapore, Singapore             Micro     $26M    $25.40   Paul Maxwell, 34, suitAndTie           bridge on silverNavy
+  MJHR MJH Realty Trust                       Self Storage               Chicago, United States           Nano       $6M     $1.23   Jessica Hodges, 53, windbreaker        pillar on charcoalSilver
+  GBSD Gibson Development                     Industrial                 Los Angeles, United States       Nano       $3M     $8.11   Keith Greco, 56, fleeceVest            sun on navyGold
+  TPRE Transcontinental Property REIT         Office REITs               Los Angeles, United States       Nano       $3M     $2.77   Andrea Cunningham, 49, suitAndTie      tree on eggplantCream
+
+Media & Entertainment — 220 companies
+  NRRC Northern Reel Communications           Cable Networks             New York, United States          Large   $43.9B   $118.40   Samantha Cobb, 36, suitAndTie          globe on yellowCharcoal
+  FSCM Fischer Media                          Newspapers                 Paris, France                    Mid      $8.2B    $71.57   Fatima Ndlovu, 55, suitAndTie          globe on lavenderNavy
+  RLSN Reelstar Newspapers                    Film Studios               Tokyo, Japan                     Mid      $7.5B   $217.89   Jennifer Diallo, 55, suitAndTie        crown on oxbloodSilver
+  VFCF VFC Films                              Cable Networks             Beijing, China                   Small    $820M    $12.41   Marco Haile, 49, threePiece            star on amberBrown
+  FSD  Fisher & Davies                        Broadcasting               Los Angeles, United States       Small    $571M    $11.05   Albert Reid, 50, powerSuit             globe on terracottaSand
+  FRH  Ferguson & Hernandez                   Film Studios               Chicago, United States           Small    $674M    $23.74   Henry Carter, 52, fleeceVest           crown on silverNavy
+  WLFO Wolf & Sons                            Publishing                 Los Angeles, United States       Small    $522M     $4.71   Anders Liu, 41, turtleneck             lightning on rustCream
+  MRDN Meridian Newspapers                    Film Studios               Denver, United States            Small    $580M     $7.29   Javier Riley, 37, turtleneck           sun on magentaBlack
+  STRE Standard Reel Entertainment            Film Studios               Mumbai, India                    Small    $429M    $78.85   Sunita Singh, 63, fleeceVest           star on eggplantCream
+  RDPL Radioplex                              Cable Networks             Los Angeles, United States       Micro    $196M    $11.16   Philippe Goodwin, 61, turtleneck       lightning on navyWhite
+  CMN  Cumberland Newspapers                  Cable Networks             Portland, United States          Micro    $171M     $2.35   Olivia Patton, 59, flannel             star on navyGold
+  RLMD Reelmedia                              Publishing                 New York, United States          Micro    $132M    $10.63   Thaddeus Okonkwo, 48, suitAndTie       lightning on oxbloodSilver
+  HLIH Hill & Hartmann                        Cable Networks             Charlotte, United States         Micro     $94M    $10.53   Crystal Kimura, 56, tuxedo             tower on siennaOlive
+  MPR  Modern Print Records                   Publishing                 Miami, United States             Micro    $101M     $4.40   Giovanni Thornton, 34, tuxedo          lightning on slateCyan
+  LRSC Larsen Communications                  Film Studios               Paris, France                    Micro     $87M    $18.46   Liam Hodges, 37, turtleneck            sun on charcoalSilver
+  HGB  Highland Broadcasting                  Newspapers                 Tokyo, Japan                     Micro     $50M    $10.23   Sofia Kang, 50, suitAndTie             lightning on lavenderNavy
+  AFF  Advanced Film Films                    Broadcasting               Taipei, Taiwan                   Micro     $38M    $33.96   Rose Cohen, 59, suitAndTie             globe on brassMaroon
+  NRPB Northern Print Broadcasting            Publishing                 Chicago, United States           Micro     $35M     $4.85   Angus Brown, 37, suitAndTie            tower on silverNavy
+  GRNN Granite Networks                       Film Studios               Paris, France                    Micro     $22M    $31.74   Thiago Park, 53, turtleneck            lightning on denimCream
+  RVRP Rivera Pictures                        Broadcasting               Los Angeles, United States       Micro     $20M     $2.11   Steven Farmer, 34, hawaiian            tower on grapeLime
+
+Video Games — 138 companies
+  JYD  Joyworks Digital                       Game Retail                Kyoto, Japan                     Mid      $7.1B    $29.66   Ahmet Wright, 38, powerSuit            star on jadeGold
+  PXL  Pixelzone                              Arcade                     San Francisco, United States     Mid      $4.9B    $12.90   Kenji Ivanov, 40, threePiece           lightning on brickGrey
+  FRND Frontier Nova Digital                  Handhelds                  Dallas, United States            Small    $2.0B    $36.70   Melissa Flores, 62, hoodie             chip on scarletWhite
+  INBD International Bit Digital              Arcade                     San Francisco, United States     Small    $1.5B    $16.92   Denise Conti, 52, suspenders           lightning on aquaPurple
+  CNHE Central Hyper Entertainment            Arcade                     Dhahran, Saudi Arabia            Small    $1.2B    $25.40   Ming Liu, 40, fleeceVest               bull on jadeGold
+  MGVE Megavision Entertainment               Console Publishers         Tokyo, Japan                     Small    $477M    $11.05   Thabo Choi, 32, suitAndTie             chip on scarletWhite
+  KYCA Keystone Combo Arcade                  PC Games                   Toronto, Canada                  Small    $375M    $51.00   Leonard Karimi, 52, threePiece         star on indigoOrange
+  CBG  Continental Bit Games                  Arcade                     Seattle, United States           Small    $410M    $34.63   Kai Santos, 57, hoodie                 flame on brassMaroon
+  JYTS Joytendo Soft                          Handhelds                  Seattle, United States           Small    $375M    $18.46   Pablo Meyer, 35, fleeceVest            bull on goldBlack
+  LVLA Levelware Amusements                   Arcade                     Tokyo, Japan                     Micro    $299M     $6.94   Philippe Cross, 35, suitAndTie         crown on amberBrown
+  GHTA GHT Amusements                         Handhelds                  Miami, United States             Micro    $221M     $3.70   Anders Barnes, 62, fleeceVest          crown on plumSilver
+  PWRZ Powerzone                              Handhelds                  San Francisco, United States     Micro    $265M     $6.42   Candace Hudson, 41, suitAndTie         bull on cyanMagenta
+  PWRG Powersoft Game Co.                     PC Games                   Los Angeles, United States       Micro     $95M     $9.10   Roy Atkins, 46, windbreaker            chip on yellowCharcoal
+  FRPE Frontier Play Entertainment            Console Publishers         San Francisco, United States     Micro    $119M     $6.00   Thomas Goodwin, 56, powerSuit          bull on magentaBlack
+  PWE  Powerworks Entertainment               Game Retail                Boston, United States            Micro     $87M    $12.65   Nicholas Jang, 51, threePiece          bull on purpleGold
+  NVWG Novaware Games                         Arcade                     Seattle, United States           Micro     $68M    $25.90   Minjun Fleming, 35, threePiece         chip on amberBrown
+  NTJS National Joystick Soft                 Game Retail                Charlotte, United States         Micro     $40M     $6.00   Miguel Zhang, 62, suitAndTie           crown on cyanMagenta
+  CNBG Central Byte Game Co.                  Arcade                     Los Angeles, United States       Micro     $37M     $4.62   Philippe Lombardi, 40, hoodie          bull on lavenderNavy
+  ASHG Associated Hyper Games                 Handhelds                  Zurich, Switzerland              Nano       $6M     $4.40   Patricia Mills, 39, hoodie             bull on violetWhite
+  JYXS Joyix Studios                          Arcade                     Houston, United States           Nano       $3M     $1.14   Sophia Moreno, 39, fleeceVest          chip on petrolCream
+
+Hotels & Leisure — 178 companies
+  BKIE Bookie Holdings                        Travel Agencies            New York, United States          Mega   $181.3B    $60.13   Wayne Barker, 61, suitAndTie           star on indigoOrange
+  BPI  BPI Travel                             Theme Parks                Portland, United States          Large   $13.6B    $81.17   Melissa Wallace, 44, threePiece        sun on maroonCream
+  INBH Innbrook Hotels                        Cruise Lines               Paris, France                    Mid      $7.1B    $30.24   Akiko Jacobs, 42, threePiece           sun on jadeGold
+  BLWH Bluewater Hotels                       Casinos                    New York, United States          Mid      $7.8B    $11.71   Heather Brewer, 49, suitAndTie         crown on jadeGold
+  HWKL Hawkins Leisure                        Travel Agencies            Hong Kong, Hong Kong             Mid      $7.5B    $74.40   Gloria Cheung, 36, suspenders          wave on turquoiseNavy
+  KRC  Keystone Resort Cruise Lines           Casinos                    New Orleans, United States       Mid      $4.4B    $25.90   Sanne Ellsworth, 59, turtleneck        ship on honeyWhite
+  HRHR Horizon Hotels & Resorts               Casinos                    Miami, United States             Small    $1.6B    $28.26   Francois Obi, 61, tuxedo               key on mustardNavy
+  PNPV Pioneer Palace Vacations               Travel Agencies            Paris, France                    Small    $1.9B    $66.88   Michelle Lawson, 33, suitAndTie        star on khakiBrown
+  GLGI GLG Inns                               Hotels                     Mumbai, India                    Small    $1.3B    $25.65   Winifred Lefebvre, 32, powerSuit       crown on cyanMagenta
+  NRHC Northern Hotel Casinos                 Theme Parks                New York, United States          Small    $491M    $43.26   Miguel Fisher, 62, powerSuit           wave on grapeLime
+  CLMV Columbia Vacations                     Hotels                     Chicago, United States           Small    $456M    $51.50   Amanda Saunders, 60, tuxedo            star on seafoamGrey
+  FRL  Frontier Leisure                       Theme Parks                Atlanta, United States           Micro    $214M     $5.61   Amir Ribeiro, 59, suitAndTie           key on turquoiseNavy
+  BNTE Bennett Entertainment                  Travel Agencies            Miami, United States             Micro    $190M    $22.84   Omar Ross, 57, suitAndTie              sun on burgundyGold
+  SPHR Supreme Palm Hotels & Resorts          Hotels                     London, United Kingdom           Micro    $128M    $14.77   Luca Hardy, 54, suitAndTie             wave on violetWhite
+  MSEH Mesa Hotels                            Travel Agencies            Rome, Italy                      Micro    $126M     $5.29   Skip Otieno, 32, suitAndTie            wave on amberBrown
+  RMPC RMP Cruise Lines                       Hotels                     Seoul, South Korea               Micro    $128M    $31.43   Ralph Thorsen, 45, suitAndTie          key on champagneBurgundy
+  VCL  Vacationhaven Cruise Lines             Cruise Lines               Hong Kong, Hong Kong             Micro    $101M    $10.23   Anil Hosseini, 56, tuxedo              crown on scarletWhite
+  MDRI Modern Inns                            Travel Agencies            Paris, France                    Micro     $77M     $5.35   Fergus Watanabe, 33, suitAndTie        key on tealWhite
+  PJU  PJU Lodging                            Theme Parks                Miami, United States             Micro     $45M     $2.37   Helmut Floyd, 61, hawaiian             key on champagneBurgundy
+  RVRH Riverside Hotels                       Theme Parks                London, United Kingdom           Nano      $14M     $4.24   Brandon Bianchi, 48, tuxedo            crown on oxbloodSilver
+
+Conglomerate — 103 companies
+  CNST Consolidated Trust                     Industrial                 Tokyo, Japan                     Mid      $8.6B    $23.74   Deborah Zhu, 36, suitAndTie            eagle on champagneBurgundy
+  UNC  Unico                                  Industrial                 Tokyo, Japan                     Mid      $8.9B    $11.94   Pavel Higgins, 48, suitAndTie          eagle on scarletWhite
+  RSLC Russell Corporation                    Industrial                 Hong Kong, Hong Kong             Mid      $4.2B    $29.95   Beatrice Eze, 36, threePiece           crown on cobaltOrange
+  AMMT AMM Trust                              Holding Company            Omaha, United States             Mid      $2.6B    $59.55   Ralph Hayes, 43, suitAndTie            crown on greyRed
+  DZIB Diaz Brothers                          Diversified                Luxembourg, Luxembourg           Small    $1.9B    $29.95   Goran Richards, 55, suitAndTie         lion on oxbloodSilver
+  AHRT AHR Trust                              Diversified                Seoul, South Korea               Small    $1.6B    $17.58   Anna Wilson, 38, threePiece            pillar on brickGrey
+  MROR Moreau & Richter                       Holding Company            Mumbai, India                    Small    $1.5B     $2.96   Gerald Cruz, 52, suitAndTie            eagle on emeraldWhite
+  PTL  Patel Group                            Industrial                 New York, United States          Small    $1.4B     $3.17   Henrik Berg, 54, suitAndTie            globe on midnightCyan
+  NDLP Ndlovu & Patterson                     Industrial                 Lagos, Nigeria                   Small    $1.3B    $25.16   Mehmet Rocha, 48, threePiece           lion on ochreTeal
+  PRT  Paramount Trust                        Diversified                Hong Kong, Hong Kong             Small    $912M    $42.43   Pavel Carvalho, 49, suitAndTie         lion on navyWhite
+  UNCR Unicorp                                Diversified                Seoul, South Korea               Small    $761M     $7.22   Eero Lefebvre, 41, suitAndTie          crown on rustCream
+  HDSI Hudson Industrial Corp.                Holding Company            Kyoto, Japan                     Small    $499M    $34.29   Sofia Wilkins, 46, suitAndTie          lion on honeyWhite
+  HDB  Hudson & Baker                         Industrial                 New York, United States          Micro     $72M     $3.63   Siobhan Hopkins, 57, threePiece        pillar on greyRed
+  GRTI Great Industrial Corp.                 Industrial                 New York, United States          Micro     $41M    $12.29   Anjali Stewart, 42, suitAndTie         globe on ochreTeal
+  KTVI KTV Industrial Corp.                   Holding Company            Miami, United States             Micro     $43M     $5.14   Keith Mills, 41, powerSuit             eagle on umberGreen
+  KND  Knight Diversified                     Holding Company            Melbourne, Australia             Micro     $38M    $17.08   Isabelle Jung, 44, suitAndTie          pillar on tealBlack
+  ASCT Associated Holdings                    Holding Company            New York, United States          Micro     $22M     $6.06   Vladimir Yates, 40, suitAndTie         lion on cobaltOrange
+  ALI  Allied Industrial Corp.                Industrial                 Dallas, United States            Nano      $14M     $3.33   Ayse Michel, 60, suitAndTie            gear on greyRed
+  LIUE Liu Enterprises                        Holding Company            Chicago, United States           Nano       $4M     $1.88   Ralph Ashby, 59, flannel               gear on burgundyGold
+  WTNS Watanabe & Singh                       Holding Company            Seoul, South Korea               Nano       $3M     $3.39   Marcel Davies, 60, suspenders          lion on ochreTeal
