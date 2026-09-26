@@ -1,0 +1,193 @@
+/* The CEO's ID badge (spec §8): a laminated card that flips. */
+
+.id-badge {
+  /* Reset 98.css's button look. */
+  all: unset;
+  display: inline-block;
+  width: 240px;
+  height: 310px;
+  perspective: 900px;
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #111;
+}
+
+.id-badge:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: 4px;
+}
+
+.id-badge-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease;
+}
+
+.id-badge.flipped .id-badge-card {
+  transform: rotateY(180deg);
+}
+
+.id-badge-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #fdfdfb, #e9ece8);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 5px rgba(255, 255, 255, 0.7), 3px 4px 8px rgba(0, 0, 0, 0.35);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.id-badge-back {
+  transform: rotateY(180deg);
+  gap: 8px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.id-badge-hole {
+  flex: none;
+  width: 38px;
+  height: 8px;
+  margin: 10px 0 6px;
+  border-radius: 4px;
+  background: #b9b9b0;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.id-badge-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 46px;
+  background: var(--firm);
+  border-bottom: 3px solid var(--firm-accent);
+}
+
+.id-badge-logo {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 4px;
+}
+
+.id-badge-body {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 12px 0;
+  box-sizing: border-box;
+}
+
+.id-badge-photo {
+  flex: none;
+  align-self: flex-start;
+  line-height: 0;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #888;
+}
+
+.id-badge-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: 10px;
+}
+
+.id-badge-name {
+  font-size: 14px;
+  line-height: 1.1;
+}
+
+.id-badge-title {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 9px;
+}
+
+.id-badge-access {
+  color: #b00000;
+}
+
+.id-badge-barcode {
+  display: block;
+  margin-top: auto;
+  margin-bottom: 14px;
+  width: 200px;
+}
+
+.barcode {
+  display: block;
+  width: 100%;
+  fill: #000;
+}
+
+.id-badge-stripe {
+  flex: none;
+  width: calc(100% + 32px);
+  height: 40px;
+  margin-top: 8px;
+  background: linear-gradient(180deg, #2b2b2b, #0c0c0c 60%, #262626);
+}
+
+.id-badge-small {
+  font-size: 9px;
+  color: #555;
+}
+
+.id-badge-signature {
+  width: 100%;
+  margin-top: 24px;
+  border-bottom: 1px solid #333;
+  font-family: 'Brush Script MT', 'Snell Roundhand', 'Apple Chancery', cursive;
+  font-size: 20px;
+  font-style: italic;
+  color: #1c2a6a;
+}
+
+/* The laminate's hologram: a rainbow band drifting across the card. */
+.id-badge-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 120, 200, 0.18) 40%,
+    rgba(120, 220, 255, 0.22) 47%,
+    rgba(255, 255, 140, 0.2) 54%,
+    transparent 64%
+  );
+  background-size: 300% 100%;
+  mix-blend-mode: screen;
+  animation: id-badge-sheen 6s ease-in-out infinite alternate;
+}
+
+@keyframes id-badge-sheen {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .id-badge-card {
+    transition: none;
+  }
+  .id-badge-sheen {
+    animation: none;
+  }
+}

@@ -11,11 +11,14 @@ interface ShellStore {
   speed: Speed;
   /** Scrolling watchlist ticker above the taskbar. */
   tickerTape: boolean;
+  /** The Setup Wizard (spec §5) fills the screen: at first power-on, or from My Computer → New Game. */
+  setup: boolean;
 
   setPower(power: Power): void;
   moveIcon(id: string, x: number, y: number): void;
   setSpeed(speed: Speed): void;
   toggleTickerTape(): void;
+  setSetup(setup: boolean): void;
 }
 
 export const useShell = create<ShellStore>()((set) => ({
@@ -23,9 +26,11 @@ export const useShell = create<ShellStore>()((set) => ({
   iconPositions: {},
   speed: 1,
   tickerTape: false,
+  setup: false,
 
   setPower: (power) => set({ power }),
   moveIcon: (id, x, y) => set((s) => ({ iconPositions: { ...s.iconPositions, [id]: { x, y } } })),
   setSpeed: (speed) => set({ speed }),
   toggleTickerTape: () => set((s) => ({ tickerTape: !s.tickerTape })),
+  setSetup: (setup) => set({ setup }),
 }));

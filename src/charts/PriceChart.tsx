@@ -1,10 +1,10 @@
 import {
-  CandlestickSeries, ColorType, CrosshairMode, HistogramSeries, LineSeries, LineStyle, createChart, type IChartApi,
-  type ISeriesApi, type UTCTimestamp,
+  CandlestickSeries, ColorType, CrosshairMode, HistogramSeries, LineSeries, LineStyle, TickMarkType, createChart,
+  type IChartApi, type ISeriesApi, type Time, type UTCTimestamp,
 } from 'lightweight-charts';
 import { useEffect, useRef, useState } from 'react';
 import { count, price as formatPrice } from '../apps/format';
-import { dayOf, formatClock, formatDate } from '../sim/calendar';
+import { dayOf, formatClock, formatDate, formatTime, gameYear, monthName } from '../sim/calendar';
 import { simulation } from '../sim/client';
 import type { Bar, LiveBars, Timeframe } from '../sim/types';
 import { useGame } from '../state/game';
@@ -31,7 +31,20 @@ export const LOOK = {
     horzLines: { color: '#8a8a8a', style: LineStyle.Dotted },
   },
   rightPriceScale: { borderColor: '#808080' },
-  timeScale: { borderColor: '#808080', rightOffset: 2 },
+  timeScale: {
+    borderColor: '#808080',
+    rightOffset: 2,
+    // Our own labels, so the cosmetic start year (spec §9) shows on the axis.
+    tickMarkFormatter: (t: Time, type: TickMarkType) => {
+      const seconds = t as number;
+      const day = Math.floor(seconds / 86_400);
+      if (type === TickMarkType.Year) return String(gameYear(day));
+      if (type === TickMarkType.Month) return monthName(day);
+      if (type === TickMarkType.DayOfMonth) return String(new Date(seconds * 1000).getUTCDate());
+      return formatTime(seconds / 60);
+    },
+  },
+  localization: { timeFormatter: (t: Time) => formatDate(Math.floor((t as number) / 86_400)) },
   crosshair: {
     mode: CrosshairMode.Normal,
     vertLine: { color: '#000080', labelBackgroundColor: '#000080' },

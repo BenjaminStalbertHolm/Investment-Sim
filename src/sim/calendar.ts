@@ -132,11 +132,27 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const pad = (n: number) => String(n).padStart(2, '0');
 
+let yearShift = 0;
+
+/**
+ * The year the game says it starts in (spec §9, cosmetic): dates are shown shifted by whole years, while the calendar
+ * underneath stays 1998's. Each thread (UI and worker) sets it when a game starts.
+ */
+export function setStartYear(year: number): void {
+  yearShift = year - new Date(START_DAY * 86_400_000).getUTCFullYear();
+}
+
+/** The year a day is shown in. */
+export const gameYear = (day: number) => new Date(day * 86_400_000).getUTCFullYear() + yearShift;
+
 /** "05 Jan 1998" */
 export function formatDate(day: number): string {
   const d = new Date(day * 86_400_000);
-  return `${pad(d.getUTCDate())} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  return `${pad(d.getUTCDate())} ${MONTHS[d.getUTCMonth()]} ${gameYear(day)}`;
 }
+
+/** "Jan", for chart axes. */
+export const monthName = (day: number) => MONTHS[new Date(day * 86_400_000).getUTCMonth()];
 
 /** "10:42" */
 export const formatTime = (t: GameTime) => `${pad(Math.floor(minuteOf(t) / 60))}:${pad(minuteOf(t) % 60)}`;

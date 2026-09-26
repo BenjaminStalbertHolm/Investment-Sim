@@ -1,14 +1,17 @@
 import { useMemo, type ReactNode } from 'react';
+import { DEFAULT_LOGO } from '../../art/logo/code';
 import { Logo, type LogoSpec } from '../../art/logo/Logo';
+import { PlayerBadge, usePlayerLook } from '../../apps/mycomputer/PlayerBadge';
 import { LOGO_FONTS, LOGO_LAYOUTS, LOGO_SHAPES, PALETTES, type LogoMotif } from '../../art/logo/options';
 import { PerformanceChart } from '../../charts/PerformanceChart';
 import { bigMoney, count, pct, signedPct } from '../../apps/format';
-import { START_DAY, formatDate } from '../../sim/calendar';
+import { START_DAY, formatDate, gameYear } from '../../sim/calendar';
 import { useAccountData, useGame } from '../../state/game';
 import { simulation } from '../../sim/client';
 import { CITIES } from '../../world/cities';
 import { FIRST_NAMES, LAST_NAMES } from '../../world/people-names';
-import { PRESET_FIRMS } from '../../world/presetFirms';
+import { randomCeo, type Ceo } from '../../world/ceo';
+import { PRESET_FIRMS, presetLogo } from '../../world/presetFirms';
 import { Rng } from '../../world/rng';
 import { STRATEGY_BLURBS } from '../data/copy';
 import { Photo } from '../company/CompanySite';
@@ -24,6 +27,8 @@ export interface FirmProfile {
   ceo: string;
   /** Chief investment officer and chief financial officer. */
   officers: [string, string];
+  /** Portraits of the CEO and the two officers. */
+  faces: [Ceo, Ceo, Ceo];
   founded: number;
   city: string;
 }
@@ -37,7 +42,7 @@ export function firmProfile(seed: string, firm: { id: string; preset: boolean })
   const rng = Rng.stream(firm.preset ? 'preset firms' : seed, `firm:${firm.id}`);
   const person = () => `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`;
   const logo: LogoSpec = preset
-    ? { ...preset.logo, palette: PALETTES.find((p) => p.id === preset.logo.palette)! }
+    ? presetLogo(preset)
     : {
         shape: rng.pick(LOGO_SHAPES),
         motif: rng.pick(MOTIFS),
@@ -47,11 +52,15 @@ export function firmProfile(seed: string, firm: { id: string; preset: boolean })
       };
   const ceo = preset?.ceo ?? person();
   const city = CITIES.find((c) => c.name === rng.pick(HUBS));
-  return { logo, ceo, officers: [person(), person()], founded: rng.int(1870, 1990), city: city ? `${city.name}, ${city.country}` : 'New York' };
+  // Faces come from a stream of their own, so adding them changed nothing else about a firm.
+  const faces = Rng.stream(firm.preset ? 'preset firms' : seed, `firm:${firm.id}:faces`);
+  return {
+    logo,
+    ceo,
+    officers: [person(), person()],
+    faces: [randomCeo(faces), randomCeo(faces), randomCeo(faces)],
+    founded: rng.int(1870, 1990), city: city ? `${city.name}, ${city.country}` : 'New York' };
 }
-
-/** The player's firm until the logo designer (Phase 5) gives it one of its own. */
-const PLAYER_LOGO: LogoSpec = { shape: 'circle', motif: 'bull', palette: PALETTES.find((p) => p.id === 'navyGold')!, font: 'serif', layout: 'iconLeft' };
 
 const PAGES = [
   ['index.html', 'Home'],
@@ -76,7 +85,7 @@ function Shell({ name, logo, page, children, colour }: { name: string; logo: Log
       <div className="firm-body">{children}</div>
       <Rule />
       <div className="firm-footer">
-        Past performance is no guarantee of future results. © 1998 {name}.
+        Past performance is no guarantee of future results. © {gameYear(START_DAY)} {name}.
         <BestViewed />
       </div>
     </div>
@@ -168,10 +177,10 @@ export function FirmWebsite({ id, page }: { id: number; page: string }) {
         return (
           <>
             <h1>Leadership</h1>
-            {[[profile.ceo, 'Chief Executive Officer'], [profile.officers[0], 'Chief Investment Officer'], [profile.officers[1], 'Chief Financial Officer']].map(
-              ([name, role]) => (
+            {([[profile.ceo, 'Chief Executive Officer'], [profile.officers[0], 'Chief Investment Officer'], [profile.officers[1], 'Chief Financial Officer']] as const).map(
+              ([name, role], i) => (
                 <div key={role} className="firm-person">
-                  <Photo name={name} />
+                  <Photo name={name} ceo={profile.faces[i]} />
                   <p>
                     <b>{name}</b>
                     <br />
@@ -196,9 +205,11 @@ export function FirmWebsite({ id, page }: { id: number; page: string }) {
 /** The player's own firm (spec §14): its name, assets and returns, updated as it grows. */
 export function PlayerWebsite({ page }: { page: string }) {
   const firmName = useGame((s) => s.firmName);
+  const look = usePlayerLook();
   const account = useGame((s) => s.snapshot?.account);
   const stats = useAccountData(() => simulation().stats());
   useTitle(`${firmName} — Home`);
+  const logo = look?.logo ?? DEFAULT_LOGO;
   const history: [number, number, number][] = stats ?? [];
   const last = history.at(-1);
   const deposits = account?.deposits ?? 0;
@@ -208,7 +219,7 @@ export function PlayerWebsite({ page }: { page: string }) {
         return (
           <>
             <h1>Welcome to {firmName}</h1>
-            <p>A young investment firm with big ambitions, founded in {new Date(START_DAY * 86_400_000).getUTCFullYear()}.</p>
+            <p>A young investment firm with big ambitions, founded in {gameYear(START_DAY)}.</p>
             <table className="firm-facts" border={1} cellPadding={4}>
               <tbody>
                 <tr><th>Assets under management</th><td>{account ? bigMoney(account.netWorth) : '…'}</td></tr>
@@ -234,11 +245,11 @@ export function PlayerWebsite({ page }: { page: string }) {
           <>
             <h1>Leadership</h1>
             <div className="firm-person">
-              <Photo name="Chief Executive Officer" />
+              <PlayerBadge />
               <p>
-                <b>Chief Executive Officer</b>
+                <b>{look?.player.ceoName}</b>
                 <br />
-                <i>Founder</i>
+                <i>Founder and Chief Executive Officer</i>
               </p>
             </div>
           </>
@@ -248,7 +259,7 @@ export function PlayerWebsite({ page }: { page: string }) {
     }
   })();
   return (
-    <Shell name={firmName} logo={PLAYER_LOGO} page={page} colour={PLAYER_LOGO.palette.colors[0]}>
+    <Shell name={firmName} logo={logo} page={page} colour={logo.palette.colors[0]}>
       {body}
     </Shell>
   );

@@ -1,18 +1,23 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useId, type CSSProperties, type ReactNode } from 'react';
 import type { Genes } from '../../world/genome';
 import { MOTIF_ICONS } from './motifs';
+import './logo.css';
 import {
-  LOGO_FONTS, LOGO_LAYOUTS, LOGO_MOTIFS, LOGO_SHAPES, PALETTES, type LogoFont, type LogoLayout, type LogoMotif,
-  type LogoShape, type Palette,
+  LOGO_FONTS, LOGO_LAYOUTS, LOGO_MOTIFS, LOGO_SHAPES, PALETTES, type LogoEffect, type LogoFont, type LogoLayout,
+  type LogoMotif, type LogoShape, type Palette,
 } from './options';
 
-/** Everything a logo is drawn from (spec §7). Phase 5's designer adds effects and custom colours. */
+/**
+ * Everything a logo is drawn from (spec §7). Custom colours replace the palette's colours (its id stays the palette
+ * they started from); a third colour is a background panel behind the logo.
+ */
 export interface LogoSpec {
   shape: LogoShape;
   motif: LogoMotif;
   palette: Palette;
   font: LogoFont;
   layout: LogoLayout;
+  effect?: LogoEffect;
 }
 
 const item = <T,>(list: readonly T[], index: number): T => list[index % list.length];
@@ -69,22 +74,72 @@ export function monogram(name: string): string {
   return (words.length ? words : [name]).slice(0, 3).map((w) => w[0].toUpperCase()).join('');
 }
 
-function Emblem({ spec, name, height }: { spec: LogoSpec; name: string; height: number }) {
+/** 90s WordArt on the wordmark (spec §7). */
+function textEffect(effect: LogoEffect | undefined, ink: string, accent: string, size: number): CSSProperties {
+  const px = Math.max(1, Math.round(size / 16));
+  switch (effect) {
+    case 'dropShadow':
+      return { textShadow: `${px * 2}px ${px * 2}px 0 rgba(0, 0, 0, 0.4)` };
+    case 'bevel':
+      return { textShadow: `-${px}px -${px}px 0 rgba(255, 255, 255, 0.8), ${px}px ${px}px 0 rgba(0, 0, 0, 0.55)` };
+    case 'gradient':
+      return {
+        backgroundImage: `linear-gradient(180deg, ${accent} 15%, ${ink} 85%)`,
+        WebkitBackgroundClip: 'text',
+        backgroundClip: 'text',
+        color: 'transparent',
+      };
+    case 'outline':
+      return { WebkitTextStroke: `${px}px ${accent}`, paintOrder: 'stroke fill' };
+    default:
+      return {};
+  }
+}
+
+/** The emblem: container and motif (or monogram letters), with the effect drawn in SVG. x and y place it in an SVG. */
+export function Emblem({ spec, name, height, x: left, y: top }: { spec: LogoSpec; name: string; height: number; x?: number; y?: number }) {
+  const id = useId().replace(/:/g, '');
   const [main, accent] = spec.palette.colors;
   const shape = spec.shape === 'none' ? (spec.layout === 'monogram' ? SHAPES.circle : undefined) : SHAPES[spec.shape];
   const Motif = MOTIF_ICONS[spec.motif];
   const [x, y, size] = shape?.motif ?? [4, 4, 92];
   const letters = monogram(name);
+  const effect = spec.effect ?? 'none';
+  const fill = effect === 'gradient' && shape ? `url(#${id}g)` : main;
+  const filter = effect === 'dropShadow' || effect === 'bevel' ? `url(#${id}f)` : undefined;
   return (
-    <svg className="logo-emblem" width={height} height={height} viewBox="0 0 100 100" aria-hidden="true">
-      {shape?.draw(main)}
-      {spec.layout === 'monogram' ? (
-        <text x="50" y="50" dy="0.35em" textAnchor="middle" fill={accent} fontSize={letters.length > 2 ? 30 : 40} style={LOGO_FONT_STYLES[spec.font]}>
-          {letters}
-        </text>
-      ) : (
-        <Motif x={x} y={y} size={size} color={shape ? accent : main} />
-      )}
+    <svg className="logo-emblem" x={left} y={top} width={height} height={height} viewBox={effect === 'none' ? '0 0 100 100' : '-5 -5 110 110'} aria-hidden="true">
+      <defs>
+        {effect === 'gradient' && (
+          <linearGradient id={`${id}g`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor={accent} />
+            <stop offset="0.6" stopColor={main} />
+          </linearGradient>
+        )}
+        {effect === 'dropShadow' && (
+          <filter id={`${id}f`}>
+            <feDropShadow dx="5" dy="5" stdDeviation="0" floodOpacity="0.4" />
+          </filter>
+        )}
+        {effect === 'bevel' && (
+          <filter id={`${id}f`}>
+            <feDropShadow dx="-3" dy="-3" stdDeviation="0" floodColor="#fff" floodOpacity="0.7" />
+            <feDropShadow dx="3" dy="3" stdDeviation="0" floodOpacity="0.5" />
+          </filter>
+        )}
+      </defs>
+      <g filter={filter} stroke={effect === 'outline' ? accent : undefined} strokeWidth={effect === 'outline' ? 4 : undefined}>
+        {shape?.draw(fill)}
+        {spec.layout === 'monogram' ? (
+          <text x="50" y="50" dy="0.35em" textAnchor="middle" fill={accent} stroke="none" fontSize={letters.length > 2 ? 30 : 40} style={LOGO_FONT_STYLES[spec.font]}>
+            {letters}
+          </text>
+        ) : (
+          <g stroke="none">
+            <Motif x={x} y={y} size={size} color={shape ? accent : main} />
+          </g>
+        )}
+      </g>
     </svg>
   );
 }
@@ -94,40 +149,52 @@ function Emblem({ spec, name, height }: { spec: LogoSpec; name: string; height: 
  * draws through here. `height` is the emblem's size in pixels.
  */
 export function Logo({ spec, name, height = 48, showName = true }: { spec: LogoSpec; name: string; height?: number; showName?: boolean }) {
-  const [main, accent] = spec.palette.colors;
+  const [main, accent, background] = spec.palette.colors;
   const font = LOGO_FONT_STYLES[spec.font];
   const wordmark = (size: number, colour = inkColour(spec.palette)) =>
     showName && (
-      <span className="logo-wordmark" style={{ ...font, color: colour, fontSize: size }}>
+      <span className="logo-wordmark" style={{ ...font, color: colour, fontSize: size, ...textEffect(spec.effect, colour, accent, size) }}>
         {name}
       </span>
     );
-  switch (spec.layout) {
-    case 'textOnly':
-      return (
-        <span className="logo logo-text-only" style={{ borderBottomColor: accent }}>
-          {wordmark(height * 0.6) || monogram(name)}
-        </span>
-      );
-    case 'textInside':
-      return (
-        <span className={`logo logo-text-inside logo-shape-${spec.shape}`} style={{ background: main, ...font, color: accent, fontSize: height * 0.45 }}>
-          {showName ? name : monogram(name)}
-        </span>
-      );
-    case 'iconAbove':
-      return (
-        <span className="logo logo-icon-above">
-          <Emblem spec={spec} name={name} height={height} />
-          {wordmark(height * 0.35)}
-        </span>
-      );
-    default:
-      return (
-        <span className="logo logo-icon-left">
-          <Emblem spec={spec} name={name} height={height} />
-          {wordmark(height * 0.5)}
-        </span>
-      );
-  }
+  const logo = (() => {
+    switch (spec.layout) {
+      case 'textOnly':
+        return (
+          <span className="logo logo-text-only" style={{ borderBottomColor: accent }}>
+            {wordmark(height * 0.6) || monogram(name)}
+          </span>
+        );
+      case 'textInside':
+        return (
+          <span
+            className={`logo logo-text-inside logo-shape-${spec.shape}`}
+            style={{ background: main, ...font, color: accent, fontSize: height * 0.45, ...textEffect(spec.effect, accent, main, height * 0.45) }}
+          >
+            {showName ? name : monogram(name)}
+          </span>
+        );
+      case 'iconAbove':
+        return (
+          <span className="logo logo-icon-above">
+            <Emblem spec={spec} name={name} height={height} />
+            {wordmark(height * 0.35)}
+          </span>
+        );
+      default:
+        return (
+          <span className="logo logo-icon-left">
+            <Emblem spec={spec} name={name} height={height} />
+            {wordmark(height * 0.5)}
+          </span>
+        );
+    }
+  })();
+  return background ? (
+    <span className="logo-panel" style={{ background }}>
+      {logo}
+    </span>
+  ) : (
+    logo
+  );
 }

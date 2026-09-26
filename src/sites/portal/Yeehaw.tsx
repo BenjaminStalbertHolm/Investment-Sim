@@ -1,3 +1,4 @@
+import { START_DAY, gameYear } from '../../sim/calendar';
 import { useMemo, useState } from 'react';
 import { count, signedPct, tone } from '../../apps/format';
 import { searchCompanies } from '../../apps/trade/SymbolSearch';
@@ -27,7 +28,7 @@ export default function Yeehaw({ url }: { url: URL }) {
         <Front />
       )}
       <p className="yh-footer">
-        Copyright © 1998 Yeehaw! Inc. All rights reserved. <Link href={`http://${YEEHAW}/`}>Add URL</Link> · <Link href={`http://${YEEHAW}/`}>Help</Link>
+        Copyright © {gameYear(START_DAY)} Yeehaw! Inc. All rights reserved. <Link href={`http://${YEEHAW}/`}>Add URL</Link> · <Link href={`http://${YEEHAW}/`}>Help</Link>
       </p>
     </div>
   );

@@ -1,9 +1,11 @@
 import { pastQuarters, type Fundamentals } from '../sim/earnings';
+import { defaultPlayer } from '../sim/player';
+import { completeSettings, type GameSettings } from '../sim/settings';
 import { newBrowserState } from './browser';
 import { SAVE_FORMAT, type Manifest, type SaveDocuments } from './saveFile';
 
 /** Version of the save format. Bump it, and add a migration, whenever what is saved changes shape (spec §18). */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 type Migration = (documents: SaveDocuments) => SaveDocuments;
 
@@ -15,6 +17,12 @@ export const MIGRATIONS: Record<number, Migration> = {
     pastQuarters(sim.fundamentals);
     const game = docs.game as Record<string, unknown> | undefined;
     return { ...docs, game: game && { ...game, browser: newBrowserState() } };
+  },
+  // Phase 5: the firm's logo and CEO, and the advanced settings.
+  2: (docs) => {
+    const sim = docs.sim as { world: { seed: string }; player: { firmName: string }; settings: GameSettings };
+    const player = { ...defaultPlayer(sim.world.seed, sim.player.firmName), ...sim.player };
+    return { ...docs, sim: { ...sim, player, settings: completeSettings(sim.settings) } };
   },
 };
 

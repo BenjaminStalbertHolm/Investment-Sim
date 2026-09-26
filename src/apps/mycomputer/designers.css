@@ -1,0 +1,338 @@
+/* The logo and portrait designers, the Setup Wizard and the Firm panel (spec §5, §7, §8, §17). */
+
+.designer {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.designer-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.designer-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.picker label:first-child {
+  display: inline-block;
+  width: 84px;
+}
+
+.picker select {
+  width: 150px;
+}
+
+.picker-step {
+  min-width: 20px;
+  padding: 0 2px;
+  font-size: 9px;
+}
+
+.feature-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.feature-row input[type='color'] {
+  width: 24px;
+  height: 20px;
+  padding: 0;
+}
+
+.motif-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 26px);
+  gap: 2px;
+}
+
+.motif-grid button {
+  /* 98.css draws button text as a shadow of transparent text; icons need a real colour. */
+  color: #222;
+  min-width: 0;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+}
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(16, 14px);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.palette-grid button {
+  min-width: 0;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  box-shadow: inset 0 0 0 1px #808080;
+}
+
+.motif-grid .selected,
+.palette-grid .selected {
+  outline: 2px solid #000080;
+  outline-offset: 0;
+}
+
+.custom-colours {
+  flex-wrap: wrap;
+}
+
+.logo-preview-web {
+  display: flex;
+  align-items: center;
+  min-height: 70px;
+  padding: 8px;
+  overflow: hidden;
+  background: #fff;
+  border: 2px inset #fff;
+}
+
+.logo-preview-row {
+  display: flex;
+  gap: 8px;
+}
+
+.logo-preview-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #008080;
+}
+
+.logo-preview-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 140px;
+  height: 46px;
+  padding: 0 6px;
+}
+
+.logo-preview-badge > span {
+  padding: 3px 6px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 4px;
+}
+
+.code-field .code {
+  width: 170px;
+  font-family: 'Courier New', monospace;
+}
+
+.code-error {
+  margin: 2px 0 0;
+  color: #a00000;
+}
+
+.portrait-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.portrait-preview > *,
+.firm-panel-summary > .id-badge {
+  flex: none;
+}
+
+.portrait-frame {
+  line-height: 0;
+  border: 2px inset #fff;
+}
+
+/* ---------- Setup Wizard ---------- */
+
+.setup-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #000080, #1084d0);
+}
+
+.setup-screen .setup-title {
+  position: absolute;
+  top: 16px;
+  left: 24px;
+  margin: 0;
+  font: italic bold 32px 'Times New Roman', Times, serif;
+  color: #fff;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.setup-window {
+  position: relative;
+  width: 980px;
+  max-width: calc(100vw - 24px);
+}
+
+.setup-body {
+  display: flex;
+  gap: 12px;
+  height: 540px;
+  max-height: calc(100vh - 140px);
+}
+
+.setup-banner {
+  flex: none;
+  width: 150px;
+  background: linear-gradient(160deg, #008080, #004040);
+  color: #fff;
+  padding: 12px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.setup-banner ol {
+  margin: 12px 0 0;
+  padding-left: 18px;
+}
+
+.setup-banner .current {
+  font-weight: bold;
+  color: #ffff80;
+}
+
+.setup-page {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.setup-page h2 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.setup-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid #808080;
+  box-shadow: 0 1px 0 #fff inset;
+}
+
+.setup-buttons .spacer {
+  margin-right: 12px;
+}
+
+.firm-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 6px;
+}
+
+.firm-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 72px;
+  padding: 6px;
+  text-align: left;
+  overflow: hidden;
+}
+
+.firm-choice.selected {
+  outline: 2px solid #000080;
+}
+
+.firm-choice small {
+  color: #404040;
+}
+
+.difficulty-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.difficulty-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  text-align: left;
+  min-height: 150px;
+}
+
+.difficulty-card.selected {
+  outline: 2px solid #000080;
+}
+
+.difficulty-card b {
+  font-size: 14px;
+}
+
+.difficulty-label {
+  margin: 10px 0;
+}
+
+.install-progress {
+  margin: 24px 0 8px;
+}
+
+.install-progress .progress-indicator {
+  height: 20px;
+}
+
+.finish-page {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+/* ---------- Advanced settings ---------- */
+
+.advanced-settings {
+  width: 460px;
+}
+
+.advanced-settings .tab-panel {
+  min-height: 300px;
+  padding: 8px;
+}
+
+.advanced-settings .field-row label:first-child {
+  display: inline-block;
+  width: 190px;
+}
+
+.advanced-settings input[type='number'] {
+  width: 90px;
+}
+
+/* ---------- My Computer → Firm ---------- */
+
+.firm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.firm-panel-summary {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}

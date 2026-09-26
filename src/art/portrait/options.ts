@@ -51,8 +51,37 @@ export const CLOTHING_COLOURS = [
   'royalBlue', 'skyBlue', 'purple', 'mustard',
 ] as const;
 
+// Not in the company genome: companies derive these from the CEO's name genes (world/ceo.ts).
+export const FACE_SHAPES = ['oval', 'round', 'square', 'long', 'heart'] as const;
+
+/** Tints over the skin tone. */
+export const UNDERTONES = ['neutral', 'warm', 'cool', 'olive'] as const;
+
+/** Photo backgrounds: plain studio gradients, [top, bottom]. */
+export const BACKGROUNDS = [
+  ['#8fb4d9', '#3d6a99'], ['#c9c9c9', '#7d7d7d'], ['#7fc4c0', '#2f7773'], ['#d9a3a3', '#8a3e3e'],
+  ['#a8c98f', '#4f7a3a'], ['#d9c29a', '#8a6a3a'], ['#b8a3d9', '#5a4a8a'], ['#f0e6c8', '#b8a878'],
+] as const;
+
+export const HAIR_HEX: Record<HairColour, string> = {
+  black: '#1c1a1a', darkBrown: '#3b2616', brown: '#6b4423', auburn: '#8c3a1f', ginger: '#c8622a', blond: '#e0c068',
+  platinum: '#efe8d0', grey: '#9a9a9a', white: '#eeeeee', dyedBlue: '#2f6fd6', dyedPink: '#e05aa8', dyedGreen: '#3fae4a',
+};
+
+export const CLOTHING_HEX: Record<ClothingColour, string> = {
+  navy: '#1f2d57', charcoal: '#3a3d42', black: '#1a1a1a', grey: '#8a8d91', white: '#f2f2f2', cream: '#ece2c6',
+  brown: '#5c3b22', tan: '#c4a57a', maroon: '#6d1a2a', burgundy: '#7e1f3b', forestGreen: '#1f4d2b', olive: '#5b6b2f',
+  royalBlue: '#2346a0', skyBlue: '#7fb2e5', purple: '#5b2c83', mustard: '#d0a020',
+};
+
 export type HairStyle = (typeof HAIR_STYLES)[number];
 export type HairColour = (typeof HAIR_COLOURS)[number];
 export type FacialHair = (typeof FACIAL_HAIR)[number];
 export type Accessory = (typeof ACCESSORIES)[number];
 export type Clothing = (typeof CLOTHING)[number];
+export type ClothingColour = (typeof CLOTHING_COLOURS)[number];
+export type FaceShape = (typeof FACE_SHAPES)[number];
+export type EyeStyle = (typeof EYES)[number];
+export type Eyebrows = (typeof EYEBROWS)[number];
+export type Nose = (typeof NOSES)[number];
+export type Mouth = (typeof MOUTHS)[number];
