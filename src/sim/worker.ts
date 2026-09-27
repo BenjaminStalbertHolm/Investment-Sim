@@ -228,6 +228,7 @@ const api = {
   loanQuote: (amount: number, structure: Structure, months: number) => game().loanQuote(amount, structure, months),
   takeLoan: (amount: number, structure: Structure, months: number) => changed(game().takeLoan(amount, structure, months)),
   repayLoan: (id: number, amount: number) => changed(game().repayLoan(id, amount)),
+  repayQuote: (id: number, amount: number) => game().repayQuote(id, amount),
   bankruptcy: () => game().bankruptcy(),
 };
 

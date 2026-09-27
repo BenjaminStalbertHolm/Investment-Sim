@@ -10,7 +10,7 @@ a calendar, futures on 22 commodities and indices, and bank loans. Internet Expl
 Yeehaw! portal and search, every company's own website (home, about, products, investor relations with live stats,
 short interest and holders, guestbook), competitor firms' sites and your own, QuoteZone (movers, sector map, screener),
 the news, the Chicago Murkantile Exchange, the National Weather Bureau (its warnings are a real signal for farm and
-energy futures), OPEK, the Federal Reservoir, First Continental Bank and Equifacts. A Setup Wizard founds your firm:
+energy futures), OPEK, the Federal Reservoir, First Continental Bank, Equifacts, and Ask Reeves, the in-game help. A Setup Wizard founds your firm:
 pick one of ten famous firms or design your own logo, draw your CEO's portrait (every company CEO has one too), choose a
 difficulty or tune the advanced settings, and get a laminated ID badge. The market has corporate events — scandals,
 frauds, takeovers, drug trials, recalls, CEO changes, dividends, bankruptcies — and an economy with a Federal Reservoir;
@@ -42,14 +42,17 @@ Targets Safari and Chrome on macOS, 1280×800 minimum window.
 
 ## Playing
 
-The game boots into your most recent save; the first time, the Setup Wizard founds your firm. Open **MajorTrade Pro 98**
+The game boots into your most recent save; the first time, the Setup Wizard founds your firm. New to investing? The
+**Ask Reeves** icon on the desktop (or Start → Help) opens the in-game help: guides to stocks, orders, margin, short
+selling, futures, loans and clients, and a butler who answers questions. Open **MajorTrade Pro 98**
 to watch quotes and trade, and **Internet Exploiter** to read the news and visit companies (type a company or ticker
 in the address bar to search Yeehaw!); the tray sets the game speed (a trading day takes two minutes at 1×).
 **Outbox Express** (the tray's envelope shows unread mail) is where clients offer mandates — each with rules that apply
 to your whole portfolio — and where tips, briefings and broker letters arrive. **My Computer → Firm** lists your clients
 and their mandates and sets your fees. The account is a margin account: MajorTrade's **Futures** tab trades contracts
 (hold a commodity past its last trading day and it is delivered to your office lobby), **Financing** takes out bank
-loans, and the Portfolio shows equity against the margin requirements; a margin call gives a few days to put it right.
+loans and repays them (in part or in full, at any time), and the Portfolio shows equity against the margin
+requirements; a margin call gives a few days to put it right.
 Press **Ctrl+S**
 (or ⌘S) to save. **My Computer → Saves** lists saved games and exports or imports `.d98` files; dropping a `.d98` on
 the desktop loads it. **My Computer → New Game** reruns Setup, **My Computer → Firm** renames your firm and
@@ -83,7 +86,8 @@ src/
                     text.ts (template writer), portal/ (Yeehaw!), company/ (company sites: content.ts generates them),
                     firm/, news/ (every outlet; articles.ts writes articles from the news archive), forum/ (Raging
                     Bear), quotezone/, finance/ (the exchange, Weather Bureau, OPEK, Federal Reservoir, bank and
-                    Equifacts); data/ holds the text templates, product lists and industry themes
+                    Equifacts), help/ (Ask Reeves: topics.tsx holds the guides); data/ holds the text templates,
+                    product lists and industry themes
   ui98/             98-style widgets 98.css lacks: menu bar, modals, virtualised table view, ticker tape
   charts/           price and performance charts (lightweight-charts), sparklines
   art/icons.tsx     original pixel-style SVG icons

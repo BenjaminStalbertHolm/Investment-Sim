@@ -1,5 +1,6 @@
 import { money, pct, signedMoney, tone } from '../../apps/format';
 import { LoanForm } from '../../apps/trade/LoanForm';
+import { RepayForm } from '../../apps/trade/RepayForm';
 import type { LedgerEntry } from '../../sim/account';
 import { START_DAY, formatClock, formatDate, gameYear } from '../../sim/calendar';
 import { simulation } from '../../sim/client';
@@ -28,7 +29,8 @@ export function FirstContinental({ url }: { url: URL }) {
           First Continental Bank
         </Link>
         <span className="bank-nav">
-          <Link href="/">Business Lending</Link> | <Link href="/apply">Apply Online</Link> | <Link href="/loans">Your Loans &amp; Statements</Link>
+          <Link href="/">Business Lending</Link> | <Link href="/apply">Apply Online</Link> | <Link href="/loans">Your Loans &amp; Statements</Link> |{' '}
+          <Link href="/pay">Make a Payment</Link>
         </span>
       </div>
       <div className="bank-body">
@@ -36,6 +38,8 @@ export function FirstContinental({ url }: { url: URL }) {
           <p>Please wait while we verify your connection is secure…</p>
         ) : page === 'apply' ? (
           <Apply headroom={view.headroom} />
+        ) : page === 'pay' ? (
+          <Pay view={view} />
         ) : page === 'loans' ? (
           <Statements firmName={firmName} view={view} />
         ) : (
@@ -85,6 +89,29 @@ function Lending({ firmName, view }: { firmName: string; view: LoansView }) {
       <p>
         <Link href="/apply">Apply online in minutes »</Link>
       </p>
+    </>
+  );
+}
+
+function Pay({ view }: { view: LoansView }) {
+  useTitle('First Continental Bank — Make a Payment');
+  return (
+    <>
+      <h2>Make a Payment</h2>
+      <p>
+        Pay a missed payment, part of a loan, or all of it. We apply your money to any missed payment first, then to the
+        interest accrued to today, then to the principal, which carries a fee of 1%. Paying early lowers your later
+        payments, and a smaller debt may fall into a cheaper tier.
+      </p>
+      {view.loans.some((l) => l.status === 'active') ? (
+        <div className="bank-form">
+          <RepayForm loans={view.loans} />
+        </div>
+      ) : (
+        <p>
+          You have no loans with us. <Link href="/apply">Apply online »</Link>
+        </p>
+      )}
     </>
   );
 }
@@ -147,6 +174,11 @@ function Statements({ firmName, view }: { firmName: string; view: LoansView }) {
           You have no loans with us. <Link href="/apply">Apply online »</Link>
         </p>
       )}
+      {view.loans.some((l) => l.status === 'active') && (
+        <p>
+          <Link href="/pay">Make a payment or pay off a loan »</Link>
+        </p>
+      )}
       <h3>Statement</h3>
       {lines.length ? (
         <table className="bank-table" cellPadding={4}>
@@ -172,7 +204,10 @@ function Statements({ firmName, view }: { firmName: string; view: LoansView }) {
       ) : (
         <p>No transactions.</p>
       )}
-      <p>Early repayment is available in MajorTrade Pro 98 → Financing, for a fee of 1% of the amount repaid.</p>
+      <p>
+        Interest accrues every day on what you owe, at your floating rate, and is collected with each monthly payment. You can
+        also make payments in MajorTrade Pro 98 → Financing.
+      </p>
     </>
   );
 }

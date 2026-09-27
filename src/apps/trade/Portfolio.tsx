@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PerformanceChart } from '../../charts/PerformanceChart';
+import { HelpLink } from '../HelpLink';
 import { formatDate } from '../../sim/calendar';
 import { simulation } from '../../sim/client';
 import type { PositionView } from '../../sim/types';
@@ -44,7 +45,8 @@ export function Portfolio() {
       {account?.call && (
         <p className="margin-banner">
           ⚠ MARGIN CALL: your equity is {money(account.call.amount)} short of the maintenance requirement. Meet it by the
-          opening bell on {formatDate(account.call.due)}, or the broker will sell positions for you.
+          opening bell on {formatDate(account.call.due)}, or the broker will sell positions for you.{' '}
+          <HelpLink topic="margin">What should I do?</HelpLink>
         </p>
       )}
       {account && (

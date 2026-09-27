@@ -549,16 +549,30 @@ Judgement calls made where the spec leaves details open.
   cheap against its long-run level. About nineteen a year (measured). Both are news — the Newswire, the Financial Timez
   and the trade papers of the industries that depend on the commodity, and for decisions and weather that hits, MoneyTV
   and the Jottings — and their articles chart the commodity instead of the index.
-- **Bank loans (§16A).** First Continental Bank lends $10,000 up to $5M in all. The rate on every loan is the policy rate
-  plus the spread of the tier the total bank debt falls into (Bronze 3%, Silver 5%, Gold 7.5%, Platinum 11%) times the
-  difficulty's loan-rate multiplier, ± up to 2 points by credit score, floating. Amortising (`financial.pmt`) or interest
-  only with the principal at the end, over 1–5 years; the form shows the rate, payment, interest over the term and the
-  price of a missed payment, and the game autosaves before signing. Payments come out at the open on the first trading day
-  of each month, and only from equity above the initial requirement (the broker won't let the bank take what the
-  positions need); otherwise the payment is missed: a 5% late fee, a mark on the credit report and five trading days to
-  pay. A second miss, or the late payment left unpaid, is a default: the bank has positions and goods sold to recover the
-  whole loan, and any shortfall is bankruptcy. Early repayment costs 1%. The same form is on MajorTrade → Financing and
-  the bank's site, as §16A asks, so the bank's site comes now rather than with Phase 10's other §14.2 sites.
+- **Bank loans (§16A).** First Continental Bank lends $10,000 up to $5M in all. The rate on every loan is the policy
+  rate plus the spread of the tier the total bank debt falls into (Bronze 3%, Silver 5%, Gold 7.5%, Platinum 11%)
+  times the difficulty's loan-rate multiplier, ± up to 2 points by credit score, floating. Amortising or interest only
+  with the principal at the end, over 1–5 years; the form shows the rate, payment, interest over the term and the
+  price of a missed payment, and the game autosaves before signing. **Interest accrues every calendar day** on the
+  principal owed, at the day's rate (actual/365, counted at each close up to the next session), and counts against net
+  worth as it accrues. A first version charged a whole month's interest at each payment, so a loan signed on the 30th
+  paid a month for three days and one repaid mid-month paid nothing for the days since the last payment; daily accrual
+  fixes both. Payments come out at the open on the first trading day of each month: the interest accrued since the
+  last one, and for an amortising loan the rest of an even instalment (`financial.pmt` over the months left, worked
+  out afresh each month, so the rate can float and early repayments lower the instalments rather than shorten the
+  term). They are taken only from equity above the initial requirement (the broker won't let the bank take what the
+  positions need); otherwise the payment is missed: a 5% late fee, a mark on the credit report and five trading days
+  to pay. A second miss, or the late payment left unpaid, is a default: the bank has positions and goods sold to
+  recover the whole loan, and any shortfall is bankruptcy.
+- **Repaying** is one form, in MajorTrade → Financing (Repay…, a double-click on a loan, or Pay Now… on the banner of
+  an overdue payment) and on the bank's Make a Payment page: pay off the whole loan, only a missed payment, or an
+  amount. A payment goes to any missed payment first (which can now be paid at once rather than waiting for the next
+  open), then the interest accrued to date, then principal, which carries the 1% early repayment fee (spec §16A).
+  Before paying, the form shows the split, what is free to pay, the balance and next payment afterwards, and a cheaper
+  tier if the smaller debt reaches one; it comes from the engine (`repayQuote`), so the preview and the payment are
+  the same arithmetic (`splitRepayment` in `sim/loans.ts`). The loans table shows the interest so far and the payoff
+  amount. Loans in saves from the first Phase 7 build start accruing from the save. The same form is on the bank's
+  site, as §16A asks, so the bank's site comes now rather than with Phase 10's other §14.2 sites.
 - **Credit score (Equifacts, 300–850):** 680 + payment history (+2 a payment on time up to +80, +20 a loan repaid, −70 a
   missed payment, −200 a default) + leverage (down to −130 as bank and margin debt reach twice net worth; −250 without
   net worth) + the six-month net worth trend (±60). The regulator's record joins it in Phase 8.
@@ -577,6 +591,20 @@ Judgement calls made where the spec leaves details open.
   minutes whose tone — hawkish, balanced, dovish — is the one the news already carried, the latest economic data, the
   10-year yield), First Continental Bank (rates for this firm, the application, loans and statement) and Equifacts (score,
   its parts, the record). Yeehaw! gains the weather teaser Phase 4 left for this phase, and links to all of them.
+- **Ask Reeves (§14.2)**, www.askreeves.com, is the spec's butler and the game's help in one: Reeves (original SVG
+  art) answers questions typed in plain words, and 23 guides in six sections cover the first day, time and saving;
+  stocks, research, buying, order types, the portfolio, dividends and takeovers; margin and short selling; what
+  futures are, how to trade them step by step, daily settlement, expiry and delivery, the weather, OPEK and the Fed;
+  loans, repaying and credit; clients, news and tips, bankruptcy and a glossary. The guides quote the game's own
+  constants (margin levels, borrow fees, contract sizes and margins, storage and fines, loan tiers and fees) and the
+  settings of the game in progress (commission, leverage, margin-call grace), and work their examples with the game's
+  functions (`quoteLoan`), so they can't drift from the rules. Shortcuts in the guides open the program or tab they
+  describe, as 90s help files did. The question box scores the guides' titles, questions and keywords against the
+  question's words (plural endings and word endings folded, stop words dropped): 23 guides don't need a search
+  library. It is found from Start → Help (until Phase 11's help file), a desktop shortcut, the browser's favourites
+  for new games, Yeehaw!, the welcome letter, MajorTrade's Help menu, and "What do these mean?" links in the order
+  ticket, the Futures and Financing tabs and the margin-call banner. A test renders every guide at every difficulty,
+  checks every link to a guide leads to one, and checks typical questions find the right guide.
 - **Not built.** Tradable index funds (§11.5's MJR, sector and gold funds, and the ticket's "index fund" instrument):
   the MAJOR 500 future covers a bet on the market, and a fund needs its own NAV and holdings; left for a later phase.
   The Portfolio lists stocks and shorts, with futures summarised (P&L today, margin, goods) and listed in the Futures tab.
@@ -589,4 +617,6 @@ Judgement calls made where the spec leaves details open.
   (target 25). A browser check (Playwright, dev server) went through every Trade tab, every new site after 70 trading days
   with a loan, a short, a trailing stop and two futures delivered to the lobby, the Blue Screen and final report, and an
   imported bankrupt save through the report, the Hall of Shame, a refused Ctrl+S and a power cycle. It caught the bank's
-  pages reading their data before it had arrived; they now take it from the site's fetch.
+  pages reading their data before it had arrived; they now take it from the site's fetch. A second check took two loans
+  through the repay form (part of one, all of the other) and the bank's payment page, and walked Ask Reeves: its pages,
+  the question box, a shortcut into MajorTrade and Start → Help.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { PROGRAMS, type AppId } from '../apps/catalog';
 import { Icon, type IconName } from '../art/icons';
+import { helpUrl } from '../sites/urls';
 import { useTrade } from '../state/trade';
 import { useWindows, type WindowParams } from '../state/windows';
 
@@ -53,7 +54,8 @@ export function StartMenu({ onClose }: { onClose(): void }) {
           ))}
         </Item>
         <Item icon="find" label="Find" onClick={find} />
-        <Item icon="help" label="Help" onClick={launch('help')} />
+        {/* Help: Ask Reeves answers questions until Phase 11's help file (spec §14.2: it doubles as the in-game help). */}
+        <Item icon="help" label="Help" onClick={launch('browser', { url: helpUrl() })} />
         <Item icon="run" label="Run…" onClick={launch('run')} />
         <li className="menu-separator" />
         <Item icon="shutdown" label="Shut Down…" onClick={launch('shutdown')} />

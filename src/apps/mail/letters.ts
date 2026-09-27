@@ -122,6 +122,7 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
           'Clients folder: mandate offers. Accepting one brings new money — and rules you must follow.',
           'Tips folder: anonymous tips. Some are genuine. Some are bait. Trading on inside information is a crime.',
           'Press Ctrl+S to save at any time.',
+          'Lost? Ask Reeves: the Ask Reeves icon on the desktop (or Start → Help) explains how stocks, margin, futures and loans work, step by step.',
         ] },
         { p: 'Good luck, and remember: past performance is no guarantee of future results.' },
       ]);
@@ -312,14 +313,15 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
       return letter(BANK, `Your loan of ${money(mail.amount!)} is approved`, () => [
         { p: `Dear ${ceoName},` },
         { p: `We are pleased to confirm loan number ${mail.loan} of ${money(mail.amount!)} to ${firmName}. The money has been paid into your brokerage account today.` },
-        { p: `Your rate is ${(mail.rate! * 100).toFixed(2)}% a year for now. It floats with the Federal Reservoir’s rate and your credit score, and rises if your total borrowing with us moves into a higher tier. Interest is debited on the first trading day of each month; the first payment is due on ${words.date}.` },
+        { p: `Your rate is ${(mail.rate! * 100).toFixed(2)}% a year for now. It floats with the Federal Reservoir’s rate and your credit score, and rises if your total borrowing with us moves into a higher tier. Interest accrues day by day on what you owe and is collected with each payment, on the first trading day of each month; the first is due on ${words.date}.` },
+        { p: 'You may repay any part of the loan early, with a fee of 1% of the principal repaid, in MajorTrade Pro 98 → Financing or at www.firstcontinental.com.' },
         { p: 'A missed payment gets five trading days’ grace and a late fee. A second is a default: we will sell your positions to recover the loan.' },
         { p: 'Thank you for banking with First Continental. Since 1887.' },
       ]);
     case 'loanLate':
       return letter(BANK, `Missed payment on loan ${mail.loan}`, () => [
         { p: `Your payment on loan number ${mail.loan} was due today, and your account could not cover it. A late fee has been added: you now owe ${money(mail.amount!)}.` },
-        { p: `We will take it as soon as the money is there. If it has not been paid by ${words.date}, the loan is in default and we will sell your positions to recover all of it.` },
+        { p: `Pay it now in MajorTrade Pro 98 → Financing, or we will take it at the next opening bell when the money is there. If it has not been paid by ${words.date}, the loan is in default and we will sell your positions to recover all of it.` },
         { p: 'This has been reported to Equifacts.' },
       ]);
     case 'loanDefault':

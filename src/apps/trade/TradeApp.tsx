@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useGame } from '../../state/game';
+import { openUrl, useGame } from '../../state/game';
+import { helpUrl } from '../../sites/urls';
 import { useShell } from '../../state/shell';
 import { useTrade, type TradeTab } from '../../state/trade';
 import { Modal } from '../../ui98/Modal';
@@ -14,6 +15,17 @@ import { OrderTicket } from './OrderTicket';
 import { Orders } from './Orders';
 import { Portfolio } from './Portfolio';
 import { Quotes } from './Quotes';
+
+/** Help → Ask Reeves's guides on what MajorTrade does. */
+const HELP: [string, string][] = [
+  ['How to Buy and Sell…', 'buying'],
+  ['Order Types…', 'orders'],
+  ['Margin and Margin Calls…', 'margin'],
+  ['Short Selling…', 'shorting'],
+  ['Trading Futures…', 'trading-futures'],
+  ['Loans and Repaying Them…', 'repaying'],
+  ['All Help Topics…', ''],
+];
 
 const TABS: { id: TradeTab; label: string }[] = [
   { id: 'quotes', label: 'Quotes' },
@@ -45,7 +57,13 @@ export default function TradeApp({ windowId }: AppProps) {
               { label: 'Ticker Tape', checked: tickerTape, onClick: () => useShell.getState().toggleTickerTape() },
             ],
           },
-          { label: 'Help', items: [{ label: 'About MajorTrade Pro 98…', onClick: () => setAbout(true) }] },
+          {
+            label: 'Help',
+            items: [
+              ...HELP.map(([label, topic]) => ({ label, onClick: () => openUrl(helpUrl(topic)) })),
+              { label: 'About MajorTrade Pro 98…', onClick: () => setAbout(true) },
+            ],
+          },
         ]}
       />
       <menu role="tablist">
