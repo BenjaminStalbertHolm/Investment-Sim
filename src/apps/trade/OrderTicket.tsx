@@ -8,6 +8,7 @@ import { useTrade, type Ticket } from '../../state/trade';
 import { Confirm } from '../../ui98/Modal';
 import { count, money, pct, price } from '../format';
 import { SIDES, SIDE_DONE, SIDE_LABEL, TYPES, describeType } from './labels';
+import { HelpLink } from '../HelpLink';
 import { SymbolSearch } from './SymbolSearch';
 
 const integer = (text: string) => (/^\s*[\d,]+\s*$/.test(text) ? Number(text.replace(/[\s,]/g, '')) : NaN);
@@ -155,6 +156,7 @@ export function OrderTicket() {
               <span>%</span>
             </>
           )}
+          <HelpLink topic="orders">What do these mean?</HelpLink>
         </div>
         <div className="field-row">
           <label className="ticket-label" htmlFor="ticket-tif">

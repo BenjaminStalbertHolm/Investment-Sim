@@ -65,7 +65,7 @@ function DesktopIcon(props: {
   const position = useShell((s) => s.iconPositions[icon.id]) ?? props.fallback;
   const open = () => {
     if (icon.tab) useTrade.getState().setTab(icon.tab);
-    useWindows.getState().open(icon.opens);
+    useWindows.getState().open(icon.opens, icon.url ? { url: icon.url } : undefined);
   };
 
   return (

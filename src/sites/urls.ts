@@ -16,6 +16,8 @@ export const OPEK = 'www.opek.org';
 export const FED = 'www.federalreservoir.gov';
 export const BANK = 'www.firstcontinental.com';
 export const EQUIFACTS = 'www.equifacts.com';
+/** Ask Reeves (spec §14.2): the butler who answers questions, and the game's help. */
+export const REEVES = 'www.askreeves.com';
 
 /** "Alphabeta (Goggle)" → "alphabeta", "Ridgepine Timber Co." → "ridgepinetimber", "Clickzilla.com" → "clickzilla". */
 export function slugOf(name: string): string {
@@ -69,7 +71,7 @@ export function sites(directory: Directory, firmName: string): Sites {
 }
 
 const RESERVED = new Set([
-  YEEHAW, QUOTEZONE, RAGINGBEAR, EXCHANGE, WEATHER, OPEK, FED, BANK, EQUIFACTS, 'www.majorsoft.com', ...ALL_OUTLETS.map((o) => o.host),
+  YEEHAW, QUOTEZONE, RAGINGBEAR, EXCHANGE, WEATHER, OPEK, FED, BANK, EQUIFACTS, REEVES, 'www.majorsoft.com', ...ALL_OUTLETS.map((o) => o.host),
 ]);
 
 /**
@@ -97,3 +99,5 @@ export const firmUrl = (s: Sites, id: number, page = '') => `http://${s.firm[id]
 export const playerUrl = (s: Sites, page = '') => `http://${s.player}/${page}`;
 export const quoteUrl = (ticker: string) => `http://${QUOTEZONE}/quote?s=${ticker}`;
 export const searchUrl = (query: string) => `http://${YEEHAW}/search?q=${encodeURIComponent(query)}`;
+/** An Ask Reeves guide, or its front page. */
+export const helpUrl = (topic = '') => `http://${REEVES}/${topic ? `guide?t=${topic}` : ''}`;

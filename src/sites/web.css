@@ -1762,3 +1762,169 @@ button:disabled .tb-glyph {
 .eq-table th {
   border-bottom: 1px solid #e0e0e0;
 }
+
+/* ---------- Ask Reeves (help) ---------- */
+
+.site-reeves {
+  min-height: 100%;
+  box-sizing: border-box;
+  background: #fdf8ec;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+}
+
+.reeves-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  background: linear-gradient(#7a1f2b, #5a141e);
+  border-bottom: 4px double #d8b86a;
+  color: #f5e6c8;
+}
+
+.web-page a.reeves-home {
+  flex: none;
+  text-decoration: none;
+}
+
+.reeves-butler {
+  display: block;
+  background: #f5e6c8;
+  border: 2px solid #d8b86a;
+  border-radius: 50%;
+}
+
+.web-page a.reeves-logo {
+  font-size: 28px;
+  font-style: italic;
+  font-weight: bold;
+  color: #fff;
+  text-decoration: none;
+}
+
+.reeves-tagline {
+  font-size: 13px;
+}
+
+.reeves-ask {
+  margin-top: 6px;
+}
+
+.reeves-body {
+  max-width: 780px;
+  padding: 0 16px;
+}
+
+.reeves-welcome,
+.reeves-answer {
+  margin: 12px 0;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #d8b86a;
+}
+
+.reeves-answer {
+  font-size: 17px;
+}
+
+.reeves-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 0 18px;
+}
+
+.reeves-section h3 {
+  color: #7a1f2b;
+}
+
+.reeves-section ul,
+.reeves-popular {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.reeves-crumbs {
+  font-size: 12px;
+}
+
+.reeves-guide h1 {
+  color: #5a141e;
+}
+
+.reeves-guide h3 {
+  color: #7a1f2b;
+}
+
+.reeves-steps li {
+  margin-bottom: 4px;
+}
+
+.reeves-example {
+  margin: 10px 0;
+  padding: 6px 10px;
+  background: #fffdf5;
+  border: 1px dashed #b89a4a;
+}
+
+.reeves-example p {
+  margin: 4px 0 0;
+}
+
+.reeves-tip {
+  padding: 6px 10px;
+  background: #eef4e4;
+  border-left: 4px solid #5a7a2b;
+}
+
+.reeves-terms dt {
+  margin-top: 6px;
+  font-weight: bold;
+}
+
+.reeves-terms dd {
+  margin-left: 18px;
+}
+
+.reeves-table {
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.reeves-table th {
+  background: #efe2c2;
+  text-align: left;
+}
+
+.reeves-table td,
+.reeves-table th {
+  border: 1px solid #e0d2b0;
+}
+
+.web-page a.reeves-go {
+  padding: 0 4px;
+  background: #fff4c8;
+  border: 1px solid #c8a848;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  color: #000080;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.web-page a.reeves-go:hover {
+  background: #ffe890;
+}
+
+.reeves-related {
+  margin: 18px 0;
+  padding: 8px 12px;
+  background: #f5ecd5;
+  border: 1px solid #d8b86a;
+}
+
+.reeves-footer {
+  margin: 18px 16px 6px;
+  font-size: 11px;
+  color: #606060;
+}

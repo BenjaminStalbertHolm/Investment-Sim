@@ -12,7 +12,8 @@ import { HAZARDS } from '../../sim/data/commodities';
 import { useOutlooks } from '../hooks';
 import { useStories } from '../news/NewsSites';
 import {
-  BANK, EQUIFACTS, EXCHANGE, FED, NEWSWIRE, OPEK, QUOTEZONE, RAGINGBEAR, WEATHER, YEEHAW, companyUrl, firmUrl, playerUrl, quoteUrl, searchUrl, sites,
+  BANK, EQUIFACTS, EXCHANGE, FED, NEWSWIRE, OPEK, QUOTEZONE, RAGINGBEAR, WEATHER, YEEHAW, companyUrl, firmUrl, helpUrl, playerUrl, quoteUrl,
+  searchUrl, sites,
 } from '../urls';
 import { Link, usePage, useTitle } from '../web';
 
@@ -131,6 +132,14 @@ function Front() {
               </span>
             ))}{' '}
             · <Link href={`http://${RAGINGBEAR}/`}>Raging Bear boards</Link>
+          </p>
+        </div>
+        <div className="yh-box">
+          <b>New to investing?</b>
+          <p>
+            <Link href={helpUrl()}>Ask Reeves!</Link> The butler explains <Link href={helpUrl('stocks')}>stocks</Link>,{' '}
+            <Link href={helpUrl('margin')}>margin</Link>, <Link href={helpUrl('futures')}>futures</Link> and{' '}
+            <Link href={helpUrl('loans')}>loans</Link>.
           </p>
         </div>
         <WeatherTeaser />

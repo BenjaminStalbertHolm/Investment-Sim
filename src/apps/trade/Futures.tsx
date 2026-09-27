@@ -9,6 +9,7 @@ import { showError, useGame } from '../../state/game';
 import { useFetched } from '../../sites/hooks';
 import { Confirm } from '../../ui98/Modal';
 import { VirtualTable, type Column } from '../../ui98/VirtualTable';
+import { HelpLink } from '../HelpLink';
 import { count, money, price, signed, signedMoney, signedPct, tone } from '../format';
 
 const GROUPS: Record<CommodityGroup, string> = {
@@ -128,6 +129,10 @@ export function Futures() {
           ) : (
             <p className="hint">Market orders, filled at once. Positions are settled in cash every night.</p>
           )}
+          <p className="hint">
+            New to futures? <HelpLink topic="futures">What a contract is</HelpLink> · <HelpLink topic="trading-futures">How to trade</HelpLink> ·{' '}
+            <HelpLink topic="expiry">Expiry and delivery</HelpLink>
+          </p>
         </div>
       </div>
       <PriceChart id={k === MJ ? INDEX : commodityChart(k)} timeframe="1Y" type="line" />

@@ -2,7 +2,7 @@ import type { ClosedPosition, LedgerEntry, MarginCall, Order, Side } from './acc
 import type { BankruptcyReport } from './bankruptcy';
 import type { GameTime, Phase } from './calendar';
 import type { Client, Fees } from './clients';
-import type { CreditEvent, Loan, Tier } from './loans';
+import type { CreditEvent, Loan, Payment, Repayment, Tier } from './loans';
 import type { Borrow } from './shorts';
 import type { Bar } from './history';
 import type { MacroState } from './macro';
@@ -305,7 +305,8 @@ export interface OutlookView {
 
 /** MajorTrade → Financing, First Continental Bank and Equifacts (spec §12.9, §16A). */
 export interface LoansView {
-  loans: (Loan & { next?: { day: number; interest: number; principal: number } })[];
+  /** Each loan with its next payment (at today's rate) and what clearing it today would take. */
+  loans: (Loan & { next?: Payment; payoff: number })[];
   /** Principal owed, and interest and fees owed on missed payments. */
   debt: number;
   accrued: number;
@@ -321,6 +322,24 @@ export interface LoansView {
   policy: number;
   /** Interest on a margin debit balance. */
   marginRate: number;
+}
+
+/** What a payment to the bank would do (MajorTrade → Financing, First Continental Bank). */
+export interface RepayQuote extends Repayment {
+  /** The loan today: principal owed, interest accrued to date, a missed payment, and all it takes to clear it. */
+  owed: number;
+  interestToDate: number;
+  missed: number;
+  payoffAmount: number;
+  /** What the bank can take now: equity the positions don't need as margin. */
+  available: number;
+  /** The bank's rate now and on the smaller debt afterwards (it may fall into a cheaper tier). */
+  rate: number;
+  rateAfter: number;
+  balanceAfter: number;
+  /** The next payment before and after. */
+  before?: Payment;
+  after?: Payment;
 }
 
 export type { BankruptcyReport };

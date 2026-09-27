@@ -30,6 +30,7 @@ export const newBrowserState = () => ({
     { url: HOME_PAGE, title: 'Yeehaw!' },
     { url: 'http://www.quotezone.com/', title: 'QuoteZone' },
     { url: 'http://www.wsjottings.com/', title: 'The Wall Street Jottings' },
+    { url: 'http://www.askreeves.com/', title: 'Ask Reeves (help)' },
   ],
   history: [] as string[],
   dialup: 'short' as Dialup,

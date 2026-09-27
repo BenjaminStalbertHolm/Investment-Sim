@@ -7,12 +7,13 @@ import Exchange from './finance/Exchange';
 import Opek from './finance/Opek';
 import Reservoir from './finance/Reservoir';
 import WeatherBureau from './finance/WeatherBureau';
+import AskReeves from './help/AskReeves';
 import { ALL_OUTLETS } from '../sim/data/outlets';
 import RagingBear from './forum/RagingBear';
 import { Barrens, DailyScoop, FinancialTimez, Jottings, MoneyTv, MotleyFowl, Newswire, NyJournal, TradePress, Wyred } from './news/NewsSites';
 import Yeehaw from './portal/Yeehaw';
 import QuoteZone from './quotezone/QuoteZone';
-import { BANK, EQUIFACTS, EXCHANGE, FED, OPEK, QUOTEZONE, RAGINGBEAR, WEATHER, YEEHAW, sites } from './urls';
+import { BANK, EQUIFACTS, EXCHANGE, FED, OPEK, QUOTEZONE, RAGINGBEAR, REEVES, WEATHER, YEEHAW, sites } from './urls';
 import { useTitle } from './web';
 
 type SiteComponent = ComponentType<{ url: URL }>;
@@ -36,6 +37,7 @@ const STATIC: Record<string, SiteComponent> = {
   [FED]: Reservoir,
   [BANK]: FirstContinental,
   [EQUIFACTS]: Equifacts,
+  [REEVES]: AskReeves,
   ...Object.fromEntries(
     ALL_OUTLETS.map((o) => [o.host, OUTLET_SITES[o.id] ?? (({ url }: { url: URL }) => <TradePress url={url} outlet={o} />)]),
   ),

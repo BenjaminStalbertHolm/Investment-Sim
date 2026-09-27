@@ -608,6 +608,37 @@ td.table-empty {
   gap: 6px;
 }
 
+/* A link from an app to a web page (Ask Reeves, the bank…). */
+.help-link {
+  color: #0000ee;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.repay-form {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 560px;
+}
+
+.repay-form .field-row {
+  gap: 6px;
+}
+
+.repay-form p {
+  margin: 0;
+}
+
+.repay-form .ticket-estimate td {
+  white-space: normal;
+}
+
+.repay-form .ticket-estimate td:first-child {
+  width: 130px;
+  white-space: nowrap;
+}
+
 .loan-form input[type='range'] {
   flex: 1;
   min-width: 160px;

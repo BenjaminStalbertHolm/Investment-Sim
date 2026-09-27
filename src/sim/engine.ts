@@ -27,8 +27,9 @@ import {
 } from './events';
 import { bookFutures, chargeStorage, expire, goodsAtSpot, goodsValue, sellGoods, settleFutures, type Expiry } from './futures';
 import {
-  BANK_LIMIT, EARLY_FEE, GRACE_DAYS, HISTORY, LATE_FEE, MIN_LOAN, TERMS, TIERS, accrued, bankDebt, bankRate, creditScore,
-  isPaymentDay, newLoans, nextPayment, paymentDay, quoteLoan, type Loan, type LoansState, type Structure,
+  BANK_LIMIT, GRACE_DAYS, HISTORY, LATE_FEE, MIN_LOAN, TERMS, TIERS, accrue, accrued, bankDebt, bankRate, creditScore,
+  isPaymentDay, lateAmount, newLoans, nextPayment, paymentDay, payoffAmount, quoteLoan, schedule, splitRepayment,
+  type Loan, type LoansState, type Structure,
 } from './loans';
 import { initialMacro, release, releasesOn, type MacroState } from './macro';
 import { FOLDER_OF, digest, morningMail, newMailState, noteTrade, type Mail, type MailDraft, type MailLine, type MailState } from './mail';
@@ -50,7 +51,7 @@ import type { GameSettings } from './settings';
 import { RECALL_DAYS, borrowOf, pileIn, recallChance, revertShortInterest, squeeze, type Borrow } from './shorts';
 import {
   INDEX, chartCommodity, type AccountView, type CalendarEntry, type ClientsView, type CompanyDetails, type ContractQuote,
-  type Directory, type EngineEvent, type Estimate, type FirmView, type FuturesView, type Holder, type LiveBars, type LoansView,
+  type Directory, type EngineEvent, type Estimate, type FirmView, type FuturesView, type Holder, type LiveBars, type LoansView, type RepayQuote,
   type MarketTable, type OutlookView, type PositionView, type Quote, type QuarterResult, type Timeframe,
 } from './types';
 import { seasonOf } from './earnings';
@@ -220,6 +221,11 @@ export class Engine implements Sim {
 
   /** Continues a game from exportState(). Companies are decoded from their genomes, not regenerated. */
   static restore(saved: SimState): Engine {
+    // Loans saved by the first Phase 7 build, before interest accrued day by day, start accruing from the save.
+    for (const loan of saved.loans.loans) {
+      loan.interest ??= 0;
+      loan.accruedTo ??= dayOf(saved.clock);
+    }
     return new Engine({ ...saved, history: unpackHistory(saved.history) }, saved.world.genomes.map(decodeCompany));
   }
 
@@ -457,10 +463,11 @@ export class Engine implements Sim {
     settleFutures(account, (key) => this.futuresPrice(key, p), this.s.clock);
     for (const e of expire(account, day, (k) => this.commodities.spot(k, p), this.s.clock)) this.expired(e);
     this.commodities.close(p);
-    // Overnight charges for the calendar days until the next session: borrow fees, margin interest, storage.
+    // Overnight charges for the calendar days until the next session: borrow fees, margin and loan interest, storage.
     const nights = nextTradingDay(day) - day;
     this.chargeBorrow(nights);
     this.chargeInterest(nights);
+    this.accrueLoans(nextTradingDay(day));
     chargeStorage(account, nights, (code) => this.commodities.spot(CONTRACT_INDEX[code], p), this.s.clock);
     this.recalls(day);
     digest(this, day);
@@ -654,12 +661,9 @@ export class Engine implements Sim {
     const loans = this.s.loans.loans.filter((l) => l.status === 'active');
     const rate = loans.length ? this.bankRate() : 0;
     for (const l of loans) {
-      // Later payments are shown at today's balance and rate.
-      for (let n = l.paid + 1; n <= l.months && paymentDay(l, n) <= to; n++) {
-        const day = paymentDay(l, n);
-        if (day < from) continue;
-        const p = nextPayment({ ...l, paid: n - 1 }, rate);
-        out.push({ day, minute: OPEN, kind: 'loan', loan: l.id, amount: p.interest + p.principal });
+      // Later payments are shown at today's rate.
+      for (const p of schedule(l, rate)) {
+        if (p.day >= from && p.day <= to) out.push({ day: p.day, minute: OPEN, kind: 'loan', loan: l.id, amount: p.interest + p.principal });
       }
     }
     for (let day = isTradingDay(from) ? from : nextTradingDay(from); day <= to; day = nextTradingDay(day)) {
@@ -1295,6 +1299,14 @@ export class Engine implements Sim {
     return amount <= Math.max(0, this.marginFigures().excess) + 1e-9;
   }
 
+  /** Each close: bank loans' interest up to the next session, at the day's floating rate (spec §16A). */
+  private accrueLoans(to: number): void {
+    const loans = this.s.loans.loans.filter((l) => l.status === 'active');
+    if (!loans.length) return;
+    const rate = this.bankRate();
+    for (const loan of loans) this.s.account.charges += accrue(loan, to, rate);
+  }
+
   /** Each open: payments due on the first trading day of the month, and missed payments made good or defaulted. */
   private loansDue(day: number): void {
     const state = this.s.loans;
@@ -1303,22 +1315,26 @@ export class Engine implements Sim {
     const payday = isPaymentDay(day);
     for (const loan of state.loans) {
       if (loan.status !== 'active' || this.s.bankruptcy) continue;
+      this.s.account.charges += accrue(loan, day, rate);
       if (loan.late) {
-        if (this.payable(loan.late.interest + loan.late.fee + loan.late.principal)) this.payLate(loan, day);
+        if (this.payable(lateAmount(loan))) this.payLate(loan, day);
         else if (day > loan.late.deadline) this.defaultLoan(loan, day);
       } else if (payday && paymentDay(loan, loan.paid + 1) === day) this.payLoan(loan, rate, day);
     }
   }
 
+  /** A payment falls due: the interest accrued since the last one, and principal. */
   private payLoan(loan: Loan, rate: number, day: number): void {
     const state = this.s.loans;
     const account = this.s.account;
-    const { interest, principal } = nextPayment(loan, rate);
+    const { interest, principal } = nextPayment(loan, rate)!;
     if (!this.payable(interest + principal)) {
       // Missed (spec §16A): a late fee and a mark on the credit report, and five trading days to pay; a second miss defaults.
+      // Its interest was charged as it accrued; now it is owed with the payment.
       loan.missed++;
       const fee = LATE_FEE * (interest + principal);
-      account.charges += interest + fee;
+      account.charges += fee;
+      loan.interest = 0;
       loan.late = { interest, fee, principal, deadline: addTradingDays(day, GRACE_DAYS) };
       state.history += HISTORY.late;
       state.record.push({ day, kind: 'late', loan: loan.id, amount: interest + principal });
@@ -1327,8 +1343,8 @@ export class Engine implements Sim {
       return;
     }
     book(account, this.s.clock, 'loanInterest', -interest, { note: `Loan ${loan.id}` });
-    account.charges += interest;
     if (principal) book(account, this.s.clock, 'repayment', -principal, { note: `Loan ${loan.id}` });
+    loan.interest = 0;
     loan.balance -= principal;
     loan.paid++;
     loan.interestPaid += interest;
@@ -1336,7 +1352,7 @@ export class Engine implements Sim {
     if (loan.paid >= loan.months || loan.balance < 0.005) this.loanRepaid(loan, day);
   }
 
-  /** A missed payment made good within the grace period. Its interest and fee were charged when it was missed. */
+  /** A missed payment made good within the grace period. Its interest and fee were charged when they arose. */
   private payLate(loan: Loan, day: number): void {
     const late = loan.late!;
     const account = this.s.account;
@@ -1350,9 +1366,15 @@ export class Engine implements Sim {
     if (loan.paid >= loan.months || loan.balance < 0.005) this.loanRepaid(loan, day);
   }
 
+  /** The loan is repaid. Interest still accrued on it (a last payment made late) is collected with it. */
   private loanRepaid(loan: Loan, day: number): void {
+    if (loan.interest > 0.005) {
+      book(this.s.account, this.s.clock, 'loanInterest', -loan.interest, { note: `Loan ${loan.id}, interest to date` });
+      loan.interestPaid += loan.interest;
+    }
     loan.status = 'repaid';
     loan.balance = 0;
+    loan.interest = 0;
     loan.closed = day;
     this.s.loans.history += HISTORY.repaid;
     this.s.loans.record.push({ day, kind: 'repaid', loan: loan.id, amount: loan.principal });
@@ -1362,7 +1384,7 @@ export class Engine implements Sim {
   /** A default (spec §16A): the bank sells what it must to recover the whole loan; a shortfall is bankruptcy. */
   private defaultLoan(loan: Loan, day: number): void {
     const account = this.s.account;
-    const owedInterest = loan.late ? loan.late.interest + loan.late.fee : 0;
+    const owedInterest = loan.interest + (loan.late ? loan.late.interest + loan.late.fee : 0);
     const owed = loan.balance + owedInterest;
     const lines = this.liquidate({ cash: owed }, 'loan');
     const paid = this.s.settings.noBankruptcy ? owed : Math.min(owed, Math.max(0, this.marginFigures().excess));
@@ -1371,6 +1393,7 @@ export class Engine implements Sim {
     if (paid > interestPaid) book(account, this.s.clock, 'repayment', -(paid - interestPaid), { note: `Loan ${loan.id}, recovered` });
     // What the bank did not recover of the interest owed stays a loss; the principal it did not recover is still owed.
     loan.balance -= paid - interestPaid;
+    loan.interest = 0;
     loan.late = undefined;
     loan.status = 'defaulted';
     loan.closed = day;
@@ -1399,7 +1422,10 @@ export class Engine implements Sim {
     if (structure !== 'amortising' && structure !== 'interestOnly') return { error: 'Choose how to repay the loan.' };
     const state = this.s.loans;
     const day = dayOf(this.s.clock);
-    const loan: Loan = { id: state.nextId++, principal: amount, balance: amount, structure, months, opened: day, paid: 0, missed: 0, interestPaid: 0, status: 'active' };
+    const loan: Loan = {
+      id: state.nextId++, principal: amount, balance: amount, structure, months, opened: day, paid: 0, interest: 0, accruedTo: day, missed: 0,
+      interestPaid: 0, status: 'active',
+    };
     state.loans.push(loan);
     book(this.s.account, this.s.clock, 'loan', amount, { note: `Loan ${loan.id}` });
     state.record.push({ day, kind: 'opened', loan: loan.id, amount });
@@ -1407,23 +1433,68 @@ export class Engine implements Sim {
     return { loan: structuredClone(loan) };
   }
 
-  /** Repays some or all of a loan early, with a 1% fee (spec §16A). */
-  repayLoan(id: number, amount: number): { loan: Loan } | { error: string } {
+  /**
+   * Pays `amount` to the bank on a loan (spec §16A): a missed payment first, then the interest accrued to date, then
+   * principal with the 1% early repayment fee. The bank takes only money the positions don't need as margin.
+   */
+  repayLoan(id: number, amount: number): { loan: Loan; paid: number } | { error: string } {
     if (this.s.bankruptcy) return { error: 'The firm is bankrupt.' };
     const loan = this.s.loans.loans.find((l) => l.id === id && l.status === 'active');
     if (!loan) return { error: 'There is no such loan.' };
-    if (loan.late) return { error: 'Make the missed payment good first: the bank will take it at the next open if the money is there.' };
-    if (!(amount > 0)) return { error: 'Enter an amount to repay.' };
-    const principal = Math.min(amount, loan.balance);
-    const fee = EARLY_FEE * principal;
-    if (!this.payable(principal + fee)) return { error: `You need ${dollars(principal + fee)} free to repay that, fee included.` };
+    if (!(amount > 0)) return { error: 'Enter an amount to pay.' };
+    const day = dayOf(this.s.clock);
+    this.s.account.charges += accrue(loan, day, this.bankRate());
+    const split = splitRepayment(loan, amount);
+    if (loan.late && split.late < lateAmount(loan) - 0.005) return { error: `The missed payment of ${dollars(lateAmount(loan))} has to be paid first.` };
+    if (!this.payable(split.total)) {
+      return { error: `You can pay the bank ${dollars(Math.max(0, this.marginFigures().excess))} now: the rest of your money is needed as margin for your positions.` };
+    }
     const account = this.s.account;
-    book(account, this.s.clock, 'repayment', -principal, { note: `Loan ${loan.id}, early` });
-    book(account, this.s.clock, 'loanFee', -fee, { note: `Loan ${loan.id}: early repayment fee` });
-    account.charges += fee;
-    loan.balance -= principal;
-    if (loan.balance < 0.005) this.loanRepaid(loan, dayOf(this.s.clock));
-    return { loan: structuredClone(loan) };
+    if (split.late) {
+      const interest = loan.interest;
+      this.payLate(loan, day);
+      // That was its last payment: the loan is repaid, with the interest accrued since.
+      if (loan.status !== 'active') return { loan: structuredClone(loan), paid: split.late + interest };
+    }
+    if (split.interest) {
+      book(account, this.s.clock, 'loanInterest', -split.interest, { note: `Loan ${loan.id}, interest to date` });
+      loan.interest -= split.interest;
+      loan.interestPaid += split.interest;
+    }
+    if (split.principal) {
+      book(account, this.s.clock, 'repayment', -split.principal, { note: `Loan ${loan.id}, early` });
+      loan.balance -= split.principal;
+    }
+    if (split.fee) {
+      book(account, this.s.clock, 'loanFee', -split.fee, { note: `Loan ${loan.id}: early repayment fee` });
+      account.charges += split.fee;
+    }
+    if (loan.status === 'active' && loan.balance < 0.005) this.loanRepaid(loan, day);
+    return { loan: structuredClone(loan), paid: split.total };
+  }
+
+  /**
+   * What paying `amount` on a loan would do (the repayment form's preview): how it splits, whether the money is there,
+   * and the loan's next payment afterwards, at the rate its smaller debt would pay.
+   */
+  repayQuote(id: number, amount: number): RepayQuote | undefined {
+    const found = this.s.loans.loans.find((l) => l.id === id && l.status === 'active');
+    if (!found) return undefined;
+    const loan = structuredClone(found);
+    const rate = this.bankRate();
+    accrue(loan, dayOf(this.s.clock), rate);
+    const split = splitRepayment(loan, Math.max(0, amount));
+    const repaid = (split.late ? loan.late!.principal : 0) + split.principal;
+    const after: Loan = {
+      ...loan, balance: loan.balance - repaid, interest: loan.interest - split.interest, late: split.late ? undefined : loan.late,
+      paid: loan.paid + (split.late ? 1 : 0),
+    };
+    const rateAfter = this.bankRate(-repaid);
+    return {
+      ...split, owed: loan.balance, interestToDate: loan.interest, missed: lateAmount(loan), payoffAmount: payoffAmount(loan),
+      available: Math.max(0, this.marginFigures().excess), rate, rateAfter, balanceAfter: after.balance,
+      before: loan.late ? undefined : nextPayment(loan, rate), after: after.balance > 0.005 && !after.late ? nextPayment(after, rateAfter) : undefined,
+    };
   }
 
   // ---------- Bankruptcy (spec §16) ----------
@@ -1595,7 +1666,8 @@ export class Engine implements Sim {
     return {
       loans: state.loans.map((l) => ({
         ...structuredClone(l),
-        next: l.status === 'active' && !l.late ? { day: paymentDay(l, l.paid + 1), ...nextPayment(l, rate) } : undefined,
+        next: l.status === 'active' && !l.late ? nextPayment(l, rate) : undefined,
+        payoff: l.status === 'active' ? payoffAmount(l) : 0,
       })),
       debt,
       accrued: accrued(state),

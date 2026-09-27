@@ -91,12 +91,16 @@ export interface DesktopIconDef {
   shortcut?: boolean;
   /** Trade app tab the shortcut opens on. */
   tab?: TradeTab;
+  /** Web page a browser shortcut opens. */
+  url?: string;
 }
 
 export const DESKTOP_ICONS: DesktopIconDef[] = [
   ...(['mycomputer', 'browser', 'trade', 'mail'] as const).map((id) => ({ id, label: APPS[id].title, icon: APPS[id].icon, opens: id })),
   // Shortcut to Trade → Portfolio.
   { id: 'portfolio', label: 'My Portfolio', icon: 'portfolio', opens: 'trade', shortcut: true, tab: 'portfolio' },
+  // Shortcut to Ask Reeves, the game's help (spec §14.2).
+  { id: 'reeves', label: 'Ask Reeves', icon: 'help', opens: 'browser', shortcut: true, url: 'http://www.askreeves.com/' },
   ...(['notepad', 'calculator', 'recyclebin', 'messenger', 'word', 'sheet', 'hr', 'rolodex', 'defrag', 'taskmangler', 'paint'] as const).map(
     (id) => ({ id, label: APPS[id].title, icon: APPS[id].icon, opens: id }),
   ),
