@@ -2,22 +2,30 @@
 
 Run an investment firm from inside a fake 1998 desktop operating system. Fully offline; runs in the browser.
 
-**Status:** Phase 7 (shorting, margin, futures, commodities, loans and bankruptcy). A seed generates a market of 10,000
+**Status:** Phase 8 (competitors, governance, scoring, the regulator; index funds and optional leverage). A seed
+generates a market of 10,000
 companies, and a Web Worker runs it in real time: trading hours and holidays, market regimes, sector moves, earnings
 seasons and the MAJOR 500. MajorTrade Pro 98 has watchlists, quote windows with charts, a margin account (buy, sell,
 sell short and buy to cover; market, limit, stop, stop-limit and trailing-stop orders), a portfolio, a cash ledger,
-a calendar, futures on 22 commodities and indices, and bank loans. Internet Exploiter browses the in-game web: the
+a calendar, futures on 22 commodities and indices, index funds (the MAJOR 500 and one per industry) and bank loans.
+Leverage is off unless you switch it on in the advanced settings (up to 15:1). Internet Exploiter browses the in-game web: the
 Yeehaw! portal and search, every company's own website (home, about, products, investor relations with live stats,
 short interest and holders, guestbook), competitor firms' sites and your own, QuoteZone (movers, sector map, screener),
 the news, the Chicago Murkantile Exchange, the National Weather Bureau (its warnings are a real signal for farm and
-energy futures), OPEK, the Federal Reservoir, First Continental Bank, Equifacts, and Ask Reeves, the in-game help. A Setup Wizard founds your firm:
+energy futures), OPEK, the Federal Reservoir, First Continental Bank, Equifacts, the Securities Oversight Bureau, and
+Ask Reeves, the in-game help. A Setup Wizard founds your firm:
 pick one of ten famous firms or design your own logo, draw your CEO's portrait (every company CEO has one too), choose a
 difficulty or tune the advanced settings, and get a laminated ID badge. The market has corporate events — scandals,
 frauds, takeovers, drug trials, recalls, CEO changes, dividends, bankruptcies — and an economy with a Federal Reservoir;
 news breaks on the Majorsoft Newswire and cascades through TV, the trade press, the morning papers and the weekend
 magazines, often after rumours on the Raging Bear boards. Outbox Express brings clients with mandate offers, quarterly
 statements, top-ups and redemptions, broker letters (margin calls, share recalls, deliveries), a morning briefing, news
-alerts, tips and junk mail. Borrow too much and a margin call or a defaulted loan ends the firm: the Blue Screen of
+alerts, tips and junk mail. Competitor firms run their own funds by their strategies, trade every week, file their
+holdings with the SOB and are ranked against you in Barren's annual league table. Stakes of 5%, 20% and 50% bring SOB
+filings, board seats and control; shareholder meetings ask for your vote; rivals bid for your stakes or offer to invest
+in your firm. Trading ahead of news raises heat, and heat brings audits, fines and suspensions. My Computer → About
+keeps your record (time-weighted returns, Sharpe ratio, drawdowns, league places) and achievements. Borrow too much and
+a margin call, a defaulted loan or an unpaid fine ends the firm: the Blue Screen of
 Debt, a final report, and a place in the Hall of Shame. Games save anywhere to named slots and
 rotating autosaves, and export as `.d98` files. Apps not built yet are placeholders that say which build phase
 delivers them.
@@ -49,7 +57,8 @@ to watch quotes and trade, and **Internet Exploiter** to read the news and visit
 in the address bar to search Yeehaw!); the tray sets the game speed (a trading day takes two minutes at 1×).
 **Outbox Express** (the tray's envelope shows unread mail) is where clients offer mandates — each with rules that apply
 to your whole portfolio — and where tips, briefings and broker letters arrive. **My Computer → Firm** lists your clients
-and their mandates and sets your fees. The account is a margin account: MajorTrade's **Futures** tab trades contracts
+and their mandates and sets your fees. MajorTrade's **Funds** tab buys the whole market (MJR) or a whole industry in one
+go. The account is a margin account (a cash account unless leverage is on): the **Futures** tab trades contracts
 (hold a commodity past its last trading day and it is delivered to your office lobby), **Financing** takes out bank
 loans and repays them (in part or in full, at any time), and the Portfolio shows equity against the margin
 requirements; a margin call gives a few days to put it right.
@@ -85,8 +94,8 @@ src/
   sites/            the in-game web: urls.ts (domains), Site.tsx (URL → site), web.tsx (links, marquee, hit counter),
                     text.ts (template writer), portal/ (Yeehaw!), company/ (company sites: content.ts generates them),
                     firm/, news/ (every outlet; articles.ts writes articles from the news archive), forum/ (Raging
-                    Bear), quotezone/, finance/ (the exchange, Weather Bureau, OPEK, Federal Reservoir, bank and
-                    Equifacts), help/ (Ask Reeves: topics.tsx holds the guides); data/ holds the text templates,
+                    Bear), quotezone/, finance/ (the exchange, Weather Bureau, OPEK, Federal Reservoir, bank,
+                    Equifacts and the SOB), help/ (Ask Reeves: topics.tsx holds the guides); data/ holds the text templates,
                     product lists and industry themes
   ui98/             98-style widgets 98.css lacks: menu bar, modals, virtualised table view, ticker tape
   charts/           price and performance charts (lightweight-charts), sparklines
@@ -101,8 +110,11 @@ src/
                     tips), margin.ts (Reg-T requirements), shorts.ts (short interest, borrow fees, recalls, squeezes),
                     commodities.ts (spot models, futures prices, the weather and OPEK), futures.ts (positions,
                     settlement, delivery), loans.ts (bank loans, credit score), bankruptcy.ts (the final report),
+                    funds.ts (index funds), competitors.ts (competitor AI, filings, league tables), governance.ts
+                    (stakes, votes, bids, investors), regulator.ts (heat, audits), scoring.ts (returns, achievements),
                     history.ts, pregame.ts (generated history), account.ts, calendar.ts, settings.ts;
-                    data/ holds event types, outlets, client lexicons, macro sensitivities and the commodities;
+                    data/ holds event types, outlets, client lexicons, macro sensitivities, the commodities, the funds
+                    and the competitors' strategies;
                     worker.ts runs it in a Web Worker via comlink
   audio/            WebAudio sounds (the new-mail chime)
   state/            Zustand stores: windows, shell, trade (watchlists), mail (Outbox view), game (session: boot, save, load);

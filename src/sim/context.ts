@@ -20,6 +20,10 @@ export interface Streams {
   commodities: Rng;
   /** The broker's own dealings with the firm: share recalls. Only the firm's positions draw from it. */
   broker: Rng;
+  /** Phase 8: competitors' client flows; shareholder meetings, bids and offers; the SOB's audits. */
+  rivals: Rng;
+  governance: Rng;
+  regulator: Rng;
 }
 
 /** What the engine offers the modules that run on its clock: events, macro, clients and mail. */
@@ -46,4 +50,8 @@ export interface Sim {
    * (spec §12.4), bad news brings the short sellers in.
    */
   squeeze(company: number, move: number): number;
+  /** Awards an achievement (spec §16), once. */
+  unlock(id: string): void;
+  /** Pays a strategic investor its share of fees just earned (spec §15.6). */
+  shareFees(fee: number): void;
 }

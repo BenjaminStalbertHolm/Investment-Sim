@@ -22,7 +22,7 @@ export interface GameSettings {
   impact: number;
   /** Corporate event frequency multiplier (Phase 6). */
   events: number;
-  /** Maximum leverage on stocks, e.g. 2 for 2:1 (Phase 7). */
+  /** Maximum leverage on stocks, e.g. 2 for 2:1 (Phase 7); 1 is a cash account: leverage off, as in every preset. */
   maxLeverage: number;
   /** Trading days to meet a margin call (Phase 7). */
   marginGrace: number;
@@ -46,6 +46,8 @@ export interface GameSettings {
   darkWebOdds: number;
   /** Heat decay multiplier (Phase 8). */
   heatDecay: number;
+  /** Index funds' annual expense ratios (Phase 8): the MAJOR 500 fund and the sector funds. */
+  fundFees: { index: number; sector: number };
   /** Single autosave slot, no reloading. */
   ironman: boolean;
   /** Cash can go negative and the game never fails. */
@@ -56,29 +58,32 @@ export interface GameSettings {
   modules: { geopolitics: boolean; periodEvents: boolean; gags: boolean };
 }
 
+/** The most leverage the advanced settings allow (x:1). */
+export const MAX_LEVERAGE = 15;
+
 const COMMON = {
-  events: 1, shortSelling: true, futures: true, clients: true, insiderTips: true, darkWeb: true, ironman: false,
+  events: 1, maxLeverage: 1, shortSelling: true, futures: true, clients: true, insiderTips: true, darkWeb: true, ironman: false,
   noBankruptcy: false, startYear: 1998, modules: { geopolitics: false, periodEvents: false, gags: false },
 };
 
 export const DIFFICULTIES: Record<Exclude<Difficulty, 'custom'>, GameSettings> = {
   easy: {
-    ...COMMON, difficulty: 'easy', startingCapital: 100_000, commission: { fixed: 9.95, rate: 0 },
-    spread: 0.5, smallCapSpread: 1, volatility: 0.8, crashes: 0.5, impact: 0.5, maxLeverage: 2, marginGrace: 3,
+    ...COMMON, difficulty: 'easy', startingCapital: 10_000_000, commission: { fixed: 9.95, rate: 0 },
+    spread: 0.5, smallCapSpread: 1, volatility: 0.8, crashes: 0.5, impact: 0.5, marginGrace: 3,
     clientPatience: 'low', tipReliability: 0.6, scrutiny: 'low', aggression: 'low', loanRates: 0.75, darkWebOdds: 0.1,
-    heatDecay: 1.5,
+    heatDecay: 1.5, fundFees: { index: 0.001, sector: 0.003 },
   },
   medium: {
-    ...COMMON, difficulty: 'medium', startingCapital: 1_000_000, commission: { fixed: 19.95, rate: 0 },
-    spread: 1, smallCapSpread: 1, volatility: 1, crashes: 1, impact: 1, maxLeverage: 2, marginGrace: 2,
+    ...COMMON, difficulty: 'medium', startingCapital: 2_500_000, commission: { fixed: 19.95, rate: 0 },
+    spread: 1, smallCapSpread: 1, volatility: 1, crashes: 1, impact: 1, marginGrace: 2,
     clientPatience: 'normal', tipReliability: 0.4, scrutiny: 'normal', aggression: 'normal', loanRates: 1, darkWebOdds: 0,
-    heatDecay: 1,
+    heatDecay: 1, fundFees: { index: 0.002, sector: 0.006 },
   },
   hard: {
-    ...COMMON, difficulty: 'hard', startingCapital: 10_000_000, commission: { fixed: 29.95, rate: 0.0005 },
-    spread: 1, smallCapSpread: 2, volatility: 1.25, crashes: 2, impact: 1, maxLeverage: 1.5, marginGrace: 1,
+    ...COMMON, difficulty: 'hard', startingCapital: 1_000_000, commission: { fixed: 29.95, rate: 0.0005 },
+    spread: 1, smallCapSpread: 2, volatility: 1.25, crashes: 2, impact: 1, marginGrace: 1,
     clientPatience: 'high', tipReliability: 0.25, scrutiny: 'high', aggression: 'high', loanRates: 1.5, darkWebOdds: -0.1,
-    heatDecay: 0.5,
+    heatDecay: 0.5, fundFees: { index: 0.004, sector: 0.012 },
   },
 };
 
@@ -102,7 +107,7 @@ export function changeSettings(settings: GameSettings, change: Partial<GameSetti
   return { ...next, difficulty: difficultyOf(next) };
 }
 
-/** Fills in settings a save from before Phase 5 doesn't have, from its difficulty's preset. */
+/** Fills in settings an older save doesn't have (Phase 5's advanced settings, Phase 8's fund fees) from its difficulty's preset. */
 export function completeSettings(saved: Partial<GameSettings> & Pick<GameSettings, 'difficulty'>): GameSettings {
   const preset = DIFFICULTIES[saved.difficulty === 'custom' ? 'medium' : saved.difficulty];
   return { ...preset, ...saved };

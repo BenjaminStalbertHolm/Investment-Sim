@@ -275,8 +275,8 @@ export function Equifacts() {
               </tr>
               <tr>
                 <th>Regulatory record</th>
-                <td>+0 points</td>
-                <td>No actions by the Securities Oversight Bureau on file.</td>
+                <td>{factor(view.factors.sob)}</td>
+                <td>{view.factors.sob < 0 ? 'Actions by the Securities Oversight Bureau are on file.' : 'No actions by the Securities Oversight Bureau on file.'}</td>
               </tr>
             </tbody>
           </table>

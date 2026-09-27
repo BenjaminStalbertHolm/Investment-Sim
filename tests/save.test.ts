@@ -60,10 +60,28 @@ function trade(e: Engine, s: number): void {
   if (s % 13 === 9 && roll) e.rollFuture(roll.contract);
   if (s === 45) e.tradeFuture(chain(CONTRACT_INDEX.ZC, day).find((c) => c.expiry > day + 20)!.key, 1);
   if (s === 110) e.sellGoods('ZC');
+  // Phase 8: index fund units bought and sold, and a stake of more than 5% in a small company, filed with the SOB.
+  if (s % 6 === 2) e.tradeFund((s * 7) % 41, 25 + s);
+  const fund = e.funds().positions[0];
+  if (s % 9 === 5 && fund) e.tradeFund(fund.fund, -Math.ceil(fund.units / 2));
+  if (s === 12 || s === 75) {
+    const small = e.companies.findIndex((_, i) => i > 400 && !e.market.state.status[i] && e.market.price[i] * e.model.shares[i] < 4e6 && e.market.price[i] > 1);
+    e.placeOrder({ company: small, side: 'buy', type: 'market', shares: Math.ceil(0.06 * e.model.shares[small]), tif: 'day' });
+  }
 }
 
-/** A state without what Phase 7 added. */
-function beforePhase7(state: SimState) {
+/** A state without what Phase 8 added. */
+function beforePhase8(state: SimState) {
+  const { funds: _f, competitors: _c, governance: _g, regulator: _r, scoring: _s, ...rest } = state;
+  const { rivals: _rr, governance: _rg, regulator: _rreg, ...rng } = state.rng;
+  const { funds: _af, ...account } = state.account;
+  const { fundFees: _ff, ...settings } = state.settings;
+  return { ...rest, rng, account, settings };
+}
+
+/** A state without what Phases 7 and 8 added. */
+function beforePhase7(full: SimState) {
+  const state = beforePhase8(full) as unknown as SimState;
   const { commodities: _c, loans: _l, bankruptcy: _b, ...rest } = state;
   const { commodities: _rc, broker: _rb, ...rng } = state.rng;
   const { shortInterest: _si, ...market } = state.market;
@@ -103,6 +121,8 @@ describe('save system (spec §18)', () => {
           const offer = e.mail().messages.find((m) => m.kind === 'offer' && !m.answer);
           if (offer) e.mailAction(offer.id, 'accept');
         }
+        // Phase 8: proxies voted as they come.
+        for (const m of e.mail().messages) if (m.kind === 'proxy' && !m.answer) e.mailAction(m.id, s % 2 ? 'for' : 'against');
         if (s === 45) {
           const tip = e.mail().messages.find((m) => m.kind === 'tip' && !m.answer);
           if (tip) e.mailAction(tip.id, 'report');
@@ -147,12 +167,44 @@ describe('save system (spec §18)', () => {
     expect(state.commodities.days).toHaveLength(120);
     const a = saved.account();
     expect(a.netWorth - a.deposits).toBeCloseTo(a.realized + a.unrealized, 3);
+    // Phase 8: funds and their units, competitors' weekly books, the SOB filings, the firm's time-weighted record.
+    expect(state.funds.days).toHaveLength(120);
+    expect(ledger.filter((l) => l.kind === 'fund').length).toBeGreaterThan(20);
+    expect(ledger.some((l) => l.kind === 'fund' && dayOf(l.time) > days[60])).toBe(true);
+    expect(state.competitors.books.every((b) => b.history.length >= 24)).toBe(true);
+    expect(state.competitors.books.every((b) => b.filings.length === 2)).toBe(true);
+    expect(state.governance.filings.filter((f) => f.firm === -1).length).toBeGreaterThanOrEqual(2);
+    expect(state.scoring.growth).toHaveLength(120);
+    expect(state.scoring.achievements.fund).toBeDefined();
     // Phase 5: the firm, its logo and CEO, and the Custom settings carry over.
     expect(saved.player).toMatchObject({ firmName: 'Renamed Capital', ceoName: 'Pat Doe-Ray', ceoCode: player.ceoCode });
     expect(decodeLogo(saved.player.logoCode).effect).toBe('bevel');
     expect(saved.settings).toEqual(settings);
     expect(saved.settings.difficulty).toBe('custom');
   }, 60_000);
+
+  it('upgrades a version 5 save: funds launched, competitors’ books opened and the firm’s record worked out where the game stands', () => {
+    const e = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Old Firm' });
+    e.placeOrder({ company: 3, side: 'buy', type: 'market', shares: 100, tif: 'day' });
+    e.runSessions(6);
+    const old = beforePhase8(e.exportState());
+    const upgraded = migrate(unpackSave(packSave({ manifest: manifest({ version: 5 }), sim: old, game: {} })));
+    const loaded = Engine.restore(upgraded.sim as SimState);
+    const state = loaded.exportState();
+    // Nothing that was there changes (fund fees come from the difficulty); what Phase 8 adds starts where the game stands.
+    expect(difference(beforePhase8(state), old)).toBeUndefined();
+    expect(state.settings.fundFees).toEqual(DIFFICULTIES.medium.fundFees);
+    expect(state.account.funds).toEqual([]);
+    expect(loaded.funds().list[0]).toMatchObject({ members: 500 });
+    expect(loaded.fundPrice(0)).toBeCloseTo(100, 6);
+    expect(state.competitors.books.map((b) => b.history.length)).toEqual(state.world.firms.map(() => 1));
+    expect(state.scoring.growth).toHaveLength(6);
+    expect(state.scoring.growth[5]).toBeCloseTo(state.stats[5][1] / 2_500_000, 9);
+    loaded.runSessions(10);
+    expect(loaded.exportState().competitors.books[0].history.length).toBeGreaterThan(1);
+    const a = loaded.account();
+    expect(a.netWorth - a.deposits).toBeCloseTo(a.realized + a.unrealized, 4);
+  });
 
   it('upgrades a version 4 save: a margin account, commodities at their 1998 levels, short interest and no loans', () => {
     const e = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Old Firm' });

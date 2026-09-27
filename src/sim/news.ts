@@ -24,7 +24,11 @@ export type NewsKind =
   | 'weatherHit'
   | 'weatherBust'
   | 'opekHint'
-  | 'opek';
+  | 'opek'
+  // Phase 8: the player's 5% filings, Barren's annual league table, the SOB's enforcement action against the firm.
+  | 'stake'
+  | 'league'
+  | 'enforcement';
 
 /** News about commodities rather than companies (spec §11.7: sector and macro events work the same way). */
 export const COMMODITY_KINDS: readonly NewsKind[] = ['weather', 'weatherHit', 'weatherBust', 'opekHint', 'opek'];

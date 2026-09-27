@@ -78,7 +78,8 @@ export function Financing() {
       <p className="hint">
         Payment history {view.factors.history >= 0 ? '+' : ''}
         {Math.round(view.factors.history)}, leverage {Math.round(view.factors.leverage)}, net worth trend {view.factors.trend >= 0 ? '+' : ''}
-        {Math.round(view.factors.trend)} points. <a role="link" className="help-link" onClick={() => openUrl(`http://${EQUIFACTS}/`)}>Full report at Equifacts</a> ·{' '}
+        {Math.round(view.factors.trend)}
+        {view.factors.sob < 0 ? `, SOB record ${Math.round(view.factors.sob)}` : ''} points. <a role="link" className="help-link" onClick={() => openUrl(`http://${EQUIFACTS}/`)}>Full report at Equifacts</a> ·{' '}
         <a role="link" className="help-link" onClick={() => openUrl(`http://${BANK}/`)}>First Continental Bank</a> ·{' '}
         <a role="link" className="help-link" onClick={() => openUrl(helpUrl('loans'))}>How loans work</a>
       </p>

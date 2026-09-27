@@ -1928,3 +1928,73 @@ button:disabled .tb-glyph {
   font-size: 11px;
   color: #606060;
 }
+
+/* ---------- The Securities Oversight Bureau (Phase 8) ---------- */
+
+.site-sob {
+  min-height: 100%;
+  box-sizing: border-box;
+  background: #fafaf5;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.sob-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  background: #1f2f4f;
+  color: #fff;
+}
+
+.web-page a.sob-logo {
+  padding: 4px 10px;
+  border: 3px double #d8c060;
+  color: #d8c060;
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  text-decoration: none;
+}
+
+.sob-nav {
+  padding: 4px 12px;
+  background: #d8dce8;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+}
+
+.sob-body {
+  padding: 4px 12px;
+}
+
+.sob-table {
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 13px;
+}
+
+.sob-notice {
+  padding: 6px 8px;
+  background: #fff4e0;
+  border-left: 4px solid #a00000;
+}
+
+.sob-footer {
+  padding: 8px 12px;
+  color: #555;
+  font-size: 11px;
+}
+
+/* ---------- Barren's league table (Phase 8) ---------- */
+
+.league-table {
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 13px;
+}
+
+.league-table tr.league-player {
+  background: #fff3b0;
+  font-weight: bold;
+}

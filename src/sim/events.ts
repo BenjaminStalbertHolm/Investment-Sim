@@ -10,6 +10,9 @@ import { FORUM_CREDIBILITY, TRADE_CREDIBILITY } from './data/outlets';
 import type { MacroKind, NewsItem, Rumour } from './news';
 import { LISTING } from './market';
 import type { Sim } from './context';
+import { firmAums } from './competitors';
+import { fileStake, mergerApproved, mergerMeeting } from './governance';
+import { surveil } from './regulator';
 
 /**
  * Corporate events (spec §11.6–11.7). Each trading day the generator decides the events of the day HORIZON_DAYS ahead,
@@ -43,7 +46,10 @@ export type Task =
   | { do: 'redeem'; client: number }
   // Phase 7: a recalled short falls due; the weather hits or OPEK announces.
   | { do: 'buyIn'; company: number }
-  | { do: 'outlook'; id: number };
+  | { do: 'outlook'; id: number }
+  // Phase 8: an annual meeting counts its votes; an SOB audit reports.
+  | { do: 'meeting'; meeting: number }
+  | { do: 'audit' };
 
 export type Timed = Task & { time: GameTime; seq: number };
 
@@ -219,15 +225,20 @@ export function fire(sim: Sim, id: number): void {
     });
     return;
   }
+  // The SOB's surveillance looks at who traded just before (spec §16B).
+  surveil(sim, i, p.move, p.id);
   const type = EVENT_TYPE[p.kind];
   const base = { kind: p.kind, company: i, rumour: p.rumour } as const;
   switch (p.kind) {
     case 'takeover':
       return takeover(sim, p);
     case 'activist': {
-      const firm = pickFirm(sim, rng, (f) => f.strategy === 'activist') ?? pickFirm(sim, rng, (f) => f.strategy !== 'index');
-      if (firm === undefined) return;
+      // Only a firm whose fund can afford the stake takes it (spec §16).
       const stake = rng.range(0.05, 0.099);
+      const aums = firmAums(sim);
+      const affords = (k: number) => aums[k] >= 3 * stake * sim.model.shares[i] * sim.market.price[i];
+      const firm = pickFirm(sim, rng, (f, k) => f.strategy === 'activist' && affords(k)) ?? pickFirm(sim, rng, (f, k) => f.strategy !== 'index' && affords(k));
+      if (firm === undefined) return;
       addHolding(sim, i, firm, Math.round(stake * sim.model.shares[i]));
       jump(sim, i, Math.log1p(p.move) - leaked, type.persist);
       return followUp(sim, sim.report({ ...base, move: p.move, firm, level: stake }), type, p.move);
@@ -324,6 +335,8 @@ function takeover(sim: Sim, p: PlannedEvent): void {
   });
   const day = addTradingDays(dayOf(sim.time), rng.int(...TAKEOVER_DAYS));
   enqueue(sim.s.events, at(day, CLOSE), { do: 'dealClose', news: item.id });
+  // Shareholders vote on it (spec §15.5): the player too, if it holds enough of the target.
+  mergerMeeting(sim, item, day);
 }
 
 export function closeDeal(sim: Sim, newsId: number): void {
@@ -332,7 +345,8 @@ export function closeDeal(sim: Sim, newsId: number): void {
   if (sim.market.state.status[i]) return;
   const rng = sim.rng.events;
   const deal = { company: i, other: bid.other, firm: bid.firm, amount: bid.amount, level: bid.level, prev: bid.prev };
-  if (rng.chance(TAKEOVER_COMPLETES)) {
+  // The target's shareholders can turn it down; then regulators and financing have their say.
+  if (mergerApproved(sim, newsId) && rng.chance(TAKEOVER_COMPLETES)) {
     sim.report({ kind: 'takeoverDone', ...deal });
     sim.delist(i, LISTING.acquired, bid.level!);
     return;
@@ -369,15 +383,21 @@ function topCompanies(sim: Sim, except: number): number[] {
   return out;
 }
 
-function pickFirm(sim: Sim, rng: Rng, test: (f: Sim['s']['world']['firms'][number]) => boolean): number | undefined {
-  const ids = sim.s.world.firms.flatMap((f, k) => (test(f) ? [k] : []));
+function pickFirm(sim: Sim, rng: Rng, test: (f: Sim['s']['world']['firms'][number], k: number) => boolean): number | undefined {
+  const ids = sim.s.world.firms.flatMap((f, k) => (test(f, k) ? [k] : []));
   return ids.length ? rng.pick(ids) : undefined;
 }
 
-/** A disclosed stake (spec §10.5 holders table), kept sorted by company, largest holder first. */
-function addHolding(sim: Sim, company: number, firm: number, shares: number): void {
+/** A disclosed stake (spec §10.5 holders table), kept sorted by company, largest holder first; bought at `price`. */
+export function addHolding(sim: Sim, company: number, firm: number, shares: number, price = sim.market.price[company]): void {
   const holdings = sim.s.world.holdings;
   const existing = holdings.find((h) => h.company === company && h.firm === firm);
+  // The firm pays for the shares out of its fund, and files with the SOB (spec §14).
+  const bought = Math.max(0, shares - (existing?.shares ?? 0));
+  sim.s.competitors.books[firm].cash -= bought * price;
+  if ((existing?.shares ?? 0) < 0.05 * sim.model.shares[company] && shares >= 0.05 * sim.model.shares[company]) {
+    fileStake(sim, firm, company, shares / sim.model.shares[company]);
+  }
   if (existing) existing.shares = Math.max(existing.shares, shares);
   else {
     let k = holdings.findIndex((h) => h.company > company);

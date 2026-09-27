@@ -1,4 +1,6 @@
-import type { ClosedPosition, LedgerEntry, MarginCall, Order, Side } from './account';
+import type { ClosedPosition, FundPosition, LedgerEntry, MarginCall, Order, Side } from './account';
+import type { StakeFiling } from './governance';
+import type { SobAction } from './regulator';
 import type { BankruptcyReport } from './bankruptcy';
 import type { GameTime, Phase } from './calendar';
 import type { Client, Fees } from './clients';
@@ -18,6 +20,10 @@ export const INDEX = -1;
 /** Chart ids of the futures contracts' underlyings (data/commodities.ts order): -2, -3, … */
 export const commodityChart = (k: number) => -2 - k;
 export const chartCommodity = (id: number) => -2 - id;
+/** Chart ids of the index funds (data/funds.ts order): -100, -101, … */
+export const FUND_CHART = -100;
+export const fundChart = (f: number) => FUND_CHART - f;
+export const chartFund = (id: number) => FUND_CHART - id;
 
 export interface Quote {
   last: number;
@@ -72,6 +78,9 @@ export interface AccountView {
   goodsValue: number;
   /** Bank debt, with interest and fees owed on missed payments. */
   loans: number;
+  /** Index fund units at their value (part of `longValue`), and an SOB fine not yet paid (Phase 8). */
+  fundsValue: number;
+  fine: number;
   /** Requirements: initial (1 / max leverage on stocks) and maintenance (25% long, 30% short); and the equity above initial. */
   initial: number;
   maintenance: number;
@@ -135,17 +144,50 @@ export interface CompanyDetails {
   quarters: QuarterResult[];
   /** Institutional holders, largest first. */
   holders: Holder[];
+  /** The player sits on the board (spec §15.5). */
+  seat: boolean;
 }
 
-/** A competitor firm's book (spec §14 firm websites). */
+/** A competitor firm's book (spec §14 firm websites, spec §16). */
 export interface FirmView {
   firm: number;
-  /** Market value of its holdings. */
+  /** Its fund's assets now: holdings at market prices and cash. */
   aum: number;
-  /** Largest first. `pct` is the share of the company it owns. */
+  cash: number;
+  /** Companies it holds now. */
+  positions: number;
+  /** Its latest public SOB filing (spec §14: 45 days late): the quarter's last day, and the holdings, largest first.
+   *  `pct` is the share of the company it owned. */
+  filed: number;
   holdings: { company: number; shares: number; value: number; pct: number }[];
-  /** [day, value, MAJOR 500] at the start and at each week's close, then now. */
+  /** [day, unit value, MAJOR 500] at the start (unit value 1) and at each week's close, then now. */
   history: [number, number, number][];
+}
+
+/** MajorTrade → Funds (spec §11.5). */
+export interface FundsView {
+  trading: boolean;
+  /** Half the bid-ask spread on a unit. */
+  spread: number;
+  list: { fund: number; nav: number; prevClose: number; members: number; fee: number }[];
+  positions: (FundPosition & { nav: number; value: number; unrealized: number })[];
+}
+
+/** The Securities Oversight Bureau's view of the firm, and the public filings (spec §14, §16B). */
+export interface SobView {
+  heat: number;
+  peak: number;
+  record: SobAction[];
+  audit?: { opened: number; due: number };
+  fine?: { amount: number; due: number };
+  suspended?: number;
+  frozen?: number;
+  /** 5% filings, newest first (firm −1 is the player). */
+  filings: StakeFiling[];
+  /** The player's stakes over 5%, and its board seats. */
+  stakes: { company: number; level: number }[];
+  seats: number[];
+  investor?: { firm: number; share: number; amount: number; day: number; paid: number };
 }
 
 /** Every company's numbers in columns, for market-wide pages: movers, sector map, screener, news (spec §14). */
@@ -200,7 +242,9 @@ export type EngineEvent =
   | { kind: 'mail'; id: number }
   | { kind: 'delisted'; company: number }
   | { kind: 'futures'; contract: string; contracts: number; price: number }
-  | { kind: 'bankrupt' };
+  | { kind: 'bankrupt' }
+  | { kind: 'fund'; fund: number; units: number; price: number }
+  | { kind: 'achievement'; id: string };
 
 /** The firm's clients and money (spec §15.1): everything is AUM; the firm's own capital is the part no client owns. */
 export interface ClientsView {
@@ -316,8 +360,8 @@ export interface LoansView {
   /** What more the bank would lend. */
   headroom: number;
   score: number;
-  /** The score's parts (spec §16A: payment history, leverage, net worth trend). */
-  factors: { history: number; leverage: number; trend: number };
+  /** The score's parts (spec §16A: payment history, leverage, net worth trend, SOB record). */
+  factors: { history: number; leverage: number; trend: number; sob: number };
   record: CreditEvent[];
   policy: number;
   /** Interest on a margin debit balance. */
@@ -383,6 +427,8 @@ export interface Snapshot {
   news: number;
   /** Each futures contract's underlying: price now and at the last close (spec §12.3). */
   commodities: { spot: number[]; previous: number[] };
+  /** Heat now and at its highest (spec §16B: the tray's thermometer), and trading suspended until (a trading day). */
+  sob: { heat: number; peak: number; suspended?: number };
 }
 
 export type { Bar, ClosedPosition, LedgerEntry, Order };

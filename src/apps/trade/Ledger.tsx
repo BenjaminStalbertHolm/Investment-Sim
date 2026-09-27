@@ -3,6 +3,7 @@ import { formatClock } from '../../sim/calendar';
 import { simulation } from '../../sim/client';
 import { contractLabel } from '../../sim/commodities';
 import { CONTRACTS } from '../../sim/data/commodities';
+import { FUNDS } from '../../sim/data/funds';
 import { useAccountData, useGame } from '../../state/game';
 import { VirtualTable, type Column } from '../../ui98/VirtualTable';
 import { count, money, price, signedMoney, tone } from '../format';
@@ -12,6 +13,7 @@ const KIND: Record<LedgerEntry['kind'], string> = {
   commission: 'Commission', dividend: 'Dividend', acquisition: 'Takeover', writeoff: 'Write-off', borrowFee: 'Borrow fees',
   interest: 'Interest', futures: 'Futures', variation: 'Variation margin', delivery: 'Delivery', storage: 'Storage',
   goods: 'Goods sold', fine: 'Fine', loan: 'Loan', repayment: 'Repayment', loanInterest: 'Loan interest', loanFee: 'Loan fee',
+  fund: 'Index fund', sobFine: 'SOB fine', investment: 'Investment', feeShare: 'Investor’s fees',
 };
 
 /** What goods a commodity code stands for: "bushels of corn". */
@@ -40,7 +42,16 @@ export function Ledger() {
       case 'writeoff':
         return `${count(Math.abs(e.shares!))} ${tickers[e.company!]}: the company is bankrupt`;
       case 'commission':
+        if (e.fund !== undefined) return `${count(e.shares!)} ${FUNDS[e.fund].ticker} units @ ${price(e.price!)}`;
         return e.contract ? `${count(e.shares!)} ${contractLabel(e.contract)} @ ${price(e.price!)}` : `Order ${e.order}: ${what}`;
+      case 'fund':
+        return `${e.note === 'sell' ? 'Sold' : 'Bought'} ${count(e.shares!)} ${FUNDS[e.fund!].ticker} units @ ${price(e.price!)}`;
+      case 'sobFine':
+        return 'Paid to the Securities Oversight Bureau';
+      case 'investment':
+        return `From ${e.note}, for a share of future fees`;
+      case 'feeShare':
+        return `${e.note}’s share of the fees earned`;
       case 'borrowFee':
         return `Borrowed shares, ${e.note}`;
       case 'interest':

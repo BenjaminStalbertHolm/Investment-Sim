@@ -12,7 +12,7 @@ import { HAZARDS } from '../../sim/data/commodities';
 import { useOutlooks } from '../hooks';
 import { useStories } from '../news/NewsSites';
 import {
-  BANK, EQUIFACTS, EXCHANGE, FED, NEWSWIRE, OPEK, QUOTEZONE, RAGINGBEAR, WEATHER, YEEHAW, companyUrl, firmUrl, helpUrl, playerUrl, quoteUrl,
+  BANK, BARRENS, EQUIFACTS, EXCHANGE, FED, NEWSWIRE, OPEK, QUOTEZONE, RAGINGBEAR, SOB, WEATHER, YEEHAW, companyUrl, firmUrl, helpUrl, playerUrl, quoteUrl,
   searchUrl, sites,
 } from '../urls';
 import { Link, usePage, useTitle } from '../web';
@@ -148,7 +148,8 @@ function Front() {
           <p>
             <Link href={`http://${EXCHANGE}/`}>Futures</Link> · <Link href={`http://${FED}/`}>Interest rates</Link> ·{' '}
             <Link href={`http://${OPEK}/`}>Oil</Link> · <Link href={`http://${BANK}/`}>Business loans</Link> ·{' '}
-            <Link href={`http://${EQUIFACTS}/`}>Your credit score</Link>
+            <Link href={`http://${EQUIFACTS}/`}>Your credit score</Link> · <Link href={`http://${SOB}/`}>Securities regulator</Link> ·{' '}
+            <Link href={`http://${BARRENS}/league`}>Fund league table</Link>
           </p>
         </div>
       </div>

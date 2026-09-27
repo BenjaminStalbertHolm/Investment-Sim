@@ -67,6 +67,8 @@ export function Portfolio() {
             value={signedPct(account.netWorth / account.deposits - 1)}
             tone={tone(account.netWorth - account.deposits)}
           />
+          {account.fundsValue > 0 && <Figure label="Index funds" value={money(account.fundsValue)} />}
+          {account.fine > 0 && <Figure label="SOB fine owed" value={money(account.fine)} tone="down" />}
           {(account.futuresMargin > 0 || account.goodsValue > 0 || account.loans > 0) && (
             <>
               <Figure label="Futures P&L today" value={signedMoney(account.futuresPnl)} tone={tone(account.futuresPnl)} />

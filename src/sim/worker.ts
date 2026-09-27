@@ -4,7 +4,7 @@ import { SAVE_FORMAT, packSave, unpackSave, type Manifest } from '../state/saveF
 import type { OrderRequest } from './account';
 import { CONTRACTS } from './data/commodities';
 import type { Structure } from './loans';
-import type { Mail } from './mail';
+import type { Mail, MailAction } from './mail';
 import type { NewsQuery } from './news';
 import { dayOf, minutesPerSecond, phaseEnd, setStartYear } from './calendar';
 import { Engine, type NewGameOptions, type SimState } from './engine';
@@ -94,6 +94,7 @@ function post(): void {
     mail: e.mailStatus(),
     news: e.newsCount,
     commodities: e.commodityQuotes(),
+    sob: e.sobStatus(),
   });
   events = [];
 }
@@ -205,7 +206,7 @@ const api = {
     dirty = true;
     posted = 0;
   },
-  mailAction: (id: number, action: 'accept' | 'decline' | 'report') => changed(game().mailAction(id, action)),
+  mailAction: (id: number, action: MailAction) => changed(game().mailAction(id, action)),
   setAlerts(on: boolean): void {
     game().setAlerts(on);
   },
@@ -230,6 +231,13 @@ const api = {
   repayLoan: (id: number, amount: number) => changed(game().repayLoan(id, amount)),
   repayQuote: (id: number, amount: number) => game().repayQuote(id, amount),
   bankruptcy: () => game().bankruptcy(),
+  // Phase 8: index funds, competitors and league tables, the SOB and governance, the firm's record.
+  funds: () => game().funds(),
+  fundHoldings: (fund: number) => game().fundHoldings(fund),
+  tradeFund: (fund: number, units: number) => changed(game().tradeFund(fund, units)),
+  league: () => game().league(),
+  sob: () => game().sob(),
+  record: () => game().record(),
 };
 
 export type SimulationApi = typeof api;

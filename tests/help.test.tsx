@@ -15,7 +15,7 @@ const sources = (dir: string): string[] =>
 
 describe('Ask Reeves (spec §14.2)', () => {
   it('renders every guide for every difficulty, with the game’s own numbers and no gaps', () => {
-    for (const settings of Object.values(DIFFICULTIES)) {
+    for (const settings of [...Object.values(DIFFICULTIES), { ...DIFFICULTIES.medium, maxLeverage: 15 }]) {
       for (const topic of TOPICS) {
         const html = renderToString(<>{topic.body({ settings })}</>);
         expect(html, topic.id).not.toMatch(/undefined|NaN|Infinity|\[object/);
@@ -23,8 +23,10 @@ describe('Ask Reeves (spec §14.2)', () => {
       }
     }
     const margin = (s: typeof DIFFICULTIES.hard) => renderToString(<>{TOPIC.margin.body({ settings: s })}</>);
-    expect(margin(DIFFICULTIES.medium)).toContain('2:1');
-    expect(margin(DIFFICULTIES.hard)).toContain('1.5:1');
+    expect(margin(DIFFICULTIES.medium)).toContain('switched off');
+    expect(margin({ ...DIFFICULTIES.medium, maxLeverage: 2 })).toContain('2:1');
+    expect(margin({ ...DIFFICULTIES.hard, maxLeverage: 1.5 })).toContain('1.5:1');
+    expect(margin({ ...DIFFICULTIES.hard, maxLeverage: 15 })).toContain('15:1');
     expect(renderToString(<>{TOPIC.buying.body({ settings: DIFFICULTIES.hard })}</>)).toContain('$29.95 an order plus 0.05%');
   });
 

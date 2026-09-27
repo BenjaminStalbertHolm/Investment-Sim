@@ -1,7 +1,7 @@
 import { useId, useState, type ReactNode } from 'react';
 import type { Dialup } from '../../state/browser';
 import { randomSeed } from '../../state/game';
-import { changeSettings, difficultyOf, type Difficulty, type GameSettings, type Level } from '../../sim/settings';
+import { MAX_LEVERAGE, changeSettings, difficultyOf, type Difficulty, type GameSettings, type Level } from '../../sim/settings';
 import { Modal } from '../../ui98/Modal';
 
 /** Everything the Setup Wizard asks (spec §9): world options, the settings and the browser's dial-up delay. */
@@ -103,10 +103,15 @@ export function AdvancedSettings({ value, onChange, onClose }: { value: SetupOpt
         <NumberField label="Spread multiplier (×)" value={s.spread} min={0.1} max={5} step={0.1} onChange={(v) => set({ spread: v })} />
         <NumberField label="Extra spread under $2B (×)" value={s.smallCapSpread} min={1} max={5} step={0.1} onChange={(v) => set({ smallCapSpread: v })} />
         <NumberField label="Market impact of your orders (×)" value={s.impact} min={0} max={3} step={0.1} onChange={(v) => set({ impact: v })} />
-        <NumberField label="Max leverage on stocks (x:1)" value={s.maxLeverage} min={1} max={4} step={0.25} onChange={(v) => set({ maxLeverage: v })} />
+        <Check label="Leverage: buy stocks on margin (off: a cash account)" value={s.maxLeverage > 1} onChange={(v) => set({ maxLeverage: v ? 2 : 1 })} />
+        {s.maxLeverage > 1 && (
+          <NumberField label="Max leverage on stocks (x:1)" value={s.maxLeverage} min={1.25} max={MAX_LEVERAGE} step={0.25} onChange={(v) => set({ maxLeverage: v })} />
+        )}
         <NumberField label="Margin call grace (trading days)" value={s.marginGrace} min={1} max={5} step={1} onChange={(v) => set({ marginGrace: Math.round(v) })} />
         <Check label="Short selling" value={s.shortSelling} onChange={(v) => set({ shortSelling: v })} />
         <Check label="Futures and commodities" value={s.futures} onChange={(v) => set({ futures: v })} />
+        <NumberField label="MAJOR 500 index fund fee (% a year)" value={s.fundFees.index} scale={100} min={0} max={0.05} step={0.05} onChange={(v) => set({ fundFees: { ...s.fundFees, index: v } })} />
+        <NumberField label="Sector fund fees (% a year)" value={s.fundFees.sector} scale={100} min={0} max={0.05} step={0.05} onChange={(v) => set({ fundFees: { ...s.fundFees, sector: v } })} />
       </>
     ),
     'Competitors & clients': (

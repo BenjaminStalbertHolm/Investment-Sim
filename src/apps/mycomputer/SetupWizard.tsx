@@ -10,7 +10,7 @@ import { Confirm } from '../../ui98/Modal';
 import { ceoName, encodeCeo, randomCeo, type Ceo } from '../../world/ceo';
 import { Rng } from '../../world/rng';
 import { PRESET_FIRMS, playerFirmName, presetLogo, type Strategy } from '../../world/presetFirms';
-import { money } from '../format';
+import { money, pct } from '../format';
 import { AdvancedSettings, difficultyLabel, type SetupOptions } from './AdvancedSettings';
 import { LogoDesigner } from './LogoDesigner';
 import { PortraitDesigner } from './PortraitDesigner';
@@ -37,7 +37,7 @@ function DifficultyCard({ level, selected, onPick }: { level: (typeof LEVELS)[nu
         {s.commission.rate ? ` + ${s.commission.rate * 100}%` : ''} a trade
       </span>
       <span>Volatility {s.volatility}×</span>
-      <span>Leverage {s.maxLeverage}:1</span>
+      <span>Index fund fees {pct(s.fundFees.index, 1)} (sectors {pct(s.fundFees.sector, 1)}) a year</span>
       <span>{{ easy: 'Forgiving clients, tight spreads', medium: 'Normal everything', hard: 'Demanding clients, wide spreads on small caps' }[level]}</span>
     </button>
   );

@@ -7,7 +7,9 @@ import {
   CLIENT_KINDS, CLIENT_NAMES, CONTACT_TITLES, EXCLUSIONS, LIMITS, SAINTS, TOWNS, TRADES, VIRTUES, type ClientKind,
   type ConstraintKind,
 } from './data/clients';
+import { FUNDS } from './data/funds';
 import { addTradingDays, enqueue } from './events';
+import { frozen } from './regulator';
 import type { Level } from './settings';
 
 /**
@@ -197,6 +199,7 @@ export function accept(sim: Sim, id: number): string | undefined {
   deposit(sim, c, c.amount, unit);
   sim.send({ kind: 'joined', client: c.id, amount: c.amount });
   sim.report({ kind: 'mandate', company: -1, amount: c.amount, text: c.name });
+  sim.unlock('mandate');
   return undefined;
 }
 
@@ -218,7 +221,7 @@ function deposit(sim: Sim, c: Client, amount: number, unit: number): void {
 }
 
 /** Notice of a redemption (spec §15.1): paid five trading days later, the broker selling positions if cash is short. */
-export function redeem(sim: Sim, c: Client, fraction: number, reason: 'breach' | 'benchmark' | 'performance'): void {
+export function redeem(sim: Sim, c: Client, fraction: number, reason: 'breach' | 'benchmark' | 'performance' | 'scandal'): void {
   if (c.redeeming || c.status !== 'active') return;
   const due = addTradingDays(dayOf(sim.time), 5);
   c.redeeming = { fraction, due };
@@ -232,6 +235,12 @@ export function redeem(sim: Sim, c: Client, fraction: number, reason: 'breach' |
 export function settle(sim: Sim, id: number): void {
   const c = sim.s.clients.clients.find((x) => x.id === id);
   if (!c?.redeeming) return;
+  // An SOB asset freeze stops withdrawals (spec §16B): the client is paid the day it lifts.
+  const day = dayOf(sim.time);
+  if (frozen(sim.s.regulator, day)) {
+    enqueue(sim.s.events, at(sim.s.regulator.frozen!, OPEN), { do: 'redeem', client: id });
+    return;
+  }
   const account = sim.s.account;
   const units = c.units * c.redeeming.fraction;
   const owed = units * unitPrice(sim);
@@ -263,7 +272,8 @@ function breaks(sim: Sim, k: Constraint, c: Client, unit: number): boolean {
   const positions = sim.s.account.positions;
   switch (k.kind) {
     case 'exclude':
-      return positions.some((p) => k.industries!.includes(sim.model.sector[p.company]));
+      // A sector fund of an excluded industry counts; the MAJOR 500 fund is diversified enough to pass.
+      return positions.some((p) => k.industries!.includes(sim.model.sector[p.company])) || sim.s.account.funds.some((f) => k.industries!.includes(FUNDS[f.fund].industry));
     case 'maxPosition':
       return nav > 0 && positions.some((p) => (Math.abs(p.shares) * price[p.company]) / nav > k.limit);
     case 'minCap':
@@ -285,6 +295,7 @@ export function closeOfDay(sim: Sim, fees: Fees): void {
   if (!state.units) return;
   const unit = unitPrice(sim);
   const day = dayOf(sim.time);
+  let earned = 0;
   for (const c of state.clients) {
     if (c.status !== 'active') continue;
     const fee = c.units * unit * (fees.management / 252);
@@ -292,6 +303,7 @@ export function closeOfDay(sim: Sim, fees: Fees): void {
       c.units -= fee / unit;
       c.fees += fee;
       state.feesEarned += fee;
+      earned += fee;
     }
     c.peak = Math.max(c.peak, unit);
     if (c.redeeming || !c.constraints.length) continue;
@@ -312,6 +324,7 @@ export function closeOfDay(sim: Sim, fees: Fees): void {
       sim.send({ kind: 'warning', client: c.id, constraint: broken, day: c.breach.deadline });
     }
   }
+  sim.shareFees(earned);
 }
 
 function lose(sim: Sim, c: Client, reason: 'breach' | 'benchmark'): void {
@@ -332,6 +345,7 @@ export function quarterEnd(sim: Sim, fees: Fees, patience: Level): void {
   state.reputation = Math.min(100, Math.max(0, state.reputation + Math.max(-6, Math.min(6, firm * 150))));
   sim.report({ kind: 'firmQuarter', company: -1, move: unit / state.quarter.unit - 1, expect: index / state.quarter.index - 1, amount: sim.nav() });
   state.quarter = { unit, index };
+  let earned = 0;
   for (const c of state.clients) {
     if (c.status !== 'active' || c.redeeming) continue;
     const mine = unit / c.mark.unit - 1;
@@ -342,6 +356,7 @@ export function quarterEnd(sim: Sim, fees: Fees, patience: Level): void {
       c.units -= fee / unit;
       c.fees += fee;
       state.feesEarned += fee;
+      earned += fee;
     }
     sim.send({ kind: 'statement', client: c.id, returns: [mine, market], amount: c.units * unit, read: true });
     c.mood = Math.min(100, Math.max(0, c.mood + Math.max(-25, Math.min(25, excess * 400))));
@@ -372,6 +387,7 @@ export function quarterEnd(sim: Sim, fees: Fees, patience: Level): void {
       sim.send({ kind: excess >= 0 ? 'praise' : 'question', client: c.id, returns: [mine, market], variant: rng.int(0, 999) });
     }
   }
+  sim.shareFees(earned);
 }
 
 /** Morning: lapsed offers, and maybe a new one. */

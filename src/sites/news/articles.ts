@@ -86,7 +86,14 @@ function words(item: NewsItem, directory: Directory, firmName: string, rng: Rng)
     w.offer = `$${item.level!.toFixed(2)}`;
     w.premium = percent(item.level! / item.prev! - 1);
   }
-  if (item.kind === 'activist') w.stake = percent(item.level!);
+  if (item.kind === 'activist' || item.kind === 'stake') w.stake = percent(item.level!);
+  if (item.kind === 'league') {
+    const signed = (v: number) => `${v >= 0 ? '+' : '−'}${percent(v)}`;
+    Object.assign(w, {
+      year: item.prev!, count: item.amount!, rank: ordinal(item.level!), ret: signed(item.move!), winRet: signed(item.expect!),
+      winner: firm ?? firmName,
+    });
+  }
   if (item.kind === 'dividendChange') {
     w.dividend = `$${item.level!.toFixed(2)}`;
     w.oldDividend = `$${item.prev!.toFixed(2)}`;
@@ -126,6 +133,8 @@ function words(item: NewsItem, directory: Directory, firmName: string, rng: Rng)
   w.analyst = `${rng.pick(FIRST_NAMES.slice(0, 300))} ${rng.pick(LAST_NAMES.slice(0, 300))} of ${firms.length ? rng.pick(firms) : 'Silverman Sacks'}`;
   return w;
 }
+
+const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 
 /** The headline alone, for lists (cheap: no paragraphs). */
 export function headlineOf(item: NewsItem, directory: Directory, firmName: string, seed: string, outlet = 'newswire'): string {

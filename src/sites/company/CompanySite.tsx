@@ -564,7 +564,10 @@ function Holders({ d, directory, sites: s, firmName, held }: { d: CompanyDetails
     name: <Link href={firmUrl(s, h.firm)}>{directory.firms[h.firm].name}</Link>,
     shares: h.shares,
   }));
-  if (held > 0) rows.push({ key: 'player', name: <Link href={playerUrl(s)}>{firmName}</Link>, shares: held });
+  if (held > 0) {
+    const name = <Link href={playerUrl(s)}>{firmName}</Link>;
+    rows.push({ key: 'player', name: d.seat ? <>{name} (represented on the board)</> : name, shares: held });
+  }
   rows.sort((a, b) => b.shares - a.shares);
   rows.push({ key: 'insiders', name: 'Officers and directors', shares: d.insiderPct * d.shares });
   return (

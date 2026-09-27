@@ -2,14 +2,16 @@ import type { ClosedPosition } from './account';
 import { START_DAY } from './calendar';
 import type { Client } from './clients';
 import { CONTRACTS, CONTRACT_INDEX } from './data/commodities';
+import { FUNDS } from './data/funds';
 import { parseContract } from './commodities';
 
 /**
- * Bankruptcy (spec §16): the only way the game ends. It comes when an obligation falls due — a margin call, a loan — that
+ * Bankruptcy (spec §16): the only way the game ends. It comes when an obligation falls due — a margin call, a loan, an
+ * SOB fine — that
  * the firm cannot meet even after the forced sale of everything it owns. The report is what the Blue Screen of Debt
  * leads to, and what the Hall of Shame keeps.
  */
-export type Cause = 'margin' | 'loan';
+export type Cause = 'margin' | 'loan' | 'fine';
 
 export interface Trade {
   /** "MVDA", "CL Mar 98" (as a contract key) or a commodity's name. */
@@ -44,6 +46,7 @@ export interface BankruptcyReport {
 function trade(c: ClosedPosition, tickers: readonly string[]): Trade {
   if (c.company >= 0) return { label: tickers[c.company], company: c.company, realized: c.realized };
   if (c.contract) return { label: CONTRACTS[parseContract(c.contract)!.k].name, contract: c.contract, realized: c.realized };
+  if (c.fund !== undefined) return { label: FUNDS[c.fund].ticker, realized: c.realized };
   return { label: `${CONTRACTS[CONTRACT_INDEX[c.goods!]].name} (goods)`, realized: c.realized };
 }
 

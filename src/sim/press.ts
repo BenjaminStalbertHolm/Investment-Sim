@@ -71,7 +71,7 @@ export interface CompanyFacts {
 }
 
 /** Kinds only outlets that name them run: the TV and newsletter picks, and news of the player's firm. */
-const OWN_KINDS = new Set<NewsKind>(['tvPick', 'fowlPick', 'firmQuarter', 'mandate']);
+const OWN_KINDS = new Set<NewsKind>(['tvPick', 'fowlPick', 'firmQuarter', 'mandate', 'stake', 'league', 'enforcement']);
 
 function matches(rule: CoverageRule, item: NewsItem, facts?: CompanyFacts): boolean {
   if (rule.kinds ? !rule.kinds.includes(item.kind) : OWN_KINDS.has(item.kind)) return false;
