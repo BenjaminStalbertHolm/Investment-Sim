@@ -353,3 +353,18 @@
 .firm-clients p {
   margin: 0;
 }
+
+/* My Computer → About: achievements (spec §16). */
+.achievements {
+  margin: 0;
+  padding-left: 4px;
+  list-style: none;
+}
+
+.achievements li {
+  margin: 2px 0;
+}
+
+.achievements li.locked {
+  color: #808080;
+}

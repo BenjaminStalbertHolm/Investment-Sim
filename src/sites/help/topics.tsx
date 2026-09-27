@@ -2,8 +2,10 @@ import type { ReactNode } from 'react';
 import { money, pct } from '../../apps/format';
 import { CONTRACTS, CONTRACT_INDEX, EXPIRY_WARNING_DAYS, FTD_FINE, MAINTENANCE, OPEK_HINT_DAYS, OPEK_RELIABILITY, PHYSICAL_DISCOUNT, STORAGE_RATE, WEATHER_LEAD, WEATHER_PRICED, WEATHER_RELIABILITY } from '../../sim/data/commodities';
 import { BANK_LIMIT, EARLY_FEE, GRACE_DAYS, LATE_FEE, MIN_LOAN, TIERS, quoteLoan } from '../../sim/loans';
-import { MAINTENANCE_LONG, MAINTENANCE_SHORT, MARGIN_SPREAD } from '../../sim/margin';
-import type { GameSettings } from '../../sim/settings';
+import { FUNDS, FUND_SPONSOR, SECTOR_SIZE } from '../../sim/data/funds';
+import { MARGIN_SPREAD, maintenanceRates } from '../../sim/margin';
+import { FINE_DAYS, HEAT_DECAY } from '../../sim/regulator';
+import { MAX_LEVERAGE, type GameSettings } from '../../sim/settings';
 import { ALWAYS_AVAILABLE, GC_FEE, MAX_FEE, RECALL_DAYS } from '../../sim/shorts';
 import { BANK, EQUIFACTS, EXCHANGE, FED, OPEK, QUOTEZONE, RAGINGBEAR, WEATHER } from '../urls';
 import { Link } from '../web';
@@ -382,6 +384,43 @@ export const TOPICS: Topic[] = [
       </>
     ),
   },
+  {
+    id: 'funds',
+    title: 'Index funds: buying the whole market',
+    section: 'stocks',
+    questions: ['What is an index fund?', 'How do I buy the MAJOR 500?', 'What are sector funds?', 'What does a fund cost?'],
+    keywords: 'index fund funds mjr sector etf tracker mutual fund diversify diversification expense ratio fee units nav whole market passive',
+    body: ({ settings }) => (
+      <>
+        <p>
+          An index fund buys a whole list of companies for you. {FUND_SPONSOR} run {FUNDS.length} of them: <b>MJR</b>, which holds
+          all 500 companies of the MAJOR 500, and one fund for each industry, holding its {SECTOR_SIZE} largest companies. Each
+          owns its companies in proportion to their market value, collects their dividends and reinvests them.
+        </p>
+        <Steps>
+          <li>
+            Open <Go app="trade" tab="funds">MajorTrade → Funds</Go> and pick a fund: MJR, or an industry you believe in.
+          </li>
+          <li>Enter a number of units and press Buy. Units are filled at once at the fund’s value, while the market is open.</li>
+          <li>To get out, pick your fund under “Your funds” and press Sell All, or sell some units.</li>
+        </Steps>
+        <h3>What they cost</h3>
+        <p>
+          The usual commission on each trade, a tiny spread, and a yearly fee taken out of the fund’s value a little each day:
+          in this game {pct(settings.fundFees.index, 2)} a year for MJR and {pct(settings.fundFees.sector, 2)} for a sector fund.
+          Funds are bought and sold, never shorted; to bet against the market, sell the MAJOR 500 future short.
+        </p>
+        <Example>
+          <p>
+            {money(100_000)} in MJR follows the MAJOR 500 up and down, and adds its dividends. Over a year the fee costs about{' '}
+            {money(100_000 * settings.fundFees.index)}. Beating that with your own stock picks is harder than it looks — and it’s what
+            your clients pay you for.
+          </p>
+        </Example>
+        <Tip>A fund of a whole industry still falls with it. A client who bans tobacco bans the tobacco fund too.</Tip>
+      </>
+    ),
+  },
 
   // ---------- Margin and short selling ----------
   {
@@ -392,15 +431,24 @@ export const TOPICS: Topic[] = [
     keywords: 'margin leverage borrow broker buying power margin call maintenance initial requirement liquidation forced sale debit interest negative cash',
     body: ({ settings }) => {
       const L = settings.maxLeverage;
-      const fall = 1 - (L - 1) / ((1 - MAINTENANCE_LONG) * L);
+      const rates = maintenanceRates(L);
+      const fall = 1 - (L - 1) / ((1 - rates.long) * L);
       return (
         <>
-          <p>
-            Your account at the broker is a <b>margin account</b>: you can buy more stock than you have cash for, and the
-            broker lends you the difference. In this game the limit is <b>{leverage(settings)}</b>: each dollar of your equity
-            buys up to {money(L)} of stock. Borrowing shows as negative cash, and costs the Federal Reservoir’s rate plus{' '}
-            {pct(MARGIN_SPREAD * settings.loanRates, 1)} a year, charged every night.
-          </p>
+          {L > 1 ? (
+            <p>
+              Your account at the broker is a <b>margin account</b>: you can buy more stock than you have cash for, and the
+              broker lends you the difference. In this game the limit is <b>{leverage(settings)}</b>: each dollar of your equity
+              buys up to {money(L)} of stock. Borrowing shows as negative cash, and costs the Federal Reservoir’s rate plus{' '}
+              {pct(MARGIN_SPREAD * settings.loanRates, 1)} a year, charged every night.
+            </p>
+          ) : (
+            <p>
+              Leverage is <b>switched off</b> in this game: you can buy only as much stock as your equity pays for, and the
+              broker lends you nothing. (A new game can switch it on in Advanced Settings → Trading, up to {MAX_LEVERAGE}:1.) The
+              rules below still matter for short sales and futures, and a bank loan is borrowed money all the same.
+            </p>
+          )}
           <p>The broker has two rules:</p>
           <ul>
             <li>
@@ -408,8 +456,8 @@ export const TOPICS: Topic[] = [
               buying power is what that leaves.
             </li>
             <li>
-              <b>To keep</b> your positions, your equity must stay above {pct(MAINTENANCE_LONG, 0)} of what you own and{' '}
-              {pct(MAINTENANCE_SHORT, 0)} of what you are short, plus the margin on any futures (the <i>maintenance
+              <b>To keep</b> your positions, your equity must stay above {pct(rates.long, 1)} of what you own and{' '}
+              {pct(rates.short, 1)} of what you are short, plus the margin on any futures (the <i>maintenance
               requirement</i>).
             </li>
           </ul>
@@ -420,13 +468,15 @@ export const TOPICS: Topic[] = [
             prices recover. If it is still short at the opening bell on the deadline, the broker sells for you — your worst
             positions first — until the account is safe. If your equity has gone below zero, it sells at the very next open.
           </p>
-          <Example>
-            <p>
-              You have {money(100_000)} and buy {money(100_000 * L)} of stock, borrowing {money(100_000 * (L - 1))}. If the
-              stock rises 10%, you make {money(10_000 * L)}: {pct(0.1 * L, 0)} on your money. If it falls 10%, you lose the
-              same. A fall of about {pct(fall, 0)} brings a margin call; a fall of {pct(1 / L, 0)} wipes you out.
-            </p>
-          </Example>
+          {L > 1 && (
+            <Example>
+              <p>
+                You have {money(100_000)} and buy {money(100_000 * L)} of stock, borrowing {money(100_000 * (L - 1))}. If the
+                stock rises 10%, you make {money(10_000 * L)}: {pct(0.1 * L, 0)} on your money. If it falls 10%, you lose the
+                same. A fall of about {pct(fall, 0)} brings a margin call; a fall of {pct(1 / L, 0)} wipes you out.
+              </p>
+            </Example>
+          )}
           <Tip>
             Keep some buying power spare. The broker doesn’t ask whether now is a good time to sell, and a margin call in a
             crash sells at the bottom.
@@ -468,7 +518,7 @@ export const TOPICS: Topic[] = [
           </li>
           <li>
             <b>Unlimited losses</b>: a stock can only fall to zero, but it can rise without limit. The broker requires equity of{' '}
-            {pct(MAINTENANCE_SHORT, 0)} of your shorts’ value, so a rising short can bring a <See topic="margin">margin call</See>.
+            {pct(maintenanceRates(settings.maxLeverage).short, 0)} of your shorts’ value, so a rising short can bring a <See topic="margin">margin call</See>.
           </li>
           <li>
             <b>Recalls</b>: a lender can ask for its shares back. You get a letter and {days(RECALL_DAYS)} to cover; after that
@@ -938,6 +988,79 @@ export const TOPICS: Topic[] = [
     ),
   },
   {
+    id: 'stakes',
+    title: 'Big stakes, board seats and shareholder votes',
+    section: 'firm',
+    questions: ['What happens if I buy 5% of a company?', 'How do I get a board seat?', 'How do I take over a company?', 'How do proxy votes work?', 'Who are my competitors?'],
+    keywords: 'stake 5% 20% 50% filing 13d disclosure board seat director control takeover proxy vote meeting merger dividend ceo competitor rival league table barren investor',
+    body: () => (
+      <>
+        <p>Own enough of a company and it starts to matter who you are:</p>
+        <ul>
+          <li>
+            <b>5%</b>: your holding is filed with the Securities Oversight Bureau and made public. The company lists you among
+            its shareholders, the Newswire reports it, and the chief executive writes to you.
+          </li>
+          <li>
+            <b>20%</b>: the board offers you a seat.
+          </li>
+          <li>
+            <b>50%</b>: you control the company. Its board writes each quarter for instructions: replace the chief executive, or
+            raise or cut the dividend.
+          </li>
+        </ul>
+        <h3>Votes</h3>
+        <p>
+          Hold 1% of a company, or a position worth 2% of your firm, and it sends you a proxy for its annual meeting: vote For,
+          Against or Abstain in Outbox Express. Your vote counts in proportion to your shares. When a company you hold gets a
+          takeover bid, its shareholders vote on the deal before it closes — own enough and you can turn it down.
+        </p>
+        <h3>Competitors</h3>
+        <p>
+          Your rivals run funds of their own, each by its strategy, and trade once a week. Their web sites show their holdings as
+          filed with the SOB, 45 days after each quarter. Barren’s ranks every firm by its year’s return each January. A rival may
+          offer to buy a big stake of yours at a premium, taunt you after a good quarter, or offer to invest in your firm for a
+          share of its fees.
+        </p>
+        <Tip>A public 5% stake is a signal: aggressive competitors pile into the same stock, and the price you pay for more rises.</Tip>
+      </>
+    ),
+  },
+  {
+    id: 'sob',
+    title: 'The Securities Oversight Bureau, heat and audits',
+    section: 'firm',
+    questions: ['What is heat?', 'What is the SOB?', 'What happens in an audit?', 'Is insider trading allowed?', 'Why was I fined?'],
+    keywords: 'sob regulator heat thermometer audit examination insider trading fine suspension freeze enforcement investigation tip illegal',
+    body: ({ settings }) => (
+      <>
+        <p>
+          The Securities Oversight Bureau watches the market. <b>Heat</b> is how closely it — and the press — watches you. It
+          rises when you trade just before news: most of all on a genuine inside tip, but any big, well-timed trade gets flagged.
+          It cools by about {Math.round(HEAT_DECAY * settings.heatDecay * 10) / 10} a week. Once it has risen, a thermometer in
+          the tray shows it.
+        </p>
+        <p>
+          Each month the Bureau may audit you: rarely when heat is low, often when it is high. An audit ends somewhere on this
+          ladder, the more evidence the further down:
+        </p>
+        <Steps>
+          <li>Cleared.</li>
+          <li>A warning letter, on your record.</li>
+          <li>A fine: a fixed sum plus 50–300% of what the suspicious trades made, due within {FINE_DAYS} trading days.</li>
+          <li>A suspension: you may only close positions, for 5 to 30 trading days.</li>
+          <li>An asset freeze: no new positions, no bank loans, and clients’ withdrawals wait.</li>
+          <li>A public enforcement action: a big fine, the newspapers, and clients leaving.</li>
+        </Steps>
+        <p>
+          An unpaid fine is collected by selling your positions; if even that isn’t enough, the firm is bankrupt. Your record
+          with the Bureau counts against your credit score and your reputation.
+        </p>
+        <Tip>Report tips you don’t trust to the SOB (the button in Outbox Express). It earns a little reputation and no heat.</Tip>
+      </>
+    ),
+  },
+  {
     id: 'bankruptcy',
     title: 'Bankruptcy: the only way to lose',
     section: 'firm',
@@ -947,7 +1070,7 @@ export const TOPICS: Topic[] = [
       <>
         <p>
           The firm goes bankrupt when it owes something it cannot pay even after selling everything it owns: a margin call
-          after the broker has sold every position, or a defaulted loan the bank can’t recover. Then comes the Blue Screen of
+          after the broker has sold every position, a defaulted loan the bank can’t recover, or an SOB fine. Then comes the Blue Screen of
           Debt, and a final report of the firm’s life. Its save is kept, read-only, in the{' '}
           <Go app="mycomputer" view="shame">Hall of Shame</Go>.
         </p>

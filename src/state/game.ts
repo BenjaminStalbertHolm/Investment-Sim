@@ -4,6 +4,8 @@ import { create } from 'zustand';
 import type { AppId } from '../apps/catalog';
 import { formatDate, dayOf, setStartYear } from '../sim/calendar';
 import { contractLabel } from '../sim/commodities';
+import { FUNDS } from '../sim/data/funds';
+import { ACHIEVEMENTS } from '../sim/scoring';
 import { simulation } from '../sim/client';
 import type { BankruptcyReport } from '../sim/bankruptcy';
 import type { NewGameOptions } from '../sim/engine';
@@ -306,6 +308,10 @@ function receive(snapshot: Snapshot): void {
       notify(`${verb} ${event.shares.toLocaleString('en-US')} ${tickers[event.company]} at $${event.price.toFixed(2)}`);
     } else if (event.kind === 'futures') {
       notify(`${event.contracts > 0 ? 'Bought' : 'Sold'} ${Math.abs(event.contracts)} ${contractLabel(event.contract)} at ${event.price.toFixed(event.price < 1 ? 4 : 2)}`);
+    } else if (event.kind === 'fund') {
+      notify(`${event.units > 0 ? 'Bought' : 'Sold'} ${Math.abs(event.units).toLocaleString('en-US')} ${FUNDS[event.fund].ticker} at $${event.price.toFixed(2)}`);
+    } else if (event.kind === 'achievement') {
+      notify(`Achievement unlocked: ${ACHIEVEMENTS.find((a) => a.id === event.id)?.name ?? event.id}!`);
     } else if (event.kind === 'bankrupt') void goneBust();
   }
 }

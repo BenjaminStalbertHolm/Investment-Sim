@@ -9,6 +9,7 @@ import { money, price, signedMoney, signedPct, tone } from '../format';
 import type { AppProps } from '../types';
 import { Calendar } from './Calendar';
 import { Financing } from './Financing';
+import { Funds } from './Funds';
 import { Futures } from './Futures';
 import { Ledger } from './Ledger';
 import { OrderTicket } from './OrderTicket';
@@ -22,6 +23,7 @@ const HELP: [string, string][] = [
   ['Order Types…', 'orders'],
   ['Margin and Margin Calls…', 'margin'],
   ['Short Selling…', 'shorting'],
+  ['Index Funds…', 'funds'],
   ['Trading Futures…', 'trading-futures'],
   ['Loans and Repaying Them…', 'repaying'],
   ['All Help Topics…', ''],
@@ -31,6 +33,7 @@ const TABS: { id: TradeTab; label: string }[] = [
   { id: 'quotes', label: 'Quotes' },
   { id: 'ticket', label: 'Order Ticket' },
   { id: 'portfolio', label: 'Portfolio' },
+  { id: 'funds', label: 'Funds' },
   { id: 'futures', label: 'Futures' },
   { id: 'orders', label: 'Orders' },
   { id: 'ledger', label: 'Ledger' },
@@ -85,6 +88,7 @@ export default function TradeApp({ windowId }: AppProps) {
         {tab === 'quotes' && <Quotes />}
         {tab === 'ticket' && <OrderTicket />}
         {tab === 'portfolio' && <Portfolio />}
+        {tab === 'funds' && <Funds />}
         {tab === 'futures' && <Futures />}
         {tab === 'orders' && <Orders />}
         {tab === 'ledger' && <Ledger />}

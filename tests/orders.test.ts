@@ -3,9 +3,12 @@ import type { Order } from '../src/sim/account';
 import { formatClock } from '../src/sim/calendar';
 import { Engine } from '../src/sim/engine';
 import { PARTICIPATION } from '../src/sim/market';
-import { DIFFICULTIES, type GameSettings } from '../src/sim/settings';
+import { DIFFICULTIES as PRESETS, changeSettings, type GameSettings } from '../src/sim/settings';
 import type { OrderRequest } from '../src/sim/account';
 import { generateWorld, type World } from '../src/world/generator';
+
+/** Written against the Phase 7 presets: $1,000,000 at 2:1 for Medium (leverage is off in every preset since Phase 8). */
+const DIFFICULTIES = { ...PRESETS, medium: changeSettings(PRESETS.medium, { startingCapital: 1_000_000, maxLeverage: 2 }) };
 
 let world: World;
 beforeAll(() => {

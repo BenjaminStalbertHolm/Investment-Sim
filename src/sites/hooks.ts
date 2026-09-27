@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { dayOf } from '../sim/calendar';
 import { simulation } from '../sim/client';
-import type { CompanyDetails, FirmView, FuturesView, LoansView, MarketTable, OutlookView } from '../sim/types';
+import type { CompanyDetails, FirmView, FuturesView, LoansView, MarketTable, OutlookView, SobView } from '../sim/types';
 import { decodeCompany, type Company } from '../world/company';
 import { useGame } from '../state/game';
 
@@ -56,6 +56,25 @@ export function useLoans(): LoansView | undefined {
   const revision = useGame((s) => s.snapshot?.revision);
   const day = useDay();
   return useFetched(() => simulation().loans(), [revision, day]);
+}
+
+/** The SOB's filings and the firm's record with it, refetched daily and when the account changes. */
+export function useSob(): SobView | undefined {
+  const revision = useGame((s) => s.snapshot?.revision);
+  const day = useDay();
+  return useFetched(() => simulation().sob(), [revision, day]);
+}
+
+/** Barren's league tables and this year's standings so far, refetched daily. */
+export function useLeague() {
+  const day = useDay();
+  return useFetched(() => simulation().league(), [day]);
+}
+
+/** The firm's record (spec §16): performance, league places, achievements. */
+export function useRecord() {
+  const day = useDay();
+  return useFetched(() => simulation().record(), [day]);
 }
 
 const decoded = new Map<string, Company>();

@@ -7,6 +7,8 @@ import type { MacroKind, NewsItem } from '../../sim/news';
 import type { Directory } from '../../sim/types';
 import { Rng } from '../../world/rng';
 import { shortName } from '../../sites/company/content';
+import { companyOf } from '../../sites/hooks';
+import { FUNDS } from '../../sim/data/funds';
 import { headlineOf } from '../../sites/news/articles';
 import { dollars, percent, write } from '../../sites/text';
 import { JOTTINGS, NEWSWIRE, slugOf } from '../../sites/urls';
@@ -49,12 +51,16 @@ const BROKER = 'MajorTrade Pro Brokerage Services <confirms@majortrade.com>';
 const MARGIN_DESK = 'MajorTrade Pro Margin Department <margin@majortrade.com>';
 const BANK = 'First Continental Bank <loans@firstcontinental.com>';
 const COURT = 'Clerk of the Bankruptcy Court, Southern District <clerk@bankruptcy-court.gov>';
+const SOB_FILINGS = 'Securities Oversight Bureau, Filings Desk <filings@sob.gov>';
+const SOB_ENFORCEMENT = 'Securities Oversight Bureau, Division of Enforcement <enforcement@sob.gov>';
+const MEETINGS = ['the election of directors', 'the executive pay package', 'the proposed takeover of the company'];
 
 const SIDES = { buy: 'Bought', sell: 'Sold', short: 'Sold short', cover: 'Bought to cover' };
 
 /** A line of a broker letter as a table row: symbol, what was done, quantity, price and value. Futures and goods too. */
 function row(l: MailLine, tickers: readonly string[]): string[] {
   if (l.company >= 0) return [tickers[l.company], SIDES[l.side ?? 'sell'], count(Math.abs(l.shares)), price(l.amount / Math.abs(l.shares)), money(l.amount)];
+  if (l.fund !== undefined) return [FUNDS[l.fund].ticker, SIDES[l.side ?? 'sell'], `${count(l.shares)} units`, price(l.amount / l.shares), money(l.amount)];
   const futures = l.contract ? parseContract(l.contract) : undefined;
   if (futures) {
     const size = CONTRACTS[futures.k].multiplier;
@@ -206,7 +212,9 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
       return letter(clientFrom(client), `Termination of our mandate`, () => [
         { p: mail.reason === 'benchmark'
           ? `You did not beat the MAJOR 500 over the period we agreed. ${who(client)} is ending the mandate.`
-          : `You have broken our investment policy once too often. ${who(client)} is ending the mandate.` },
+          : mail.reason === 'scandal'
+            ? `We have read of the Securities Oversight Bureau’s action against ${firmName}. ${who(client)} cannot be associated with it, and is ending the mandate.`
+            : `You have broken our investment policy once too often. ${who(client)} is ending the mandate.` },
         { p: `Our account, worth about ${money(mail.amount!)}, will be withdrawn on ${words.date}.` },
       ]);
     case 'completed':
@@ -225,6 +233,8 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
           head: ['Order', 'Action', 'Quantity', 'Symbol', 'Average price', 'Value'],
           rows: (mail.lines ?? []).map((l) => {
             if (l.company >= 0) return [String(l.order), SIDES[l.side ?? 'buy'], count(l.shares), directory.tickers[l.company], price(l.amount / l.shares), money(l.amount)];
+            // Index fund units: the price is a unit's.
+            if (l.fund !== undefined) return ['Fund', l.side === 'sell' ? 'Sold' : 'Bought', `${count(l.shares)} units`, FUNDS[l.fund].ticker, price(l.amount), money(l.amount * l.shares)];
             // Futures trades: the price is per unit of the contract, the value is the contracts' face value.
             const c = parseContract(l.contract!)!;
             return ['Futures', l.side === 'sell' ? 'Sold' : 'Bought', `${count(l.shares)} contract${l.shares === 1 ? '' : 's'}`, contractLabel(l.contract!), price(l.amount), money(l.amount * l.shares * CONTRACTS[c.k].multiplier)];
@@ -257,7 +267,7 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
     }
     case 'marginCall':
       return letter(MARGIN_DESK, `MARGIN CALL: ${money(mail.amount!)} due by ${words.date}`, () => [
-        { p: `The equity in your account has fallen ${money(mail.amount!)} below its maintenance requirement: 25% of your long positions, 30% of your short positions, and the maintenance margin on your futures.` },
+        { p: `The equity in your account has fallen ${money(mail.amount!)} below its maintenance requirement: a share of your long and short positions, and the maintenance margin on your futures.` },
         { p: `Please restore it before the opening bell on ${words.date}: sell or cover positions, or bring in cash (First Continental Bank lends to firms like yours).` },
         { p: 'If the call has not been met by then, we will sell positions at the open, the worst first, until it is. Until it is met we can only accept orders that reduce your positions.' },
       ]);
@@ -336,7 +346,7 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
       ]);
     case 'bankrupt':
       return letter(COURT, `In re ${firmName}: order for relief`, () => [
-        { p: `TAKE NOTICE that ${firmName} could not meet ${mail.reason === 'loan' ? 'its obligations to First Continental Bank' : 'a margin call from its broker'} even after the sale of everything it owned, falling ${money(mail.amount!)} short.` },
+        { p: `TAKE NOTICE that ${firmName} could not meet ${mail.reason === 'loan' ? 'its obligations to First Continental Bank' : mail.reason === 'fine' ? 'a fine owed to the Securities Oversight Bureau' : 'a margin call from its broker'} even after the sale of everything it owned, falling ${money(mail.amount!)} short.` },
         { p: 'The firm is hereby declared bankrupt. Its clients have been notified. Its office furniture is being counted.' },
         { p: `The Court thanks ${ceoName} for their service to the capital markets, such as it was.` },
       ]);
@@ -386,5 +396,109 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
       return letter(`Office Manager <office@${slugOf(firmName) || 'firm'}.com>`, 'You’re invited: the office holiday party!', () =>
         PARTY.map((t) => ({ p: write(t, words, rng) })),
       );
+    // ---------- Phase 8: stakes and governance (spec §15.5–15.6), the SOB (spec §16B) ----------
+    case 'stakeFiled':
+      return letter(SOB_FILINGS, `Schedule 13D filed: ${ticker}`, () => [
+        { p: `This confirms that ${firmName}’s holding of ${percent(mail.amount!)} of ${mention(c!)} has been filed with the Securities Oversight Bureau, as the law requires of anyone who owns 5% or more of a listed company.` },
+        { p: 'The filing is public. It appears on our web site, www.sob.gov, and the company will list you among its shareholders. Changes in your holding across 5% are filed for you, automatically.' },
+      ]);
+    case 'ceoLetter': {
+      const boss = ceoOf(directory, c!);
+      const warm = (mail.variant ?? 0) % 2 === 0;
+      return letter(`${boss}, Chief Executive, ${name} <ceo@${slugOf(name)}.com>`, warm ? `Welcome, ${firmName}` : `Your stake in ${short(name)}`, () => [
+        { p: `Dear ${ceoName},` },
+        warm
+          ? { p: `I see from the SOB’s filings that ${firmName} now owns ${percent(mail.amount!)} of ${name}. Welcome aboard! We are always glad of shareholders who share our long-term vision, and my door is always open.` }
+          : { p: `We note from the SOB’s filings that ${firmName} now owns ${percent(mail.amount!)} of ${name}. The board is always happy to hear the views of its shareholders — and equally happy to remind them that it is the board that runs the company.` },
+        { p: `Yours sincerely,\n${boss}` },
+      ]);
+    }
+    case 'boardSeat':
+      return letter(`Chairman of the Board, ${name} <board@${slugOf(name)}.com>`, `An invitation to join the board of ${short(name)}`, () => [
+        { p: `Dear ${ceoName},` },
+        { p: `With ${percent(mail.amount!)} of ${mention(c!)}, ${firmName} is now one of our largest shareholders. The board would be honoured if you would join it as a director.` },
+        { p: 'Directors meet quarterly, receive a modest fee and an excellent lunch, and are listed on our Investor Relations pages.' },
+      ]);
+    case 'control':
+      return letter(`Chairman of the Board, ${name} <board@${slugOf(name)}.com>`, `${short(name)}: the board awaits your instructions`, () => [
+        { p: `Dear ${ceoName},` },
+        { p: `${firmName} owns ${percent(mail.amount!)} of ${mention(c!)}: control of the company. The board will carry out the wishes of its majority shareholder.` },
+        { p: 'You may replace the chief executive, or have the company raise or cut its dividend. The company will announce your decision the same day. The board will write again next quarter.' },
+      ]);
+    case 'proxy':
+      return letter(`Investor Relations, ${name} <proxy@${slugOf(name)}.com>`, `Proxy: ${(mail.variant ?? 0) === 2 ? 'special' : 'annual'} meeting of ${short(name)} on ${words.date}`, () => [
+        { p: `As a shareholder of ${mention(c!)}, you are asked to vote on ${MEETINGS[mail.variant ?? 0]} at the ${(mail.variant ?? 0) === 2 ? 'special' : 'annual'} meeting on ${words.date}.` },
+        (mail.variant ?? 0) === 2
+          ? { p: 'If the shareholders vote the takeover down, the deal is off.' }
+          : (mail.variant ?? 0) === 1
+            ? { p: 'The board recommends a vote FOR the package, which it describes as “competitive”.' }
+            : { p: 'The board recommends a vote FOR its nominees. If they are voted down, the board will be reconstituted.' },
+        { p: 'Your vote counts in proportion to your shares. Please vote before the meeting.' },
+      ]);
+    case 'voteResult': {
+      const passed = mail.amount! > 0.5;
+      return letter(`Investor Relations, ${name} <proxy@${slugOf(name)}.com>`, `${short(name)}: results of the vote on ${MEETINGS[mail.variant ?? 0]}`, () => [
+        { p: `Shareholders cast ${percent(mail.amount!)} of their votes in favour of ${MEETINGS[mail.variant ?? 0]}. The proposal was ${passed ? 'passed' : 'defeated'}.` },
+        !passed && (mail.variant ?? 0) === 0 ? { p: 'The chief executive has offered to resign. A successor will be named shortly.' } : { p: 'Thank you for voting.' },
+      ]);
+    }
+    case 'stakeBid': {
+      const firm = directory.firms[mail.firm!]?.name ?? 'A competitor';
+      return letter(`${firm} <deals@${slugOf(firm)}.com>`, `An offer for your ${ticker} shares`, () => [
+        { p: `Dear ${ceoName},` },
+        { p: `${firm} would like to buy all ${count(mail.shares!)} of your shares of ${mention(c!)} at ${price(mail.amount! / mail.shares!)} a share — a premium to the market — for ${money(mail.amount!)} in cash.` },
+        { p: `The offer is open until ${words.date}. We look forward to your reply.` },
+      ]);
+    }
+    case 'investmentOffer': {
+      const firm = directory.firms[mail.firm!]?.name ?? 'A competitor';
+      return letter(`${firm} <partners@${slugOf(firm)}.com>`, `A strategic investment in ${firmName}`, () => [
+        { p: `Dear ${ceoName},` },
+        { p: `${firm} has been watching ${firmName} with interest. We propose to invest ${money(mail.amount!)} in the firm, in exchange for ${percent(mail.rate!)} of the management and performance fees it earns from now on.` },
+        { p: 'The money would be the firm’s own capital, to use as it sees fit. Our share of the fees would be paid as they are earned, for as long as the firm exists.' },
+        { p: `The offer is open until ${words.date}.` },
+      ]);
+    }
+    case 'taunt': {
+      const firm = directory.firms[mail.firm!]?.name ?? 'A competitor';
+      return letter(`${firm} <ceo@${slugOf(firm)}.com>`, 'Quarterly results', () => [
+        { p: `${ceoName}, old friend. We returned ${signedPct(mail.returns![1])} this quarter. I hear ${firmName} managed ${signedPct(mail.returns![0])}.` },
+        { p: rng.pick(['Better luck next quarter!', 'If you ever want a job, our door is open.', 'No hard feelings. Well, some.', 'Lunch is on you.']) },
+      ]);
+    }
+    case 'audit':
+      return letter(SOB_ENFORCEMENT, `Notice of examination: ${firmName}`, () => [
+        { p: `The Securities Oversight Bureau is examining the trading records and cash ledger of ${firmName}. Our findings will be sent to you by ${words.date}.` },
+        { p: 'Please preserve all documents. You are reminded that trading on inside information, or ahead of news you had reason to know about, is a serious offence.' },
+      ]);
+    case 'sobOutcome': {
+      const fine = mail.amount ? money(mail.amount) : '';
+      const bodies: Record<NonNullable<Mail['outcome']>, string[]> = {
+        cleared: ['Our examination found no violations. The matter is closed. Thank you for your cooperation.'],
+        warning: ['Our examination found trading that came close to the line. This letter is a formal warning, and will remain on your record.'],
+        fine: [`Our examination found trading ahead of market-moving news. ${firmName} is fined ${fine}, payable by ${words.date}. If it has not been paid by then, your broker will sell positions to pay it.`],
+        suspension: [`Our examination found serious violations. ${firmName} is fined ${fine}, payable within five trading days, and suspended from opening new positions until ${words.date}. You may close positions.`],
+        freeze: [`Our examination found serious violations. ${firmName} is fined ${fine}, payable within five trading days, and its assets are frozen until ${words.date}: no new positions, no bank loans, and your clients’ withdrawals will be paid when the freeze lifts.`],
+        enforcement: [`The Bureau has brought a public enforcement action against ${firmName}. The firm is fined ${fine}, payable within five trading days, and suspended from opening new positions until ${words.date}.`, 'The action has been announced to the press.'],
+      };
+      const outcome = mail.outcome ?? 'cleared';
+      return letter(SOB_ENFORCEMENT, `Examination of ${firmName}: ${OUTCOME_SUBJECTS[outcome]}`, () => bodies[outcome].map((t) => ({ p: t })));
+    }
+    case 'finePaid':
+      return letter(SOB_ENFORCEMENT, `Fine collected: ${money(mail.amount!)}`, () => [
+        { p: `${money(mail.amount!)} has been collected from ${firmName}’s account in payment of the Bureau’s fine.` },
+      ]);
   }
 }
+
+const OUTCOME_SUBJECTS: Record<NonNullable<Mail['outcome']>, string> = {
+  cleared: 'no further action', warning: 'formal warning', fine: 'fine imposed', suspension: 'fine and trading suspension',
+  freeze: 'fine and asset freeze', enforcement: 'public enforcement action',
+};
+
+/** A company's chief executive as its genome has them (a later change of CEO is in the news, not the directory). */
+const ceoOf = (directory: Directory, company: number) => {
+  const { ceo } = companyOf(directory.genomes[company]);
+  return `${ceo.firstName} ${ceo.lastName}`;
+};
+const short = shortName;

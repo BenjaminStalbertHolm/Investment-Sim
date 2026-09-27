@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon, type IconName } from '../../art/icons';
 import type { BankruptcyReport } from '../../sim/bankruptcy';
-import { formatClock } from '../../sim/calendar';
+import { formatClock, formatDate } from '../../sim/calendar';
 import { simulation } from '../../sim/client';
 import { exportSave, importSave, loadGame, openSetup, saveGame, showError, useGame } from '../../state/game';
 import { deleteSave, listSaves, readSave, type SaveSlot } from '../../state/saves';
@@ -9,7 +9,8 @@ import { useWindows } from '../../state/windows';
 import { Confirm, Prompt } from '../../ui98/Modal';
 import { VirtualTable, type Column } from '../../ui98/VirtualTable';
 import { AppMenuBar } from '../AppMenuBar';
-import { count, money } from '../format';
+import { useRecord } from '../../sites/hooks';
+import { count, money, pct, signedPct } from '../format';
 import { FinalReport } from './FinalReport';
 import { FirmPanel } from './FirmPanel';
 import type { AppProps } from '../types';
@@ -282,16 +283,55 @@ function NewGame() {
 function About() {
   const seed = useGame((s) => s.seed);
   const firmName = useGame((s) => s.firmName);
+  const record = useRecord();
+  const p = record?.performance;
+  const full = p?.years.filter((y) => !y.partial) ?? [];
+  const best = full.length ? full.reduce((a, b) => (b.ret > a.ret ? b : a)) : undefined;
+  const worst = full.length ? full.reduce((a, b) => (b.ret < a.ret ? b : a)) : undefined;
   return (
     <div className="tab-page about">
       <p>
-        <b>Majorsoft Doors 98</b> — Investment Firm Edition, build 7.
+        <b>Majorsoft Doors 98</b> — Investment Firm Edition, build 8.
       </p>
       <p>
         Licensed to: {firmName}
         <br />
         World seed: <b>{seed}</b>
       </p>
+      {record && p && (
+        <fieldset>
+          <legend>{firmName}’s record</legend>
+          <table className="ticket-estimate">
+            <tbody>
+              <tr><td>Reputation</td><td>{Math.round(record.reputation)} of 100</td></tr>
+              <tr><td>Return since the start (time-weighted)</td><td>{signedPct(p.total)} (MAJOR 500 {signedPct(p.index)})</td></tr>
+              <tr><td>Annualised return</td><td>{p.days > 20 ? `${signedPct(p.annualised)} a year` : '—'}</td></tr>
+              <tr><td>Volatility, Sharpe ratio</td><td>{p.days > 20 ? `${pct(p.volatility)} a year; Sharpe ${p.sharpe.toFixed(2)}` : '—'}</td></tr>
+              <tr><td>Largest drawdown</td><td>{pct(p.maxDrawdown)}{p.drawdown > 0.001 ? ` (${pct(p.drawdown)} below the peak now)` : ''}</td></tr>
+              <tr><td>Best and worst years</td><td>{best && worst ? `${best.year} ${signedPct(best.ret)}; ${worst.year} ${signedPct(worst.ret)}` : 'After the first full year'}</td></tr>
+              <tr>
+                <td>Barren’s league table</td>
+                <td>{record.league.length ? record.league.map((l) => `${l.year}: ${l.rank} of ${l.of}`).join('; ') : 'Published each January'}</td>
+              </tr>
+            </tbody>
+          </table>
+        </fieldset>
+      )}
+      {record && (
+        <fieldset>
+          <legend>
+            Achievements ({record.achievements.filter((a) => a.day !== undefined).length} of {record.achievements.length})
+          </legend>
+          <ul className="achievements">
+            {record.achievements.map((a) => (
+              <li key={a.id} className={a.day === undefined ? 'locked' : ''} title={a.text}>
+                {a.day === undefined ? '🔒' : '🏆'} <b>{a.name}</b> — {a.text}
+                {a.day !== undefined && <i> ({formatDate(a.day)})</i>}
+              </li>
+            ))}
+          </ul>
+        </fieldset>
+      )}
       <p>
         Charts by TradingView Lightweight Charts™, copyright © 2025 TradingView, Inc.,{' '}
         <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">

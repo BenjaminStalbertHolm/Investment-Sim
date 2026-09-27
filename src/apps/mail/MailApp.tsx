@@ -2,7 +2,7 @@ import { useMemo, useReducer, useState } from 'react';
 import { Icon } from '../../art/icons';
 import { formatClock } from '../../sim/calendar';
 import { simulation } from '../../sim/client';
-import { FOLDER_OF, type Mail } from '../../sim/mail';
+import { FOLDER_OF, type Mail, type MailAction } from '../../sim/mail';
 import { openQuote, openUrl, showError, useGame } from '../../state/game';
 import { useMailView, type MailFolder, type MailSort } from '../../state/mail';
 import { useTrade, type TradeTab } from '../../state/trade';
@@ -86,7 +86,7 @@ export default function MailApp({ windowId }: AppProps) {
     set({ selected: m.id });
     if (!m.read) mark([m.id], { read: true });
   };
-  const act = (m: Mail, action: 'accept' | 'decline' | 'report') =>
+  const act = (m: Mail, action: MailAction) =>
     void simulation()
       .mailAction(m.id, action)
       .then((error) => (error ? showError(error) : refresh()));
@@ -96,7 +96,7 @@ export default function MailApp({ windowId }: AppProps) {
   };
 
   const columns: Column<Row>[] = [
-    { header: '!', width: 16, cell: (m) => (m.flagged ? <span className="mail-flag">⚑</span> : m.answer === undefined && (m.kind === 'offer' || m.kind === 'tip') ? '•' : '') },
+    { header: '!', width: 16, cell: (m) => (m.flagged ? <span className="mail-flag">⚑</span> : m.answer === undefined && (ACTIONS[m.kind] || m.kind === 'tip') ? '•' : '') },
     { header: view.folder === 'sent' ? 'To' : 'From', cell: (m) => (view.folder === 'sent' ? writeLetter(m, ctx, true).to : m.from) },
     { header: 'Subject', cell: (m) => m.subject },
     { header: 'Received', cell: (m) => formatClock(m.time) },
@@ -273,7 +273,20 @@ function BlockView({ block }: { block: Block }) {
   );
 }
 
-const ANSWERS = { accepted: 'You accepted this offer.', declined: 'You declined this offer.', reported: 'You reported this tip to the Securities Oversight Bureau.', expired: 'This offer has expired.' };
+const ANSWERS: Record<NonNullable<Mail['answer']>, string> = {
+  accepted: 'You accepted.', declined: 'You declined.', reported: 'You reported this tip to the Securities Oversight Bureau.', expired: 'This offer has expired.',
+  for: 'You voted FOR.', against: 'You voted AGAINST.', abstain: 'You abstained.', done: 'Your instructions have been passed to the board.',
+};
+
+/** Letters with buttons (spec §15, §15.5–15.6), and the buttons: an action and its label. */
+const ACTIONS: Partial<Record<Mail['kind'], [MailAction, string][]>> = {
+  offer: [['accept', 'Accept'], ['decline', 'Decline']],
+  proxy: [['for', 'Vote For'], ['against', 'Vote Against'], ['abstain', 'Abstain']],
+  boardSeat: [['accept', 'Join the Board'], ['decline', 'Decline']],
+  control: [['replaceCeo', 'Replace the CEO'], ['raiseDividend', 'Raise the Dividend'], ['cutDividend', 'Cut the Dividend']],
+  stakeBid: [['accept', 'Sell the Shares'], ['decline', 'Decline']],
+  investmentOffer: [['accept', 'Accept the Investment'], ['decline', 'Decline']],
+};
 
 /** Letters from the broker and the bank open the MajorTrade tab they are about. */
 const GOTO: Partial<Record<Mail['kind'], { tab: TradeTab; label: string }>> = {
@@ -295,7 +308,7 @@ function openTrade(set: () => void): void {
   useWindows.getState().open('trade');
 }
 
-function Preview({ mail, ctx, onAction, onDelete }: { mail: Mail; ctx: LetterContext; onAction(m: Mail, a: 'accept' | 'decline' | 'report'): void; onDelete(): void }) {
+function Preview({ mail, ctx, onAction, onDelete }: { mail: Mail; ctx: LetterContext; onAction(m: Mail, a: MailAction): void; onDelete(): void }) {
   const letter = useMemo(() => writeLetter(mail, ctx), [mail, ctx]);
   const actOnTip = () => {
     useTrade.getState().trade(mail.company!, (mail.direction ?? 1) > 0 ? 'buy' : 'sell');
@@ -317,10 +330,13 @@ function Preview({ mail, ctx, onAction, onDelete }: { mail: Mail; ctx: LetterCon
         ))}
       </div>
       {mail.answer && <p className="mail-answer">{ANSWERS[mail.answer]}</p>}
-      {!mail.answer && mail.kind === 'offer' && (
+      {!mail.answer && ACTIONS[mail.kind] && (
         <div className="button-row">
-          <button className="default" onClick={() => onAction(mail, 'accept')}>Accept</button>
-          <button onClick={() => onAction(mail, 'decline')}>Decline</button>
+          {ACTIONS[mail.kind]!.map(([action, label], k) => (
+            <button key={action} className={k ? '' : 'default'} onClick={() => onAction(mail, action)}>
+              {label}
+            </button>
+          ))}
         </div>
       )}
       {!mail.answer && mail.kind === 'tip' && (

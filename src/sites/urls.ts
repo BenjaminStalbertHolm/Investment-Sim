@@ -18,6 +18,8 @@ export const BANK = 'www.firstcontinental.com';
 export const EQUIFACTS = 'www.equifacts.com';
 /** Ask Reeves (spec §14.2): the butler who answers questions, and the game's help. */
 export const REEVES = 'www.askreeves.com';
+/** Phase 8: the Securities Oversight Bureau. */
+export const SOB = 'www.sob.gov';
 
 /** "Alphabeta (Goggle)" → "alphabeta", "Ridgepine Timber Co." → "ridgepinetimber", "Clickzilla.com" → "clickzilla". */
 export function slugOf(name: string): string {
@@ -71,7 +73,7 @@ export function sites(directory: Directory, firmName: string): Sites {
 }
 
 const RESERVED = new Set([
-  YEEHAW, QUOTEZONE, RAGINGBEAR, EXCHANGE, WEATHER, OPEK, FED, BANK, EQUIFACTS, REEVES, 'www.majorsoft.com', ...ALL_OUTLETS.map((o) => o.host),
+  YEEHAW, QUOTEZONE, RAGINGBEAR, EXCHANGE, WEATHER, OPEK, FED, BANK, EQUIFACTS, REEVES, SOB, 'www.majorsoft.com', ...ALL_OUTLETS.map((o) => o.host),
 ]);
 
 /**

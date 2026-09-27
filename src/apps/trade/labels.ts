@@ -32,4 +32,5 @@ export const FORCED: Record<NonNullable<Order['forced']>, string> = {
   margin: 'Margin call liquidation',
   buyIn: 'Buy-in after a recall',
   loan: 'Sold for First Continental Bank',
+  fine: 'Sold to pay an SOB fine',
 };

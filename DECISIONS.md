@@ -620,3 +620,123 @@ Judgement calls made where the spec leaves details open.
   pages reading their data before it had arrived; they now take it from the site's fetch. A second check took two loans
   through the repay form (part of one, all of the other) and the bank's payment page, and walked Ask Reeves: its pages,
   the question box, a shortcut into MajorTrade and Start → Help.
+
+## Phase 8 — Competitors, governance, scoring; leverage, index funds and new starting capital
+
+- **Libraries.** None added. Competitor strategies are rankings of arrays the engine already has, league tables a sort,
+  and the firm's record (time-weighted return, volatility, Sharpe ratio, drawdown) a dozen lines; a statistics package
+  (simple-statistics) would have supplied a mean and a standard deviation. Index funds are a basket of shares per unit, and
+  no library models that. The browser check used the Playwright already installed in the container, not a dependency.
+- **Changes to §9 asked for with this phase.** Starting capital is **Easy $10,000,000, Medium $2,500,000, Hard
+  $1,000,000** (the spec's table had $100k, $1M and $10M). **Leverage is off in every preset**: the account is a cash
+  account, and opening a position needs its whole value in equity (`maxLeverage` 1). Advanced Settings → Trading has a
+  "Leverage" checkbox (on sets 2:1) and the maximum, **up to 15:1**. Switching it on makes the game Custom, as §9 says of
+  any value that changes play. Beyond 2:1 the maintenance requirement is half the initial one (1.2 times that for shorts),
+  because Reg-T's 25% and 30% would put a 15:1 position in a margin call the moment it opened; up to 2:1 nothing changed.
+  Short sales and futures still use the margin rules at 1:1 (a short needs its full value in equity). The difficulty cards
+  show index fund fees where leverage was. Saves keep the capital and leverage they were started with, and their label.
+  Phase 7's margin, order and loan tests pin the old presets (2:1, $1M) rather than being rewritten.
+- **Index funds** (asked for with this phase; spec §11.5's MJR and sector funds). `sim/funds.ts`: fund 0, **MJR**, holds
+  the MAJOR 500's members; each industry has a fund of its **50 largest companies** (all of them in a small market),
+  picked again at each quarter's last close. A fund holds a basket of shares per unit in proportion to the members' shares
+  outstanding — market-value weights that follow prices by themselves — plus cash per unit: dividends and takeover money,
+  reinvested at each close. The **fee** comes out of that cash every night for the calendar days to the next session, so a
+  unit is worth the index's total return less the fee. Fees are a setting by difficulty, **Easy 0.10% / 0.30% (sector)**,
+  **Medium 0.20% / 0.60%**, **Hard 0.40% / 1.20%** a year, and editable. MJR launches at $100, sector funds at $25; their
+  tickers are five letters ending in X (mutual-fund style), so they never clash with a company's. The sponsor is First
+  Continental Index Funds, the game's bank. Funds trade the way futures do (Phase 7's judgement): a **Funds tab** in
+  MajorTrade, market orders only, filled at once from 09:30 to 16:00 at the unit value ± 0.03% (times the spread setting)
+  plus the usual commission. They are **long only** — the MAJOR 500 future is how to bet against the market — and
+  margin-eligible like stocks. They **launch on the first day**: their charts start then (no generated pre-game history;
+  the fund family is new in 1998). No gold fund: gold futures exist. In mandates a sector fund counts as its industry for
+  an exclusion; MJR does not (too diversified to count as "holding tobacco"), and neither counts as a single position or a
+  small company. Redemptions sell fund units first; liquidations take them in their turn, worst first; fund trades are in
+  the daily digest, the ledger and the Recycle Bin (`.FND` files).
+- **Competitors (spec §16).** Each firm now runs a fund: its holdings (the generated stakes) and cash, in units that
+  clients buy and sell, so returns and flows can be told apart. At each week's last close every firm works out the book
+  its strategy wants (`sim/data/competitors.ts`) and trades part of the way there (its turnover), paying the half-spread;
+  the week's net flow in each company moves its price by the square-root law, spread over five sessions' volume, at half
+  the player's strength, and half of that stays. Strategies: **index** (large and mid caps, $2B+, by value), **balanced**
+  (the 100 largest by value, 40% cash), **momentum** (half-year winners), **growth** (revenue growth and quality),
+  **value** (earnings and dividend yield), **stock-picking** and **quant** (last week's losers plus an estimate of value),
+  **macro** (the best five sectors of the last quarter, by the sector funds, with cash by market regime) and **activist**
+  (badly run mid caps below their worth). Nobody sees fundamental value: an estimate is the firm's skill (0–0.5, fixed
+  per firm) times the true gap plus an error twice its usual size — early runs with the true gap had every quant beat the
+  index by 30% a year. Positions are equal-weighted, capped at the strategy's stake (9.5%, 5% or 15% of a company), in
+  companies large enough to take them and never under $300M; nobody may push a company's institutions, insiders and the
+  player past 95%. Stakes of 10% or more at the start (subsidiaries, strategic holdings, spec §10.5) are the firm's core
+  and never traded. Fees come out weekly (index 0.1%, balanced 0.8%, active 1%, quant/macro/activist 2% a year), cash earns
+  the policy rate, dividends and takeover money are paid in. Each quarter clients add or take money: index funds gather 2%
+  a quarter whatever happens; others follow the last year's return over the MAJOR 500 (±15% a quarter at most, with
+  noise from a new stream, `competitors:ai`: the world generator already uses `competitors`). Firms react to events
+  through their signals; aggressive competitors pile into the player's filed 5% stakes (Hard: momentum, quant and
+  activist firms; Normal: activists; Easy: none). An activist event now goes only to a firm whose fund is at least three
+  times the stake, and is paid for from its cash; a takeover by a competitor is not paid from its fund (a firm buys
+  companies with its own balance sheet, not its clients').
+- **Holdings disclosure.** Company IR pages list live holders. A firm's website lists its latest public filing: the 50
+  largest holdings at a quarter's end, published 45 calendar days later (the next trading day), with the fund's assets
+  now; before the first filing is out it shows the book at the start. Its performance chart is its unit value against
+  the MAJOR 500, week by week. Every crossing of 5%, by the player, a competitor's weekly trading or an activist, is filed
+  with the SOB.
+- **League tables.** At the year's last close every firm is ranked by its unit's return over the year and the player by
+  its time-weighted return; Barren's covers it (with the Newswire and the fund trade paper), and **barrens.com/league**
+  shows every year's table and the standings so far. The top quarter gains 5 reputation, the bottom quarter loses 5.
+- **Governance (spec §15.5–15.6).** Checked at each close. **5%**: an SOB filing (public on the SOB's site), a Newswire
+  story, a confirmation from the SOB and a letter from the CEO (welcoming or wary; signed by the genome's CEO, since the
+  directory doesn't follow CEO changes). **20%**: a board seat offer; a seat shows on the IR page and is lost below 20%.
+  **50%**: control; the board writes then and each quarter with **Replace the CEO**, **Raise the dividend** or **Cut the
+  dividend**, which the company announces the same day through Phase 6's event machinery. Mergers proposed by the owner are
+  not built. **Proxies** come ten trading days before a company's annual meeting (20 trading days after its April report)
+  when the player holds 1% of it or 2% of the firm in it: a board election or (35%) a pay package, voted For, Against or
+  Abstain in Outbox Express. Others' support is drawn (board 55–97%, pay 40–90% moved by the stock's year); the player's
+  shares weigh by their share of the company. A board voted down loses its chief executive. **Takeovers** are put to the
+  target's shareholders when the deal is due to close: the player (if a voter) gets a proxy, and a rejection kills the
+  deal before regulators and financing have their say. **Bids for a stake**: each week a filed stake may draw a premium
+  bid (10–30%) from a non-index competitor, 1% or 4% a week at Normal or Hard aggressiveness, open five trading days; a
+  sale is a private trade at the bid, with the commission. **Strategic investment offers**: from the 120th trading day,
+  every 60–180 trading days, if the firm has clients, a reputation of 30 and no investor, a competitor offers 5–20% of
+  the firm's net worth for 10–25% of its future fees. Accepted, the money is the firm's own capital (deposits and units,
+  not performance), and the investor's share of each day's and quarter's fees leaves the same way. **Taunts**: at a
+  quarter's end, a non-index rival that beat the firm by three points writes 40% of the time. Not built: counter-bids,
+  partnership offers and staff poaching (staff arrive in Phase 10).
+- **Heat and the SOB (spec §16B).** Phase 8's sources: when an event breaks, the Bureau looks at the firm's trades in the
+  company over the last three trading days. Trades on a genuine tip about that very event (Phase 6 recorded them) are
+  insider trading: heat +10 plus up to 20 by the gain. Other trades are flagged if the move was 8% or more and they made
+  $25,000 or more: heat +3 plus up to 10. Heat cools by 2 a week times the heat-decay setting. On the first trading day of
+  each month an audit comes with chance min(0.9, (heat/100)² × strictness), strictness 0.6, 1 or 1.5 by the scrutiny
+  setting; it reports ten trading days later. The evidence (3 an insider trade plus a point per $1M gained, 1 a flagged
+  trade, heat/25) times strictness, plus noise, picks the outcome: **cleared**, **warning**, **fine** ($50,000 × strictness
+  plus 50–300% of the gains), **suspension** (close-only for 5–30 trading days, $250,000 fixed), **freeze** (also no loans,
+  and redemptions wait for it to lift; $500,000), **enforcement** (a New York Journal story among others, $1M fixed, 30
+  trading days' suspension, and each non-founding client leaves with even odds). A fine is a loss the day it is imposed
+  and a debt for five trading days; then it is taken from equity the positions don't need, else the broker sells, and a
+  shortfall is bankruptcy (cause "fine"). The record costs reputation (2 to 30) and credit score points (10 to 150,
+  capped at 200). The tray shows a thermometer once heat first rises, and **www.sob.gov** has the filings (searchable),
+  enforcement actions and investigation notices. The Compliance Officer's help waits for Phase 10's staff; the dark web's
+  heat for Phase 9.
+- **Reputation** now also moves with drawdowns (each quarter, beyond 20% from the peak), the SOB record and league places.
+- **Scoring.** The firm's return is **time-weighted**: at each close the day's return is the change in net worth less
+  money in and out since the last close (client deposits and redemptions, a strategic investor's money and fees) —
+  counted by ledger position, since a mandate accepted after the close is tomorrow's money. The growth series is saved
+  beside the closes; for old saves it is rebuilt from closes and ledger, counting money moved at the minute of a close with
+  that close. From it: annualised return, volatility, Sharpe ratio (against 5%, 1998's bills), maximum and current
+  drawdown, best and worst full years, the MAJOR 500 over the same time, and league places, in My Computer → About and
+  on the firm's website. **Fifteen achievements** (the spec's four plus eleven), unlocked with a tray notice.
+- **Saves.** Version 6. The v5 → v6 migration launches the funds at the current market (MJR at $100), opens every
+  competitor's book where the game stands (its current holdings, cash by strategy, history from today), starts governance,
+  the regulator and achievements empty, rebuilds the growth series, adds the three new random streams and fills the fund
+  fees from the difficulty. The save test now buys and sells fund units and files 5% stakes on both sides of the save,
+  votes proxies, and checks competitors' weekly books and filings, SOB filings and the growth series carry over.
+- **Acceptance (spec §19: "Competitors' AUM diverges plausibly by strategy over 5 simulated years").**
+  `tests/competitors.test.ts` runs five years at 1,000 companies (about 14 s) and checks: every fund solvent with a weekly
+  history; index firms within 10% (log) of MJR and gathering money (units up 43–65%); active firms' log returns spread
+  0.34 against the index firms' 0.005; the fastest- and slowest-growing funds' assets 7.4 times apart; strategy averages
+  more than 0.3 apart; a balanced fund at 60% of the index firms' volatility (0.11 against 0.19); money following returns (rank
+  correlation 0.83 among performance-chasing firms); five league tables and filings 45–145 days old. In that run
+  momentum lost ground (mean reversion punishes it), growth and quants did well, macro and value were mixed.
+- **Measured** in this container: a bar for 10,000 companies 1.16 ms on average, 1.71 ms at p99 (budget 4 ms); a
+  session 116 ms; a simulated year at 10,000 companies 25.0 s headless (Phase 7: 27.0 s); competitors' weekly trading
+  33 ms; a year's save 21.95 MB (target 25). A browser check (Playwright, dev server) set 15:1 leverage in Advanced
+  Settings (the label turned Custom), bought MJR in the Funds tab, and read Barren's league page, the SOB site, a
+  competitor's filed holdings, the player's site, My Computer → About and the new Ask Reeves guides, with no console
+  errors. The tests caught closed fund positions breaking the bankruptcy report's best and worst trades.

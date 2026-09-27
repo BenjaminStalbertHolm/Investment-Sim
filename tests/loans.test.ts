@@ -6,13 +6,16 @@ import { Engine } from '../src/sim/engine';
 import {
   BANK_LIMIT, DAY_COUNT, EARLY_FEE, HISTORY, LATE_FEE, TIERS, bankRate, creditScore, firstTradingDay, payoffAmount, tierOf,
 } from '../src/sim/loans';
-import { DIFFICULTIES, type GameSettings } from '../src/sim/settings';
+import { DIFFICULTIES as PRESETS, changeSettings, type GameSettings } from '../src/sim/settings';
 import { generateWorld, type World } from '../src/world/generator';
 
 // Spec §16A: loan tiers by total bank debt, a floating rate, interest-only or amortising over one to five years, interest
 // on the 1st, 1% for repaying early, five trading days' grace for a missed payment and default on the second; Equifacts
 // credit scores of 300–850. Spec §16: bankruptcy when an obligation cannot be met after selling everything. Interest
 // accrues day by day (actual/365), so a payment carries the interest of the days since the last one.
+
+/** Written against the Phase 7 presets: $1,000,000 at 2:1 for Medium (leverage is off in every preset since Phase 8). */
+const DIFFICULTIES = { ...PRESETS, medium: changeSettings(PRESETS.medium, { startingCapital: 1_000_000, maxLeverage: 2 }) };
 
 let world: World;
 beforeAll(() => {

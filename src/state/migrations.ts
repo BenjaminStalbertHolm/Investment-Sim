@@ -1,6 +1,11 @@
 import { dayOf } from '../sim/calendar';
 import { founding } from '../sim/clients';
 import { initialCommodities } from '../sim/commodities';
+import { initialCompetitors } from '../sim/competitors';
+import { launchFunds } from '../sim/funds';
+import { newGovernance } from '../sim/governance';
+import { newRegulator } from '../sim/regulator';
+import { growthSeries } from '../sim/scoring';
 import { pastQuarters, type Fundamentals } from '../sim/earnings';
 import { STREAM_NAMES, type SimState } from '../sim/engine';
 import { addTradingDays, newEvents } from '../sim/events';
@@ -18,7 +23,7 @@ import { newBrowserState } from './browser';
 import { SAVE_FORMAT, type Manifest, type SaveDocuments } from './saveFile';
 
 /** Version of the save format. Bump it, and add a migration, whenever what is saved changes shape (spec §18). */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 type Migration = (documents: SaveDocuments) => SaveDocuments;
 
@@ -83,6 +88,26 @@ export const MIGRATIONS: Record<number, Migration> = {
     sim.commodities = initialCommodities(seed);
     sim.loans = newLoans();
     for (const k of ['commodities', 'broker'] as const) sim.rng[k] = Rng.stream(seed, STREAM_NAMES[k]).state();
+    return { ...docs, sim };
+  },
+  // Phase 8: index funds, competitors' books, governance, the regulator and the firm's record start where the game stands;
+  // the firm's time-weighted growth is worked out from its closes and ledger. Fund fees come from the difficulty; the
+  // game keeps the leverage it was started with.
+  5: (docs) => {
+    const sim = docs.sim as SimState;
+    const { seed, genomes } = sim.world;
+    const companies = genomes.map(decodeCompany);
+    const price = Array.from(sim.market.lnP, Math.exp);
+    const shares = companies.map((c) => c.sharesOutstanding);
+    const day = dayOf(sim.clock);
+    sim.settings = completeSettings(sim.settings);
+    sim.account = { ...sim.account, funds: [] };
+    sim.funds = launchFunds({ price, shares, sector: companies.map((c) => c.genes.industry), status: sim.market.status, index: sim.market.index.members });
+    sim.competitors = initialCompetitors(sim.world.firms, sim.world.holdings, price, shares, day, sim.market.index.prevClose);
+    sim.governance = newGovernance(day);
+    sim.regulator = newRegulator();
+    sim.scoring = { growth: growthSeries(sim.stats, sim.account.ledger), ledger: sim.account.ledger.length, achievements: {} };
+    for (const k of ['rivals', 'governance', 'regulator'] as const) sim.rng[k] = Rng.stream(seed, STREAM_NAMES[k]).state();
     return { ...docs, sim };
   },
 };

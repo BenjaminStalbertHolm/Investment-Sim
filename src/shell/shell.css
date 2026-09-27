@@ -503,3 +503,43 @@ button.pressed {
     opacity: 0;
   }
 }
+
+/* The heat thermometer (spec §16B): the Securities Oversight Bureau's interest in the firm. */
+.tray-heat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 14px;
+  padding: 1px 0;
+}
+
+.heat-tube {
+  position: relative;
+  width: 4px;
+  height: 12px;
+  background: #fff;
+  border: 1px solid #404040;
+  border-bottom: none;
+}
+
+.heat-level {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #c00000;
+}
+
+.heat-level.suspended {
+  background: #800080;
+}
+
+.heat-bulb {
+  width: 7px;
+  height: 7px;
+  margin-top: -1px;
+  background: #c00000;
+  border: 1px solid #404040;
+  border-radius: 50%;
+}

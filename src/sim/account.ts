@@ -44,7 +44,7 @@ export interface Order extends OrderRequest {
   /** A stop order whose stop the market reached: it now works as a market order (a limit order, for stop-limits). */
   triggered?: boolean;
   /** Placed by the broker rather than the player: a margin call's liquidation, a buy-in after a recall, a loan default. */
-  forced?: 'margin' | 'buyIn' | 'loan';
+  forced?: 'margin' | 'buyIn' | 'loan' | 'fine';
 }
 
 /**
@@ -64,13 +64,16 @@ export interface Position {
 }
 
 /**
- * A position closed out: stocks by company; futures by contract, and goods from the lobby by commodity (company −1).
+ * A position closed out: stocks by company; futures by contract, goods from the lobby by commodity and index funds by
+ * fund (company −1).
  * The losers are what the Recycle Bin shows.
  */
 export interface ClosedPosition {
   company: number;
   contract?: string;
   goods?: string;
+  /** An index fund (data/funds.ts FUNDS index). */
+  fund?: number;
   opened: GameTime;
   closed: GameTime;
   realized: number;
@@ -107,6 +110,16 @@ export interface Goods {
   delivered: GameTime;
 }
 
+/** Units of an index fund (spec §11.5): a long position, valued at the fund's net asset value. */
+export interface FundPosition {
+  fund: number;
+  units: number;
+  /** What the units still held cost, commissions included, and the P&L of units already sold. */
+  cost: number;
+  realized: number;
+  opened: GameTime;
+}
+
 /** A margin call (spec §12.4): the amount the account's equity fell short of maintenance, and the day it is due by. */
 export interface MarginCall {
   issued: GameTime;
@@ -123,7 +136,9 @@ export interface MarginCall {
 export type LedgerKind =
   | 'deposit' | 'withdrawal' | 'buy' | 'sell' | 'short' | 'cover' | 'commission' | 'dividend' | 'acquisition' | 'writeoff'
   | 'borrowFee' | 'interest' | 'futures' | 'variation' | 'delivery' | 'storage' | 'goods' | 'fine'
-  | 'loan' | 'repayment' | 'loanInterest' | 'loanFee';
+  | 'loan' | 'repayment' | 'loanInterest' | 'loanFee'
+  // Phase 8: index fund units bought and sold, the regulator's fines, a strategic investor's money and its share of fees.
+  | 'fund' | 'sobFine' | 'investment' | 'feeShare';
 
 /** A line of the cash ledger (spec §12.7). `balance` is the cash after it. */
 export interface LedgerEntry {
@@ -137,6 +152,8 @@ export interface LedgerEntry {
   order?: number;
   /** Futures contract, or commodity code for goods. */
   contract?: string;
+  /** Index fund (units in `shares`). */
+  fund?: number;
   /** Whose money: the client of a deposit or withdrawal. Or what a charge was for. */
   note?: string;
 }
@@ -153,6 +170,8 @@ export interface Account {
   nextOrder: number;
   futures: FuturesPosition[];
   goods: Goods[];
+  /** Index fund units (Phase 8). */
+  funds: FundPosition[];
   /** Interest, fees and fines paid that belong to no position (margin and loan interest, fines): realised losses. */
   charges: number;
   call?: MarginCall;
@@ -209,4 +228,28 @@ export function bookFill(account: Account, order: Order, shares: number, price: 
   order.commission += commission;
   order.updated = time;
   if (order.filled === order.shares) order.status = 'filled';
+}
+
+/** Books a trade in fund units (positive to buy, negative to sell) at `price` a unit, with its commission. */
+export function bookFund(account: Account, fund: number, units: number, price: number, commission: number, time: GameTime): void {
+  const value = Math.abs(units) * price;
+  const line = { fund, shares: Math.abs(units), price, note: units > 0 ? 'buy' : 'sell' };
+  book(account, time, 'fund', units > 0 ? -value : value, line);
+  if (commission) book(account, time, 'commission', -commission, line);
+  let position = account.funds.find((p) => p.fund === fund);
+  if (units > 0) {
+    if (!position) account.funds.push((position = { fund, units: 0, cost: 0, realized: 0, opened: time }));
+    position.units += units;
+    position.cost += value + commission;
+    return;
+  }
+  if (!position) return;
+  const basis = -units === position.units ? position.cost : (position.cost * -units) / position.units;
+  position.realized += value - commission - basis;
+  position.cost -= basis;
+  position.units += units;
+  if (!position.units) {
+    account.funds.splice(account.funds.indexOf(position), 1);
+    account.closed.push({ company: -1, fund, opened: position.opened, closed: time, realized: position.realized });
+  }
 }

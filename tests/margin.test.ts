@@ -3,13 +3,23 @@ import type { OrderRequest } from '../src/sim/account';
 import { CLOSE, OPEN, addTradingDays, at, dayOf, nextTradingDay } from '../src/sim/calendar';
 import { Engine } from '../src/sim/engine';
 import { MAINTENANCE_LONG, MAINTENANCE_SHORT, buyingPower, requirements } from '../src/sim/margin';
-import { DIFFICULTIES, type GameSettings } from '../src/sim/settings';
+import { DIFFICULTIES as PRESETS, MAX_LEVERAGE, changeSettings, type GameSettings } from '../src/sim/settings';
 import { GC_FEE, borrowFee, squeeze } from '../src/sim/shorts';
 import { generateWorld, type World } from '../src/world/generator';
 
 // Spec §19, Phase 7: "Margin math matches spec in tests". Spec §12.4: Reg-T margin, 50% initial, 25% maintenance for
 // longs and 30% for shorts; margin calls with a deadline, then forced liquidation at the next open, worst positions
 // first. Spec §9: max leverage 2:1 (Hard 1.5:1) and a grace of 3, 2 or 1 trading days.
+
+/**
+ * Leverage is off in every preset since Phase 8 (a cash account). These tests use the Phase 7 presets, levered as the spec's
+ * §9 table has it: Easy $100,000 at 2:1, Medium $1,000,000 at 2:1, Hard $10,000,000 at 1.5:1.
+ */
+const DIFFICULTIES = {
+  easy: changeSettings(PRESETS.easy, { startingCapital: 100_000, maxLeverage: 2 }),
+  medium: changeSettings(PRESETS.medium, { startingCapital: 1_000_000, maxLeverage: 2 }),
+  hard: changeSettings(PRESETS.hard, { startingCapital: 10_000_000, maxLeverage: 1.5 }),
+};
 
 let world: World;
 beforeAll(() => {
@@ -50,6 +60,27 @@ describe('Reg-T margin (spec §12.4, §9)', () => {
     expect(requirements(90_000, 0, 0, 1.5).initial).toBeCloseTo(60_000, 9);
     expect(buyingPower(1_000_000, 0, 2)).toBe(2_000_000);
     expect(buyingPower(1_000_000, 1_200_000, 2)).toBe(0);
+  });
+
+  it('has leverage off in every preset: buying power is the equity', () => {
+    for (const d of ['easy', 'medium', 'hard'] as const) {
+      expect(PRESETS[d].maxLeverage).toBe(1);
+      expect(game(PRESETS[d]).account().buyingPower).toBeCloseTo(PRESETS[d].startingCapital, 6);
+    }
+    expect([PRESETS.easy, PRESETS.medium, PRESETS.hard].map((s) => s.startingCapital)).toEqual([10_000_000, 2_500_000, 1_000_000]);
+  });
+
+  it('allows up to 15:1, keeping maintenance at half the initial requirement beyond 2:1', () => {
+    expect(requirements(150_000, 0, 0, MAX_LEVERAGE)).toEqual({ initial: 10_000, maintenance: 5_000 });
+    expect(requirements(0, 100_000, 0, 4).maintenance).toBeCloseTo(15_000, 9);
+    const e = game(changeSettings(PRESETS.medium, { maxLeverage: MAX_LEVERAGE }));
+    expect(e.account().buyingPower).toBeCloseTo(15 * 2_500_000, 6);
+    order(e, { company: MEGA, shares: maxShares(e, MEGA) });
+    const a = e.account();
+    expect(a.longValue / a.equity).toBeGreaterThan(14.5);
+    // Fully levered, but not yet in a margin call: maintenance is half the initial requirement.
+    expect(a.maintenance).toBeCloseTo(a.longValue / 30, 6);
+    expect(a.equity).toBeGreaterThan(a.maintenance);
   });
 
   it('gives buying power of 2:1 on Easy and Medium and 1.5:1 on Hard', () => {

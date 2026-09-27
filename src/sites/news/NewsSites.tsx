@@ -11,8 +11,10 @@ import { INDEX, commodityChart } from '../../sim/types';
 import { useGame } from '../../state/game';
 import { decodeCeo } from '../../world/ceo';
 import { INDUSTRIES } from '../../world/industries';
-import { companyOf, useTable } from '../hooks';
-import { companyUrl, quoteUrl, sites } from '../urls';
+import { bigMoney, signedPct } from '../../apps/format';
+import type { LeagueTable } from '../../sim/competitors';
+import { companyOf, useLeague, useTable } from '../hooks';
+import { companyUrl, firmUrl, playerUrl, quoteUrl, sites } from '../urls';
 import { Link, Marquee, usePage, useTitle } from '../web';
 import { articlesOf, writeArticle, type Article } from './articles';
 import { useJournalists, useNews } from './data';
@@ -320,16 +322,18 @@ function StaffPage({ outlet, id }: { outlet: Outlet; id: number }) {
 // ---------- Outlets ----------
 
 /** The routes every outlet has: front page, story, archive search, and writers' pages. */
-function OutletSite({ url, outlet, className, masthead, front, market }: {
+function OutletSite({ url, outlet, className, masthead, front, market, pages }: {
   url: URL;
   outlet: Outlet;
   className: string;
   masthead: ReactNode;
   front: ReactNode;
   market?: Story[];
+  /** Pages of the outlet's own, by path. */
+  pages?: Record<string, ReactNode>;
 }) {
   const path = url.pathname;
-  let body = front;
+  let body = pages?.[path] ?? front;
   if (path === '/story') body = <StoryRoute outlet={outlet} id={url.searchParams.get('id') ?? ''} market={market} />;
   else if (path === '/search') body = <SearchPage outlet={outlet} q={url.searchParams.get('q') ?? ''} />;
   else if (path === '/staff') body = <StaffPage outlet={outlet} id={Number(url.searchParams.get('id'))} />;
@@ -480,7 +484,17 @@ export const FinancialTimez = ({ url }: { url: URL }) => (
 );
 
 /** A magazine cover: Barren's Weekly and Wyred. */
-function Magazine({ url, outlet, className, title, tagline, market }: { url: URL; outlet: Outlet; className: string; title: string; tagline: string; market?: Story[] }) {
+function Magazine({ url, outlet, className, title, tagline, market, pages, extra }: {
+  url: URL;
+  outlet: Outlet;
+  className: string;
+  title: string;
+  tagline: string;
+  market?: Story[];
+  pages?: Record<string, ReactNode>;
+  /** Shown on the cover, above the stories. */
+  extra?: ReactNode;
+}) {
   const now = useNow();
   const articles = useOutletArticles(outlet, frontQuery(outlet, now));
   const { directory, firmName, seed } = useGame.getState();
@@ -494,6 +508,7 @@ function Magazine({ url, outlet, className, title, tagline, market }: { url: URL
       outlet={outlet}
       className={className}
       market={market}
+      pages={pages}
       masthead={
         <div className="barrens-masthead">
           <Link href={home(outlet)}>{title}</Link>
@@ -503,6 +518,7 @@ function Magazine({ url, outlet, className, title, tagline, market }: { url: URL
       front={
         <div className="barrens-cover">
           {issue !== undefined && outlet.cadence === 'weekly' && <p className="barrens-issue">Issue of {formatDate(issue)}</p>}
+          {extra}
           {market?.map((s) => (
             <div key={s.id} className="barrens-story">
               <h2>
@@ -542,8 +558,73 @@ export const Barrens = ({ url }: { url: URL }) => {
       title="BARREN’S"
       tagline="The Business and Financial Weekly — for people who read the fine print"
       market={weekly}
+      pages={{ '/league': <LeaguePage year={Number(url.searchParams.get('y')) || undefined} /> }}
+      extra={
+        <p className="barrens-issue">
+          ★ <Link href="/league">The Barren’s League Table: every money manager ranked</Link> ★
+        </p>
+      }
     />
   );
+};
+
+/**
+ * Barren's annual league table (spec §14, §16): every firm ranked by its return over the year, published each January,
+ * and the standings so far this year.
+ */
+function LeaguePage({ year }: { year?: number }) {
+  const league = useLeague();
+  const { directory, firmName } = useGame.getState();
+  const s = sites(directory, firmName);
+  if (!league) return <p>Tallying the returns…</p>;
+  const table = league.tables.find((t) => t.year === year) ?? league.tables[league.tables.length - 1];
+  const rows = (t: LeagueTable) => (
+    <table className="league-table" border={1} cellPadding={3}>
+      <thead>
+        <tr><th>Rank</th><th>Firm</th><th>Strategy</th><th>Assets</th><th>Return</th></tr>
+      </thead>
+      <tbody>
+        {t.rows.map((r, k) => (
+          <tr key={r.firm} className={r.firm < 0 ? 'league-player' : ''}>
+            <td>{k + 1}</td>
+            <td>{r.firm < 0 ? <Link href={playerUrl(s)}>{firmName}</Link> : <Link href={firmUrl(s, r.firm)}>{directory.firms[r.firm].name}</Link>}</td>
+            <td>{r.firm < 0 ? 'Our readers’ favourite start-up' : STRATEGY_NAMES[directory.firms[r.firm].strategy] ?? ''}</td>
+            <td>{bigMoney(r.aum)}</td>
+            <td className={r.ret >= 0 ? 'up' : 'down'}>{signedPct(r.ret)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+  return (
+    <div className="barrens-cover">
+      <h1>The Barren’s League Table</h1>
+      <p>Every money manager we could find, ranked by the return on its funds after fees. Published each January.</p>
+      {table ? (
+        <>
+          <h2>{table.year}</h2>
+          <p>
+            Other years:{' '}
+            {league.tables.map((t) => (
+              <span key={t.year}>
+                <Link href={`/league?y=${t.year}`}>{t.year}</Link>{' '}
+              </span>
+            ))}
+          </p>
+          {rows(table)}
+        </>
+      ) : (
+        <p>Our first annual table appears in January. Here is how the year is shaping up.</p>
+      )}
+      <h2>{league.live.year} so far</h2>
+      {rows(league.live)}
+    </div>
+  );
+}
+
+const STRATEGY_NAMES: Record<string, string> = {
+  index: 'Index', balanced: 'Balanced', momentum: 'Momentum', growth: 'Growth', value: 'Value', stockPicking: 'Stock-picking',
+  quant: 'Quant', macro: 'Global macro', activist: 'Activist',
 };
 
 /** Wyred: the neon tech magazine. */

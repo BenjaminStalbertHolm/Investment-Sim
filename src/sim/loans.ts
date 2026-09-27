@@ -194,13 +194,13 @@ export function quoteLoan(amount: number, structure: Structure, months: number, 
 }
 
 /**
- * The credit score (spec §16A, Equifacts, 300–850): payment history, leverage and the trend of net worth. The regulator's
- * record joins it with Phase 8. `debt` includes margin borrowing; `trend` is net worth's change over six months.
+ * The credit score (spec §16A, Equifacts, 300–850): payment history, leverage, the trend of net worth and the SOB record
+ * (regulator.ts creditRecord, zero or less). `debt` includes margin borrowing; `trend` is net worth's change over six months.
  */
-export function creditScore(history: number, debt: number, netWorth: number, trend: number): { score: number; history: number; leverage: number; trend: number } {
+export function creditScore(history: number, debt: number, netWorth: number, trend: number, sob = 0): { score: number; history: number; leverage: number; trend: number; sob: number } {
   const leverage = netWorth <= 0 ? -250 : -130 * Math.min(1, debt / (2 * netWorth));
   const growth = Math.max(-60, Math.min(60, 150 * trend));
-  return { score: Math.max(300, Math.min(850, Math.round(680 + history + leverage + growth))), history, leverage, trend: growth };
+  return { score: Math.max(300, Math.min(850, Math.round(680 + history + leverage + growth + sob))), history, leverage, trend: growth, sob };
 }
 
 /** Payment history points: made on time, repaid in full, paid late, missed and defaulted. */

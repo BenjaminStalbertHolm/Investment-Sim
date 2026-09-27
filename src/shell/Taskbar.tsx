@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { APPS } from '../apps/catalog';
 import { Icon } from '../art/icons';
 import { formatClock } from '../sim/calendar';
-import { setSpeed, skipToNextOpen, useGame } from '../state/game';
+import { SOB } from '../sites/urls';
+import { openUrl, setSpeed, skipToNextOpen, useGame } from '../state/game';
 import { useShell, type Speed } from '../state/shell';
 import { activeWindowId, useWindows } from '../state/windows';
 import { StartMenu } from './StartMenu';
@@ -71,6 +72,18 @@ function Tray() {
       {bankrupt && (
         <button className="tray-bankrupt" title="The firm is bankrupt: its final report" onClick={() => useGame.setState({ bust: 'report' })}>
           BANKRUPT
+        </button>
+      )}
+      {snapshot && snapshot.sob.peak > 0 && (
+        <button
+          className="tray-icon tray-heat"
+          title={`Heat ${Math.round(snapshot.sob.heat)}/100: the Securities Oversight Bureau’s interest in your firm${snapshot.sob.suspended ? '. Trading suspended.' : ''}`}
+          onClick={() => openUrl(`http://${SOB}/investigations`)}
+        >
+          <span className="heat-tube">
+            <span className={`heat-level${snapshot.sob.suspended ? ' suspended' : ''}`} style={{ height: `${Math.max(4, snapshot.sob.heat)}%` }} />
+          </span>
+          <span className="heat-bulb" />
         </button>
       )}
       <button

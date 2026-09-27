@@ -157,11 +157,14 @@ describe('market data for the web', () => {
   it('lists holders and firm books that agree with each other', () => {
     const f = directory.firms.findIndex((x) => x.strategy === 'index');
     const view = engine.firm(f);
-    expect(view.holdings.length).toBeGreaterThan(100);
-    expect(view.aum).toBeCloseTo(view.holdings.reduce((a, h) => a + h.value, 0), 0);
+    // Phase 8: the site shows the latest SOB filing (its 50 largest holdings), the fund's cash and its assets now.
+    expect(view.positions).toBeGreaterThan(100);
+    expect(view.holdings).toHaveLength(50);
+    const live = engine.s.world.holdings.filter((h) => h.firm === f);
+    expect(view.aum).toBeCloseTo(view.cash + live.reduce((a, h) => a + h.shares * engine.market.price[h.company], 0), 0);
     const top = view.holdings[0];
     expect(engine.details(top.company).holders).toContainEqual({ firm: f, shares: top.shares });
-    expect(view.history[0][0]).toBe(START_DAY);
+    expect(view.history[0]).toEqual([START_DAY, 1, 1000]);
     for (let i = 0; i < 10_000; i += 97) {
       const d = engine.details(i);
       expect(d.holders.reduce((a, h) => a + h.shares, 0) + d.insiderPct * d.shares).toBeLessThanOrEqual(d.shares * 0.951);

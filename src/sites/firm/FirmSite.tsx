@@ -15,7 +15,7 @@ import { PRESET_FIRMS, presetLogo } from '../../world/presetFirms';
 import { Rng } from '../../world/rng';
 import { STRATEGY_BLURBS } from '../data/copy';
 import { Photo } from '../company/CompanySite';
-import { useFirm } from '../hooks';
+import { useFirm, useRecord } from '../hooks';
 import { companyUrl, sites } from '../urls';
 import { BestViewed, Link, Marquee, Rule, useTitle } from '../web';
 
@@ -67,6 +67,38 @@ const PAGES = [
   ['holdings.html', 'Holdings'],
   ['leadership.html', 'Leadership'],
 ] as const;
+
+/** The firm's record (spec §16): what the league tables and clients look at. Returns are time-weighted. */
+function FirmRecord({ record }: { record: NonNullable<ReturnType<typeof useRecord>> }) {
+  const p = record.performance;
+  const full = p.years.filter((y) => !y.partial);
+  const best = full.length ? full.reduce((a, b) => (b.ret > a.ret ? b : a)) : undefined;
+  const worst = full.length ? full.reduce((a, b) => (b.ret < a.ret ? b : a)) : undefined;
+  const league = record.league[record.league.length - 1];
+  return (
+    <>
+      <tr><th>Annualised return</th><td>{signedPct(p.annualised)} a year</td></tr>
+      <tr><th>Sharpe ratio</th><td>{p.sharpe.toFixed(2)}</td></tr>
+      <tr><th>Largest drawdown</th><td>{pct(p.maxDrawdown)}</td></tr>
+      {best && worst && (
+        <tr>
+          <th>Best and worst years</th>
+          <td>
+            {best.year} {signedPct(best.ret)}; {worst.year} {signedPct(worst.ret)}
+          </td>
+        </tr>
+      )}
+      {league && (
+        <tr>
+          <th>Barren’s league table</th>
+          <td>
+            {league.rank} of {league.of} in {league.year}
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
 
 function Shell({ name, logo, page, children, colour }: { name: string; logo: LogoSpec; page: string; children: ReactNode; colour: string }) {
   const current = page || 'index.html';
@@ -139,8 +171,8 @@ export function FirmWebsite({ id, page }: { id: number; page: string }) {
           <>
             <h1>Top Holdings</h1>
             <p>
-              Our largest positions, from our most recent filing with the Securities Oversight Bureau. {firm.name} holds{' '}
-              {count(view.holdings.length)} stocks.
+              Our largest positions at {formatDate(view.filed)}, from our most recent filing with the Securities Oversight Bureau
+              (filings are published 45 days after each quarter). {firm.name} holds {count(view.positions)} stocks today.
             </p>
             <table className="firm-holdings" border={1} cellPadding={3}>
               <thead>
@@ -208,6 +240,7 @@ export function PlayerWebsite({ page }: { page: string }) {
   const look = usePlayerLook();
   const account = useGame((s) => s.snapshot?.account);
   const stats = useAccountData(() => simulation().stats());
+  const record = useRecord();
   useTitle(`${firmName} — Home`);
   const logo = look?.logo ?? DEFAULT_LOGO;
   const history: [number, number, number][] = stats ?? [];
@@ -225,8 +258,9 @@ export function PlayerWebsite({ page }: { page: string }) {
                 <tr><th>Assets under management</th><td>{account ? bigMoney(account.netWorth) : '…'}</td></tr>
                 <tr>
                   <th>Return since inception</th>
-                  <td>{last && deposits ? `${signedPct(last[1] / deposits - 1)} (MAJOR 500 ${signedPct(last[2] / 1000 - 1)})` : 'Our first trading day is under way.'}</td>
+                  <td>{last && record ? `${signedPct(record.performance.total)} (MAJOR 500 ${signedPct(last[2] / 1000 - 1)})` : 'Our first trading day is under way.'}</td>
                 </tr>
+                {record && record.performance.days > 20 && <FirmRecord record={record} />}
               </tbody>
             </table>
             <h2>Performance vs. the MAJOR 500</h2>

@@ -5,7 +5,9 @@ import type { EventKind } from './data/events';
 import { seasonOf } from './earnings';
 import { addTradingDays, plan } from './events';
 import { releasesOn } from './macro';
+import type { Vote } from './governance';
 import type { MacroKind, NewsItem } from './news';
+import type { SobOutcome } from './regulator';
 
 /**
  * Outbox Express's mail (spec §15): the facts of each letter, never its words. The mail app writes the letters from
@@ -50,7 +52,21 @@ export type MailKind =
   | 'loanLate'
   | 'loanDefault'
   | 'loanRepaid'
-  | 'bankrupt';
+  | 'bankrupt'
+  // Phase 8: stakes and their filings, the CEO's letter, board seats, control, meetings and votes; bids for a stake and
+  // offers to invest in the firm, rivals' taunts; the SOB's audits and what came of them.
+  | 'stakeFiled'
+  | 'ceoLetter'
+  | 'boardSeat'
+  | 'control'
+  | 'proxy'
+  | 'voteResult'
+  | 'stakeBid'
+  | 'investmentOffer'
+  | 'taunt'
+  | 'audit'
+  | 'sobOutcome'
+  | 'finePaid';
 
 export type Folder = 'inbox' | 'clients' | 'broker' | 'news' | 'tips' | 'junk' | 'sent';
 
@@ -64,6 +80,8 @@ export const FOLDER_OF: Record<MailKind, Folder> = {
   marginCall: 'broker', marginMet: 'broker', liquidation: 'broker', recall: 'broker', buyIn: 'broker', expiry: 'broker',
   delivery: 'broker', ftd: 'broker', cashSettled: 'broker',
   loan: 'inbox', loanLate: 'inbox', loanDefault: 'inbox', loanRepaid: 'inbox', bankrupt: 'inbox',
+  stakeFiled: 'inbox', ceoLetter: 'inbox', boardSeat: 'inbox', control: 'inbox', proxy: 'inbox', voteResult: 'inbox',
+  stakeBid: 'inbox', investmentOffer: 'inbox', taunt: 'inbox', audit: 'inbox', sobOutcome: 'inbox', finePaid: 'inbox',
   briefing: 'news', alert: 'news',
   tip: 'tips',
   spam: 'junk',
@@ -77,6 +95,8 @@ export interface MailLine {
   side?: Side;
   order?: number;
   contract?: string;
+  /** Index fund units (company −1). */
+  fund?: number;
 }
 
 export interface Mail {
@@ -87,7 +107,7 @@ export interface Mail {
   flagged: boolean;
   deleted: boolean;
   /** The player's answer to a letter with action buttons. */
-  answer?: 'accepted' | 'declined' | 'reported' | 'expired';
+  answer?: 'accepted' | 'declined' | 'reported' | 'expired' | Vote | 'done';
   client?: number;
   company?: number;
   /** News item (alerts). */
@@ -97,7 +117,7 @@ export interface Mail {
   day?: number;
   /** Which template, for letters that come in several versions. */
   variant?: number;
-  reason?: 'breach' | 'benchmark' | 'performance' | 'acquired' | 'bankrupt' | 'margin' | 'loan';
+  reason?: 'breach' | 'benchmark' | 'performance' | 'acquired' | 'bankrupt' | 'margin' | 'loan' | 'fine' | 'scandal';
   /** A constraint index (warnings). */
   constraint?: number;
   /** The quarter: the client's return and the MAJOR 500's. */
@@ -117,7 +137,15 @@ export interface Mail {
   /** Bank letters: the loan, and its rate a year. */
   loan?: number;
   rate?: number;
+  /** Phase 8: a competitor firm (bids, offers, taunts), shares bid for, a shareholder meeting, an SOB audit's outcome. */
+  firm?: number;
+  shares?: number;
+  meeting?: number;
+  outcome?: SobOutcome;
 }
+
+/** The action buttons a letter can carry (spec §15, §15.5–15.6). */
+export type MailAction = 'accept' | 'decline' | 'report' | Vote | 'replaceCeo' | 'raiseDividend' | 'cutDividend';
 
 export type MailDraft = Omit<Mail, 'id' | 'time' | 'read' | 'flagged' | 'deleted'> & { time?: GameTime; read?: boolean };
 
@@ -264,7 +292,7 @@ export function noteTrade(sim: Sim, company: number, side: Side, shares: number,
   }
 }
 
-/** The day's trade confirmations in one letter (spec §15.2), from the ledger: stocks by order, then futures trades. */
+/** The day's trade confirmations in one letter (spec §15.2), from the ledger: stocks by order, then futures and fund trades. */
 export function digest(sim: Sim, day: number): void {
   const lines = new Map<number, Required<Pick<MailLine, 'company' | 'shares' | 'amount' | 'side' | 'order'>>>();
   const futures: MailLine[] = [];
@@ -272,6 +300,7 @@ export function digest(sim: Sim, day: number): void {
   for (let k = ledger.length - 1; k >= 0 && dayOf(ledger[k].time) === day; k--) {
     const e = ledger[k];
     if (e.kind === 'futures') futures.unshift({ company: -1, contract: e.contract, shares: e.shares!, amount: e.price!, side: e.note === 'sell' ? 'sell' : 'buy' });
+    if (e.kind === 'fund') futures.unshift({ company: -1, fund: e.fund, shares: e.shares!, amount: e.price!, side: e.note === 'sell' ? 'sell' : 'buy' });
     if (e.kind !== 'buy' && e.kind !== 'sell' && e.kind !== 'short' && e.kind !== 'cover') continue;
     const line = lines.get(e.order!) ?? { company: e.company!, shares: 0, amount: 0, side: e.kind, order: e.order! };
     line.shares += e.shares!;
