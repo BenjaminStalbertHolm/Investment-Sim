@@ -475,3 +475,118 @@ Judgement calls made where the spec leaves details open.
   93 ms; a simulated year at 10,000 companies 22.6 s headless. A browser check caught template lists split on the `|`
   inside `[a|b]` choices (leads came out as fragments); the splitter now respects brackets and a test checks every
   template.
+
+## Phase 7 — Shorting, margin, futures, commodities, loans, bankruptcy
+
+- **Libraries.** One added: `financial` (a zero-dependency port of numpy-financial, MIT) for the loan payment (`pmt`) and
+  the 10-Year Note's price from its yield (`pv`); Phase 10's Calculator can use it too. Nothing else was worth a
+  dependency: the Ornstein–Uhlenbeck step is one line, a futures price under it is closed form, and Reg-T margin, borrow
+  fees and the credit score are a few formulas each (`sim/margin.ts`, `sim/shorts.ts`, `sim/loans.ts`). The commodities
+  and their contracts, industry exposures, weather hazards and OPEK's moves are data (`sim/data/commodities.ts`). Two new
+  seeded streams, `commodities` and `broker` (recalls), keep the new randomness from changing the stock market's.
+- **A margin account (§12.4, §9).** Opening stock positions needs equity of 1 / max leverage of their value (50% at 2:1
+  on Easy and Medium, two thirds at Hard's 1.5:1); keeping them needs 25% of longs and 30% of shorts; futures need the
+  exchange's initial margin to open and 75% of it to keep. Buying power is (equity − initial requirement) × leverage, less
+  what open orders reserve. Orders reserve at their worst price (a buy limit at its limit, a stop at its stop, a short at
+  the higher of the market and its limit) with impact and commission, by the same per-share formula the fill checks, so
+  an order the ticket accepts fills in full. Cash can go negative: the debit balance pays the policy rate + 2% (times the
+  difficulty's loan-rate multiplier) a year, charged each close for the calendar days to the next session. Short sale
+  proceeds stay in the account, so equity is cash + longs − shorts + open futures P&L. Accounting still balances: net
+  worth − deposits = realised + unrealised, with interest and fines as account-level charges, futures P&L realised and
+  goods in the lobby unrealised.
+- **Margin calls** are checked at each close: equity below maintenance brings a call for the difference by letter, due at
+  the open after the difficulty's grace (Easy 3 trading days, Medium 2, Hard 1); negative equity is due at the next open
+  whatever the grace. Equity back above maintenance by then — prices, sales, a loan — meets it (a letter says so). An
+  unmet call is liquidated at that open: open orders are cancelled, then positions are closed worst unrealised P&L first,
+  each only as far as needed (with a 20% cushion), goods last; a letter lists the sales. Negative equity with nothing left
+  to sell is bankruptcy.
+- **Short selling (§12.4).** Each company has a short interest (share of float), saved in the market state; its usual
+  level comes from the genome (higher for poorly run, volatile companies) and isn't saved. Lenders offer 35% of the float;
+  the borrow fee is 0.3% a year until half of that is lent, then rises to 60% as the pool empties (hard to borrow above
+  1%); companies worth $10B or more are always available at 0.3%. The ticket shows what can be located and the fee. Fees
+  accrue each close for the calendar days, against the position. Lenders recall only smaller companies' shares: 0.1% a day,
+  far likelier once more than 60% of the pool is lent; the letter gives two trading days, then the broker buys in at the
+  open. **Squeezes:** good news on a stock more than 10% shorted moves its price 1 + 3 × (short interest − 10%) times as
+  far (its value doesn't follow, so it drifts back) and 30% of the shorts cover; bad news brings more in (short
+  interest × (1 + 2 × the fall)). Short interest drifts back to its usual level at 5% a day. A short pays dividends to the
+  lender and is closed at the offer in a takeover and at $0 in a bankruptcy. The IR pages and quote windows show it.
+- **Stop orders (§12.2).** Stop, stop-limit and trailing stop (the stop trails the best price since the order was placed
+  by a percentage). They trigger when a bar's price crosses the stop, then work as market or limit orders; a gap through
+  the stop fills at the gap's price. All four sides are on the ticket.
+- **Commodities (§12.3).** Twenty physical commodities plus the MAJOR 500 and the 10-Year Note. Each spot is a log price
+  reverting (half-lives 0.7–4 years) to a long-run level that drifts with inflation and wanders 6% a year, plus a known
+  seasonal swing (natural gas and heating oil peak in winter, gasoline in the driving season, corn before harvest),
+  noise shared within oil, precious metals, grains and livestock, a loading on the stock market (copper 0.6), a rally in
+  crash regimes for gold (and less for silver and platinum), and supply shocks spread over a few bars. Prices start at
+  January 1998's (crude $17.50, gold $290). A contract's price is the spot expected at its expiry under the commodity's own
+  model — the shock decays, the long-run level drifts with inflation, the season is known — which is the spec's spot ×
+  e^((r + storage − convenience yield)·T) with the convenience yield implied by the model, so contango and backwardation
+  come by themselves. The index future is the MAJOR 500 × e^((r − 1.6%)·T); the note future prices a 6% coupon note from
+  a 10-year yield that follows the policy rate plus a term premium and takes half a Federal Reservoir move at once.
+  Charts get five years of seeded history before the start (regenerated, not saved) and each day's close after it.
+- **Stocks follow commodities** (§10.4, §11.2's Σ c·ΔCommodity): twenty industries load on commodities (oil & gas
+  +0.5 on crude, refiners on the crack spread, airlines −0.3 on crude, precious-metal miners +0.7 on gold, logging +0.45
+  on lumber, farming on the grains…). The commodity move enters price and value alike each bar, and the idiosyncratic
+  noise gives up the same variance, so each stock's volatility is still what its genome says.
+- **Futures** (MajorTrade → Futures & Commodities): the board, the selected commodity's chain (six listed months, four
+  for financial futures) with bid, ask, change and initial margin, a year's chart, positions with Close and Roll, and
+  the lobby. **Market orders only, filled at once from 09:30 to 16:00** — a judgement: the ticket's order types are
+  for stocks, and resting futures orders would need a second order book for 128 listed contracts for little play. The
+  half-spread is 0.02%, wider further out; commission is a stock order's (Hard's rate on the notional). Every close
+  settles every listed contract, and each position's change since its last mark is paid or taken in cash (variation
+  margin, in the ledger). The last trading day is the third Friday of the contract month; a letter warns three trading
+  days before. At expiry financial futures settle in cash; a long commodity position is **delivered**: the invoice is
+  paid at the final price and 1,000 barrels a contract (or 5,000 bushels, or thirty head of cattle) arrive in the
+  office lobby, with a letter. Goods cost 0.2% of their value a calendar day to store, and a local merchant pays 10%
+  under spot. A short held to expiry fails to deliver and is fined 10% of its notional. The Calendar tab shows the
+  expiries of contracts held, OPEK meetings and loan payments.
+- **The weather and OPEK (§14)** are one mechanism, the outlook: a warning or hint, a due time, and an outcome decided at
+  once but hidden. The National Weather Bureau warns of 13 hazards (Corn Belt drought, Brazilian frost, Florida freeze,
+  Gulf hurricanes, Arctic blasts, mild winters, bumper crops, wildfires…) in their months, 2–5 trading days ahead; four
+  in five come true. The market prices 15% of the move in on the warning and the rest when the weather hits, or gives the
+  15% back. OPEK meets on the last Wednesday of March, June and November and announces at 14:00; five trading days before,
+  delegates hint at a cut, hold or rise — right seven times in ten, 30% priced in — and a cut is likelier when crude is
+  cheap against its long-run level. About nineteen a year (measured). Both are news — the Newswire, the Financial Timez
+  and the trade papers of the industries that depend on the commodity, and for decisions and weather that hits, MoneyTV
+  and the Jottings — and their articles chart the commodity instead of the index.
+- **Bank loans (§16A).** First Continental Bank lends $10,000 up to $5M in all. The rate on every loan is the policy rate
+  plus the spread of the tier the total bank debt falls into (Bronze 3%, Silver 5%, Gold 7.5%, Platinum 11%) times the
+  difficulty's loan-rate multiplier, ± up to 2 points by credit score, floating. Amortising (`financial.pmt`) or interest
+  only with the principal at the end, over 1–5 years; the form shows the rate, payment, interest over the term and the
+  price of a missed payment, and the game autosaves before signing. Payments come out at the open on the first trading day
+  of each month, and only from equity above the initial requirement (the broker won't let the bank take what the
+  positions need); otherwise the payment is missed: a 5% late fee, a mark on the credit report and five trading days to
+  pay. A second miss, or the late payment left unpaid, is a default: the bank has positions and goods sold to recover the
+  whole loan, and any shortfall is bankruptcy. Early repayment costs 1%. The same form is on MajorTrade → Financing and
+  the bank's site, as §16A asks, so the bank's site comes now rather than with Phase 10's other §14.2 sites.
+- **Credit score (Equifacts, 300–850):** 680 + payment history (+2 a payment on time up to +80, +20 a loan repaid, −70 a
+  missed payment, −200 a default) + leverage (down to −130 as bank and margin debt reach twice net worth; −250 without
+  net worth) + the six-month net worth trend (±60). The regulator's record joins it in Phase 8.
+- **Bankruptcy (§16)** comes when a margin call or a defaulted loan can't be met after selling everything (fines, payroll
+  and rent arrive in later phases). The engine stops the clock for good and writes the final report: dates, cause, what
+  was owed and could not be paid, peak and final net worth, best and worst trade, clients won and lost, and net worth
+  against the MAJOR 500 a point a week. The UI saves the game into its slot (a new one if it had none), marked Bankrupt,
+  then shows the **Blue Screen of Debt**; any key brings the final report (New Firm…, Hall of Shame, Close). A bankrupt
+  save is read-only: nothing saves over it (Ctrl+S says why), power-on skips it for the latest living game, loading it
+  opens straight at the report with the clock stopped, and **My Computer → Hall of Shame** lists them and shows each
+  report from the save's manifest without loading the game. No-bankruptcy mode lets cash stay negative instead.
+- **Sites.** The Chicago Murkantile Exchange (settlements by group, each contract's specification, chain and chart, the
+  expiry calendar, margins), the National Weather Bureau (warnings with the commodities at risk, its verification
+  record, and a national forecast seeded by the day and bent by the warnings in force), OPEK (meetings, delegates'
+  remarks, communiqués with their effect on crude), the Federal Reservoir (the rate, the next meeting, decisions with
+  minutes whose tone — hawkish, balanced, dovish — is the one the news already carried, the latest economic data, the
+  10-year yield), First Continental Bank (rates for this firm, the application, loans and statement) and Equifacts (score,
+  its parts, the record). Yeehaw! gains the weather teaser Phase 4 left for this phase, and links to all of them.
+- **Not built.** Tradable index funds (§11.5's MJR, sector and gold funds, and the ticket's "index fund" instrument):
+  the MAJOR 500 future covers a bet on the market, and a fund needs its own NAV and holdings; left for a later phase.
+  The Portfolio lists stocks and shorts, with futures summarised (P&L today, margin, goods) and listed in the Futures tab.
+- **Saves.** Version 5. The v4 → v5 migration gives an old game short interest at its usual levels, an empty futures
+  book and lobby, commodities at January 1998's prices (whatever the game's date), no loans and the two new streams. The
+  save test now also shorts a stock, holds futures across a settlement and into a delivery, and takes a loan on both
+  sides of the save.
+- **Measured** in this container: a bar for 10,000 companies 1.33 ms on average, 1.82 ms at p99 (budget 4 ms; Phase 6
+  1.16 ms — the commodity step and exposures), a session 113 ms; a simulated year 27.0 s headless; a year's save 21.75 MB
+  (target 25). A browser check (Playwright, dev server) went through every Trade tab, every new site after 70 trading days
+  with a loan, a short, a trailing stop and two futures delivered to the lobby, the Blue Screen and final report, and an
+  imported bankrupt save through the report, the Hall of Shame, a refused Ctrl+S and a power cycle. It caught the bank's
+  pages reading their data before it had arrived; they now take it from the site's fetch.

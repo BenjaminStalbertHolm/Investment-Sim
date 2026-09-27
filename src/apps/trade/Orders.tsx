@@ -6,6 +6,7 @@ import { useAccountData, useGame } from '../../state/game';
 import { useTrade } from '../../state/trade';
 import { VirtualTable, type Column } from '../../ui98/VirtualTable';
 import { count, money, price } from '../format';
+import { FORCED, SIDE_LABEL, describeType } from './labels';
 
 const STATUS: Record<Order['status'], string> = {
   open: 'Working',
@@ -27,8 +28,8 @@ export function Orders() {
     { header: '#', align: 'right', cell: (o) => o.id },
     { header: 'Placed', cell: (o) => formatClock(o.placed) },
     { header: 'Symbol', cell: (o) => <b>{tickers[o.company]}</b> },
-    { header: 'Action', cell: (o) => (o.side === 'buy' ? 'Buy' : 'Sell') },
-    { header: 'Type', cell: (o) => (o.type === 'limit' ? `Limit ${price(o.limit!)}` : 'Market') },
+    { header: 'Action', cell: (o) => SIDE_LABEL[o.side] },
+    { header: 'Type', cell: (o) => describeType(o) },
     { header: 'Quantity', align: 'right', cell: (o) => count(o.shares) },
     { header: 'Filled', align: 'right', cell: (o) => count(o.filled) },
     { header: 'Avg price', align: 'right', cell: (o) => (o.filled ? price(o.price) : '') },
@@ -60,6 +61,8 @@ export function Orders() {
               type: order!.type,
               shares: String(order!.shares - order!.filled),
               limit: order!.limit ? String(order!.limit) : '',
+              stop: order!.stop && order!.type !== 'trailingStop' ? String(order!.stop) : '',
+              trail: order!.trail ? String(Math.round(order!.trail * 1000) / 10) : '5',
               tif: order!.tif,
               replaces: order!.id,
             })
@@ -71,7 +74,11 @@ export function Orders() {
       <div className="section-title">History</div>
       <VirtualTable
         rows={done}
-        columns={[...columns, { header: 'Commission', align: 'right', cell: (o) => (o.commission ? money(o.commission) : '') }, { header: 'Note', cell: (o) => o.note ?? '' }]}
+        columns={[
+          ...columns,
+          { header: 'Commission', align: 'right', cell: (o) => (o.commission ? money(o.commission) : '') },
+          { header: 'Note', cell: (o) => [o.forced && FORCED[o.forced], o.note].filter(Boolean).join('. ') },
+        ]}
         rowKey={(o) => o.id}
         empty="No orders yet."
       />

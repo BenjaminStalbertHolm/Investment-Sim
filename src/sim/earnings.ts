@@ -133,6 +133,8 @@ export function reportEarnings(
   market: Market,
   companies: readonly Company[],
   rng: Rng,
+  /** What short sellers make of the move (spec §12.4): good news squeezes heavily shorted stocks. */
+  squeeze: (company: number, move: number) => number = (_, move) => move,
 ): { company: number; move: number }[] {
   const { start, index } = seasonOf(day);
   if (index < 0) return [];
@@ -148,7 +150,7 @@ export function reportEarnings(
     const z = ECONOMY * f.seasonSurprise + Math.sqrt(1 - ECONOMY ** 2) * rng.normal();
     const size = Math.min(1.8, Math.max(0.5, model.volatility[i] / 0.35)) * (1.25 - 0.5 * model.quality[i]);
     const move = Math.sign(z) * Math.min(0.4, (0.02 + 0.06 * Math.abs(z) ** 1.5) * size);
-    jump[i] += move;
+    jump[i] += squeeze(i, move);
     jumpBars[i] = rng.int(1, 6);
     lnV[i] += move * (1 + 0.4 * (model.quality[i] - 0.5));
     updateFundamentals(f, i, move, companies[i].netMargin, model);

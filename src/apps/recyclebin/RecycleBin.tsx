@@ -1,5 +1,6 @@
 import { dayOf, formatDate } from '../../sim/calendar';
 import { simulation } from '../../sim/client';
+import { contractLabel } from '../../sim/commodities';
 import type { ClosedPosition } from '../../sim/types';
 import { useAccountData, useGame } from '../../state/game';
 import { VirtualTable, type Column } from '../../ui98/VirtualTable';
@@ -14,8 +15,9 @@ export default function RecycleBin(_: AppProps) {
   const total = losers.reduce((a, c) => a - c.realized, 0);
 
   const columns: Column<ClosedPosition & { id: number }>[] = [
-    { header: 'Name', cell: (c) => `${tickers[c.company]}.POS` },
-    { header: 'Original Location', cell: () => 'C:\\Portfolio' },
+    // Futures are FUT files in C:\Futures, goods sold at a loss LOT files in the lobby.
+    { header: 'Name', cell: (c) => (c.contract ? `${contractLabel(c.contract).replace(/ /g, '_')}.FUT` : c.goods ? `${c.goods}_GOODS.LOT` : `${tickers[c.company]}.POS`) },
+    { header: 'Original Location', cell: (c) => (c.contract ? 'C:\\Futures' : c.goods ? 'C:\\Lobby' : 'C:\\Portfolio') },
     { header: 'Date Deleted', cell: (c) => formatDate(dayOf(c.closed)) },
     { header: 'Size', align: 'right', cell: (c) => `${count(-c.realized)} KB` },
   ];

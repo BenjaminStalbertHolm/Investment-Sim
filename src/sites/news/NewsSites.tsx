@@ -3,10 +3,11 @@ import { Portrait } from '../../art/portrait/Portrait';
 import { PriceChart } from '../../charts/PriceChart';
 import { OPEN, dayOf, formatClock, formatDate, formatTime, gameYear, isTradingDay, minuteOf, previousTradingDay, START_DAY } from '../../sim/calendar';
 import { simulation } from '../../sim/client';
+import { CONTRACTS, CONTRACT_INDEX } from '../../sim/data/commodities';
 import { OUTLET, type Outlet } from '../../sim/data/outlets';
 import type { NewsQuery } from '../../sim/news';
 import type { Journalist } from '../../sim/press';
-import { INDEX } from '../../sim/types';
+import { INDEX, commodityChart } from '../../sim/types';
 import { useGame } from '../../state/game';
 import { decodeCeo } from '../../world/ceo';
 import { INDUSTRIES } from '../../world/industries';
@@ -160,7 +161,10 @@ function ArticlePage({ article, datelineDefault = 'NEW YORK' }: { article: Artic
   );
   useTitle(w.headline);
   const item = article.item;
-  const subject = item.company >= 0 ? item.company : INDEX;
+  // Weather and OPEK stories chart the commodity they move (spec §14).
+  const commodity = item.commodity !== undefined ? CONTRACT_INDEX[item.commodity] : undefined;
+  const subject = item.company >= 0 ? item.company : commodity !== undefined ? commodityChart(commodity) : INDEX;
+  const subjectName = item.company >= 0 ? directory.names[item.company] : commodity !== undefined ? CONTRACTS[commodity].name : 'MAJOR 500';
   const s = sites(directory, firmName);
   const writer = article.journalist && journalists.find((j) => j.id === article.journalist!.id);
   const dateline =
@@ -180,7 +184,7 @@ function ArticlePage({ article, datelineDefault = 'NEW YORK' }: { article: Artic
       </p>
       <div className="article-chart">
         <PriceChart id={subject} timeframe="1M" type="line" skin="web" />
-        <small>{item.company >= 0 ? directory.names[item.company] : 'MAJOR 500'}, last month</small>
+        <small>{subjectName}, last month</small>
       </div>
       {w.paragraphs.map((text, k) => (
         <Paragraph key={k} text={k ? text : `${dateline} — ${text}`} />

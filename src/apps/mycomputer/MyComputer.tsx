@@ -1,19 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon, type IconName } from '../../art/icons';
+import type { BankruptcyReport } from '../../sim/bankruptcy';
 import { formatClock } from '../../sim/calendar';
+import { simulation } from '../../sim/client';
 import { exportSave, importSave, loadGame, openSetup, saveGame, showError, useGame } from '../../state/game';
-import { deleteSave, listSaves, type SaveSlot } from '../../state/saves';
+import { deleteSave, listSaves, readSave, type SaveSlot } from '../../state/saves';
 import { useWindows } from '../../state/windows';
 import { Confirm, Prompt } from '../../ui98/Modal';
 import { VirtualTable, type Column } from '../../ui98/VirtualTable';
 import { AppMenuBar } from '../AppMenuBar';
 import { count, money } from '../format';
+import { FinalReport } from './FinalReport';
 import { FirmPanel } from './FirmPanel';
 import type { AppProps } from '../types';
 
 /** Control-Panel-style panels (spec §17). Those without a phase are built. */
 const PANELS: { id: string; label: string; icon: IconName; phase?: number }[] = [
   { id: 'saves', label: 'Saves', icon: 'documents' },
+  { id: 'shame', label: 'Hall of Shame', icon: 'shame' },
   { id: 'newgame', label: 'New Game', icon: 'doors' },
   { id: 'display', label: 'Display', icon: 'computer', phase: 11 },
   { id: 'sounds', label: 'Sounds', icon: 'settings', phase: 11 },
@@ -56,6 +60,7 @@ export default function MyComputer({ windowId }: AppProps) {
           </div>
         )}
         {view === 'saves' && <Saves />}
+        {view === 'shame' && <HallOfShame />}
         {view === 'newgame' && <NewGame />}
         {view === 'firm' && <FirmPanel />}
         {view === 'about' && <About />}
@@ -79,7 +84,15 @@ function Saves() {
   }, [busy]);
 
   const columns: Column<SaveSlot>[] = [
-    { header: 'Name', cell: (s) => (s.id === current?.id ? <b>{s.name}</b> : s.name) },
+    {
+      header: 'Name',
+      cell: (s) => (
+        <>
+          {s.id === current?.id ? <b>{s.name}</b> : s.name}
+          {s.bankrupt && <span className="down"> (Bankrupt)</span>}
+        </>
+      ),
+    },
     { header: 'Game date', cell: (s) => formatClock(s.gameTime) },
     { header: 'Firm', cell: (s) => s.firmName },
     { header: 'AUM', align: 'right', cell: (s) => money(s.netWorth) },
@@ -134,7 +147,8 @@ function Saves() {
           initial={slot && !slot.auto ? slot.name : undefined}
           onOk={(name) => {
             setDialog(undefined);
-            const existing = saves.find((s) => !s.auto && s.name === name);
+            // A bankrupt firm's slot is read-only (spec §16): a save of the same name goes into a new slot.
+            const existing = saves.find((s) => !s.auto && !s.bankrupt && s.name === name);
             void saveGame({ id: existing?.id ?? `save-${Date.now()}`, name });
           }}
           onCancel={() => setDialog(undefined)}
@@ -151,6 +165,7 @@ function Saves() {
           onCancel={() => setDialog(undefined)}
         >
           Load '{slot.name}'? Anything you haven't saved will be lost.
+          {slot.bankrupt && ' The firm is bankrupt: it opens read-only, at its final report.'}
         </Confirm>
       )}
       {dialog === 'delete' && slot && (
@@ -167,6 +182,71 @@ function Saves() {
           Are you sure you want to delete '{slot.name}'?
         </Confirm>
       )}
+    </div>
+  );
+}
+
+/**
+ * The Hall of Shame (spec §16): every firm that went bankrupt, from its read-only save. The final report comes from the
+ * save's manifest, so the game in progress is left alone.
+ */
+function HallOfShame() {
+  const [saves, setSaves] = useState<SaveSlot[]>();
+  const [selected, setSelected] = useState<string>();
+  const [report, setReport] = useState<BankruptcyReport>();
+  const busy = useGame((s) => s.busy);
+  const slot = saves?.find((s) => s.id === selected);
+
+  useEffect(() => {
+    void listSaves().then((list) => setSaves(list.filter((s) => s.bankrupt).sort((a, b) => b.gameTime - a.gameTime)));
+  }, [busy]);
+
+  const open = async (s: SaveSlot) => {
+    try {
+      const manifest = await simulation().inspect(await readSave(s.id));
+      if (manifest.bankrupt) setReport(manifest.bankrupt);
+    } catch (error) {
+      showError(error);
+    }
+  };
+
+  const columns: Column<SaveSlot>[] = [
+    { header: 'Firm', cell: (s) => s.firmName },
+    { header: 'Went bust', cell: (s) => formatClock(s.gameTime) },
+    { header: 'Final net worth', align: 'right', cell: (s) => money(s.netWorth), tone: () => 'down' },
+    { header: 'Save', cell: (s) => s.name },
+  ];
+
+  if (report) {
+    return (
+      <div className="tab-page shame-report">
+        <FinalReport report={report}>
+          <div className="button-row">
+            <button className="default" onClick={() => setReport(undefined)}>
+              &lt; Back
+            </button>
+          </div>
+        </FinalReport>
+      </div>
+    );
+  }
+  return (
+    <div className="tab-page">
+      <p className="hint">Firms that could not pay what they owed. Their saves are read-only.</p>
+      <VirtualTable
+        rows={saves ?? []}
+        columns={columns}
+        rowKey={(s) => s.id}
+        selected={selected}
+        onSelect={(s) => setSelected(s.id)}
+        onOpen={(s) => (setSelected(s.id), void open(s))}
+        empty={saves ? 'No firm has gone bankrupt. Yet.' : 'Reading C:\\Saves\\…'}
+      />
+      <div className="button-row">
+        <button className="default" disabled={!slot} onClick={() => slot && void open(slot)}>
+          Final Report…
+        </button>
+      </div>
     </div>
   );
 }
@@ -205,7 +285,7 @@ function About() {
   return (
     <div className="tab-page about">
       <p>
-        <b>Majorsoft Doors 98</b> — Investment Firm Edition, build 5.
+        <b>Majorsoft Doors 98</b> — Investment Firm Edition, build 7.
       </p>
       <p>
         Licensed to: {firmName}
@@ -224,6 +304,7 @@ function About() {
         via react-icons (MIT).
       </p>
       <p>ID badge barcodes by JsBarcode (MIT). Logo export by html-to-image (MIT).</p>
+      <p>Loan and bond arithmetic by financial, a port of numpy-financial by Luciano Mammino (MIT).</p>
     </div>
   );
 }

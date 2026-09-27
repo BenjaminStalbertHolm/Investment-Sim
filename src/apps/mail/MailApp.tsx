@@ -5,7 +5,7 @@ import { simulation } from '../../sim/client';
 import { FOLDER_OF, type Mail } from '../../sim/mail';
 import { openQuote, openUrl, showError, useGame } from '../../state/game';
 import { useMailView, type MailFolder, type MailSort } from '../../state/mail';
-import { useTrade } from '../../state/trade';
+import { useTrade, type TradeTab } from '../../state/trade';
 import { useWindows } from '../../state/windows';
 import { useFetched } from '../../sites/hooks';
 import { Modal } from '../../ui98/Modal';
@@ -275,6 +275,26 @@ function BlockView({ block }: { block: Block }) {
 
 const ANSWERS = { accepted: 'You accepted this offer.', declined: 'You declined this offer.', reported: 'You reported this tip to the Securities Oversight Bureau.', expired: 'This offer has expired.' };
 
+/** Letters from the broker and the bank open the MajorTrade tab they are about. */
+const GOTO: Partial<Record<Mail['kind'], { tab: TradeTab; label: string }>> = {
+  marginCall: { tab: 'portfolio', label: 'Open Portfolio' },
+  liquidation: { tab: 'portfolio', label: 'Open Portfolio' },
+  recall: { tab: 'portfolio', label: 'Open Portfolio' },
+  buyIn: { tab: 'portfolio', label: 'Open Portfolio' },
+  expiry: { tab: 'futures', label: 'Open Futures' },
+  delivery: { tab: 'futures', label: 'Open Futures' },
+  ftd: { tab: 'futures', label: 'Open Futures' },
+  loan: { tab: 'financing', label: 'Open Financing' },
+  loanLate: { tab: 'financing', label: 'Open Financing' },
+  loanDefault: { tab: 'financing', label: 'Open Financing' },
+};
+
+/** Switches MajorTrade Pro to a tab or a ticket, and brings it up. */
+function openTrade(set: () => void): void {
+  set();
+  useWindows.getState().open('trade');
+}
+
 function Preview({ mail, ctx, onAction, onDelete }: { mail: Mail; ctx: LetterContext; onAction(m: Mail, a: 'accept' | 'decline' | 'report'): void; onDelete(): void }) {
   const letter = useMemo(() => writeLetter(mail, ctx), [mail, ctx]);
   const actOnTip = () => {
@@ -308,6 +328,16 @@ function Preview({ mail, ctx, onAction, onDelete }: { mail: Mail; ctx: LetterCon
           <button onClick={actOnTip}>Act on It…</button>
           <button onClick={() => onAction(mail, 'report')}>Report to SOB</button>
           <button onClick={onDelete}>Delete</button>
+        </div>
+      )}
+      {GOTO[mail.kind] && (
+        <div className="button-row">
+          {mail.kind === 'recall' && mail.company !== undefined && (
+            <button onClick={() => openTrade(() => useTrade.getState().trade(mail.company!, 'cover', { shares: String(mail.amount ?? '') }))}>
+              Buy to Cover…
+            </button>
+          )}
+          <button onClick={() => openTrade(() => useTrade.getState().setTab(GOTO[mail.kind]!.tab))}>{GOTO[mail.kind]!.label}</button>
         </div>
       )}
     </div>

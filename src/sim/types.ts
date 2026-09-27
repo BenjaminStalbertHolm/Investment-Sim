@@ -1,6 +1,9 @@
-import type { ClosedPosition, LedgerEntry, Order, Side } from './account';
+import type { ClosedPosition, LedgerEntry, MarginCall, Order, Side } from './account';
+import type { BankruptcyReport } from './bankruptcy';
 import type { GameTime, Phase } from './calendar';
 import type { Client, Fees } from './clients';
+import type { CreditEvent, Loan, Tier } from './loans';
+import type { Borrow } from './shorts';
 import type { Bar } from './history';
 import type { MacroState } from './macro';
 import type { Listing } from './market';
@@ -12,6 +15,9 @@ export const TIMEFRAMES: readonly Timeframe[] = ['1D', '5D', '1M', '6M', '1Y', '
 
 /** Chart and quote id of the MAJOR 500. */
 export const INDEX = -1;
+/** Chart ids of the futures contracts' underlyings (data/commodities.ts order): -2, -3, … */
+export const commodityChart = (k: number) => -2 - k;
+export const chartCommodity = (id: number) => -2 - id;
 
 export interface Quote {
   last: number;
@@ -28,26 +34,50 @@ export interface Quote {
 
 export interface PositionView {
   company: number;
+  /** Negative for a short. */
   shares: number;
-  /** Remaining cost basis, commissions included. */
+  /** Remaining cost basis, commissions included (for a short, minus what the sale brought in). */
   cost: number;
   last: number;
+  /** Negative for a short. */
   value: number;
   dayChange: number;
   unrealized: number;
   realized: number;
+  /** Shorts: the annual borrow fee now, the fees paid so far and a lender's recall deadline (spec §12.4–12.5). */
+  borrowFee?: number;
+  fees?: number;
+  recall?: number;
 }
 
+/** The account (spec §12.4–12.5): a margin account, with futures, goods in the lobby and bank loans. */
 export interface AccountView {
   cash: number;
-  /** Market value of the positions. */
+  /** Market value of the long positions less the short ones. */
   value: number;
+  /** What the firm is worth: equity plus goods at resale value, less bank debt (spec §16). */
   netWorth: number;
   deposits: number;
   dayChange: number;
   unrealized: number;
   realized: number;
   buyingPower: number;
+  /** Cash + longs − shorts + open futures P&L. */
+  equity: number;
+  longValue: number;
+  shortValue: number;
+  /** Futures P&L since the last settlement, and the initial margin they tie up. */
+  futuresPnl: number;
+  futuresMargin: number;
+  goodsValue: number;
+  /** Bank debt, with interest and fees owed on missed payments. */
+  loans: number;
+  /** Requirements: initial (1 / max leverage on stocks) and maintenance (25% long, 30% short); and the equity above initial. */
+  initial: number;
+  maintenance: number;
+  excess: number;
+  call?: MarginCall;
+  bankrupt: boolean;
 }
 
 /** One quarter's results. `quarter` is year × 4 + (0 … 3). */
@@ -98,6 +128,9 @@ export interface CompanyDetails {
   lastEarnings: number;
   insiderPct: number;
   floatPct: number;
+  /** Short interest, yours included, as a share of the float; and what borrowing the shares costs a year (spec §12.4). */
+  shortInterest: number;
+  borrowFee: number;
   /** The last eight quarters, oldest first. */
   quarters: QuarterResult[];
   /** Institutional holders, largest first. */
@@ -154,6 +187,10 @@ export interface Estimate {
   buyingPowerAfter: number;
   /** Mandate constraints the position after this order would break (spec §15.1). */
   warnings: string[];
+  /** The margin the position after this order needs: initial and maintenance (spec §12.2). */
+  margin: { initial: number; maintenance: number };
+  /** Short sales: what the stock loan desk says. */
+  borrow?: Borrow;
 }
 
 export type EngineEvent =
@@ -161,7 +198,9 @@ export type EngineEvent =
   | { kind: 'close'; day: number; weekEnd: boolean }
   | { kind: 'halt' }
   | { kind: 'mail'; id: number }
-  | { kind: 'delisted'; company: number };
+  | { kind: 'delisted'; company: number }
+  | { kind: 'futures'; contract: string; contracts: number; price: number }
+  | { kind: 'bankrupt' };
 
 /** The firm's clients and money (spec §15.1): everything is AUM; the firm's own capital is the part no client owns. */
 export interface ClientsView {
@@ -180,11 +219,111 @@ export interface ClientsView {
 export interface CalendarEntry {
   day: number;
   minute: number;
-  kind: MacroKind | 'earnings';
+  kind: MacroKind | 'earnings' | 'expiry' | 'opek' | 'loan';
   company?: number;
   /** The quarterly dividend paid that day, per share. */
   dividend?: number;
+  /** A held futures contract's last trading day. */
+  contract?: string;
+  /** A loan payment: the loan and roughly how much. */
+  loan?: number;
+  amount?: number;
 }
+
+/** A futures contract on the board (spec §12.3). */
+export interface ContractQuote {
+  key: string;
+  k: number;
+  month: number;
+  expiry: number;
+  price: number;
+  bid: number;
+  ask: number;
+  /** Last settlement, if there was one. */
+  settle?: number;
+  /** Initial margin per contract. */
+  margin: number;
+}
+
+export interface FuturesPositionView {
+  contract: string;
+  k: number;
+  expiry: number;
+  contracts: number;
+  entry: number;
+  mark: number;
+  price: number;
+  /** Since the last settlement (not yet paid), and since the position was opened. */
+  open: number;
+  pnl: number;
+  realized: number;
+  margin: number;
+}
+
+export interface GoodsView {
+  code: string;
+  quantity: number;
+  cost: number;
+  storage: number;
+  /** What the merchant would pay now, and the storage a day costs. */
+  value: number;
+  perDay: number;
+  delivered: GameTime;
+}
+
+/** MajorTrade → Futures & Commodities and the Chicago Murkantile Exchange (spec §12.3, §14). */
+export interface FuturesView {
+  enabled: boolean;
+  trading: boolean;
+  day: number;
+  /** Each contract's underlying: price now and at the last close. */
+  spot: number[];
+  previous: number[];
+  /** Listed contracts per commodity, nearest first. */
+  chains: ContractQuote[][];
+  positions: FuturesPositionView[];
+  goods: GoodsView[];
+  /** The 10-year yield and the policy rate, for the note and index futures. */
+  yield10: number;
+  rate: number;
+}
+
+/** A weather warning or an OPEK meeting as the public sees it: what happened only once it has. */
+export interface OutlookView {
+  id: number;
+  source: 'weather' | 'opek';
+  kind: string;
+  issued: GameTime;
+  due: GameTime;
+  /** The contracts it moves, and by how much the outlook says (log moves). */
+  moves: [number, number][];
+  done: boolean;
+  /** Once done: 'hit' or 'bust', or OPEK's decision; and what actually moved. */
+  result?: string;
+  actual?: [number, number][];
+}
+
+/** MajorTrade → Financing, First Continental Bank and Equifacts (spec §12.9, §16A). */
+export interface LoansView {
+  loans: (Loan & { next?: { day: number; interest: number; principal: number } })[];
+  /** Principal owed, and interest and fees owed on missed payments. */
+  debt: number;
+  accrued: number;
+  /** The bank's rate on the current debt, and each tier's rate for this firm today. */
+  rate: number;
+  tiers: (Tier & { rate: number })[];
+  /** What more the bank would lend. */
+  headroom: number;
+  score: number;
+  /** The score's parts (spec §16A: payment history, leverage, net worth trend). */
+  factors: { history: number; leverage: number; trend: number };
+  record: CreditEvent[];
+  policy: number;
+  /** Interest on a margin debit balance. */
+  marginRate: number;
+}
+
+export type { BankruptcyReport };
 
 /** Company names for lists and search. */
 export interface Directory {
@@ -223,6 +362,8 @@ export interface Snapshot {
   /** Unread mail (the tray badge), the newest letter and the size of the news archive: views refetch when they change. */
   mail: { unread: number; latest: number };
   news: number;
+  /** Each futures contract's underlying: price now and at the last close (spec §12.3). */
+  commodities: { spot: number[]; previous: number[] };
 }
 
 export type { Bar, ClosedPosition, LedgerEntry, Order };

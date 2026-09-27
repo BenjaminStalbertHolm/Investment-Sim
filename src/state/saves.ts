@@ -13,6 +13,8 @@ export interface SaveSlot {
   netWorth: number;
   size: number;
   file: string;
+  /** The firm went bankrupt in it (spec §16): read-only, in the Hall of Shame. */
+  bankrupt?: boolean;
 }
 
 /** Autosaves rotate through this many slots (spec §18). */

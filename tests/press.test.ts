@@ -3,7 +3,8 @@ import { DAY_MINUTES, OPEN, START_DAY, at, weekday } from '../src/sim/calendar';
 import { ALL_OUTLETS, OUTLET } from '../src/sim/data/outlets';
 import { EVENT_TYPES } from '../src/sim/data/events';
 import { Engine } from '../src/sim/engine';
-import { MACRO_KINDS, type NewsItem, type NewsKind } from '../src/sim/news';
+import { COMMODITY_KINDS, MACRO_KINDS, type NewsItem, type NewsKind } from '../src/sim/news';
+import { HAZARDS } from '../src/sim/data/commodities';
 import { coverage, hireJournalists, publishTime } from '../src/sim/press';
 import { DIFFICULTIES } from '../src/sim/settings';
 import type { Directory } from '../src/sim/types';
@@ -80,6 +81,35 @@ describe('news articles (spec §14.1)', () => {
       }
       expect(depth, t).toBe(0);
     }
+  });
+
+  it('writes every weather and OPEK story, whichever way it went, with nothing left unfilled (Phase 7)', () => {
+    const journalists = engine.journalists();
+    const stories: NewsItem[] = [];
+    for (const kind of COMMODITY_KINDS) {
+      const texts = kind === 'opek' || kind === 'opekHint' ? ['cut', 'hold', 'raise'] : HAZARDS.map((h) => h.id);
+      for (const text of texts) {
+        for (const move of [0.12, -0.08]) {
+          const hazard = HAZARDS.find((h) => h.id === text);
+          const commodity = hazard ? hazard.moves[0][0] : 'CL';
+          stories.push({ id: stories.length, kind, time: NOON, company: -1, commodity, move, expect: move, text, level: START_DAY + 3, prev: START_DAY });
+        }
+      }
+    }
+    for (const n of stories) {
+      const outlets = coverage(n, journalists).map((a) => a.outlet);
+      expect(outlets.map((o) => o.id), n.kind).toContain('newswire');
+      for (const outlet of outlets) {
+        const a = writeArticle(n, outlet.id, directory, 'Garage Capital', 'press', journalists);
+        const text = [a.headline, a.byline, ...a.paragraphs].join('\n');
+        expect(text, `${n.kind} ${n.text} in ${outlet.id}: ${text}`).not.toMatch(/\{\w+\}|undefined|NaN|[[\]|]|Raging Bear/);
+      }
+    }
+    // The trade papers of the industries a commodity moves cover its weather: the Harvest Herald has corn's drought.
+    const drought = stories.find((n) => n.kind === 'weather' && n.text === 'cornDrought')!;
+    expect(coverage(drought, journalists).map((a) => a.outlet.id)).toEqual(expect.arrayContaining(['newswire', 'ftimez', 'trade-agriculture']));
+    const opek = stories.find((n) => n.kind === 'opek')!;
+    expect(coverage(opek, journalists).map((a) => a.outlet.id)).toEqual(expect.arrayContaining(['moneytv', 'jottings', 'trade-oilGas', 'trade-airlines', 'trade-refining']));
   });
 
   it('writes the same article every time', () => {

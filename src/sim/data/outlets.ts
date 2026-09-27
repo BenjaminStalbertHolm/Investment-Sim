@@ -1,7 +1,8 @@
 // News outlets (spec §14.1): who they are, how fast and how credible, and what they cover. Data only: sim/press.ts
 // applies the rules, sites/news/ renders the outlets.
 import { INDUSTRIES } from '../../world/industries';
-import type { NewsKind } from '../news';
+import { COMMODITY_KINDS, type NewsKind } from '../news';
+import { COMMODITY_EXPOSURE } from './commodities';
 
 /** When an outlet runs a story after it breaks (spec §11.7: the publication cascade). */
 export type Cadence = 'instant' | 'bar' | 'hour' | 'morning' | 'weekly';
@@ -18,6 +19,8 @@ export interface CoverageRule {
   industries?: readonly string[];
   /** Companies headquartered outside the United States. */
   foreign?: boolean;
+  /** Weather and OPEK stories about these commodities (contract codes). */
+  commodities?: readonly string[];
 }
 
 export interface Outlet {
@@ -44,7 +47,8 @@ export const OUTLETS: readonly Outlet[] = [
   { id: 'newswire', name: 'Majorsoft Newswire', host: 'newswire.majorsoft.com', credibility: 0.9, cadence: 'instant',
     staff: 6, integrity: [0.7, 0.95], rules: [{}, { kinds: ['firmQuarter', 'mandate'] }] },
   { id: 'moneytv', name: 'MoneyTV Online', host: 'www.moneytv.com', credibility: 0.5, cadence: 'bar', staff: 4,
-    integrity: [0.3, 0.7], rules: [{ minCap: 2e9 }, { minCap: 100e6, minMove: 0.2 }, { kinds: MACRO }, { kinds: ['tvPick'] }] },
+    integrity: [0.3, 0.7],
+    rules: [{ minCap: 2e9 }, { minCap: 100e6, minMove: 0.2 }, { kinds: MACRO }, { kinds: ['tvPick'] }, { kinds: ['opek'] }, { kinds: ['weatherHit'], minMove: 0.1 }] },
   { id: 'nyjournal', name: 'The New York Journal', host: 'www.nyjournal.com', credibility: 0.95, cadence: 'morning',
     staff: 5, integrity: [0.85, 1],
     rules: [
@@ -54,10 +58,10 @@ export const OUTLETS: readonly Outlet[] = [
     ] },
   { id: 'jottings', name: 'The Wall Street Jottings', host: 'www.wsjottings.com', credibility: 0.95, cadence: 'morning',
     staff: 6, integrity: [0.8, 1],
-    rules: [{ minCap: 10e9 }, { minCap: 1e9, minMove: 0.15 }, { kinds: MACRO }, { kinds: DEALS, minCap: 2e9 }] },
+    rules: [{ minCap: 10e9 }, { minCap: 1e9, minMove: 0.15 }, { kinds: MACRO }, { kinds: DEALS, minCap: 2e9 }, { kinds: ['opek', 'weatherHit'] }] },
   { id: 'ftimez', name: 'Financial Timez', host: 'www.ftimez.co.uk', credibility: 0.85, cadence: 'morning', staff: 4,
     integrity: [0.75, 0.95],
-    rules: [{ kinds: MACRO }, { foreign: true, minCap: 5e9 }, { industries: COMMODITIES, minCap: 5e9 }, { kinds: DEALS, minCap: 5e9 }] },
+    rules: [{ kinds: MACRO }, { foreign: true, minCap: 5e9 }, { industries: COMMODITIES, minCap: 5e9 }, { kinds: DEALS, minCap: 5e9 }, { kinds: COMMODITY_KINDS }] },
   { id: 'barrens', name: 'Barren’s Weekly', host: 'www.barrens.com', credibility: 0.85, cadence: 'weekly', staff: 3,
     integrity: [0.7, 0.95], rules: [{ minCap: 10e9, minMove: 0.05 }, { minCap: 1e9, minMove: 0.25 }, { kinds: ['firmQuarter'] }] },
   { id: 'dailyscoop', name: 'The Daily Scoop', host: 'www.dailyscoop.com', credibility: 0.25, cadence: 'morning', staff: 3,
@@ -106,7 +110,12 @@ export const ALL_OUTLETS: readonly Outlet[] = [
     return {
       id: `trade-${industry.id}`, name, host: `www.${slug}.com`, credibility: TRADE_CREDIBILITY, cadence: 'hour', staff: 1,
       integrity: [0.4, 0.8], industry: industry.id,
-      rules: [{ industries: [industry.id], minCap: 50e6 }, ...(industry.id === 'assetManagement' ? [{ kinds: ['mandate'] as const }] : [])],
+      rules: [
+        { industries: [industry.id], minCap: 50e6 },
+        ...(industry.id === 'assetManagement' ? [{ kinds: ['mandate'] as const }] : []),
+        // The weather and OPEK news of the commodities the industry lives by.
+        ...(COMMODITY_EXPOSURE[industry.id] ? [{ kinds: COMMODITY_KINDS, commodities: Object.keys(COMMODITY_EXPOSURE[industry.id]) }] : []),
+      ],
     };
   }),
 ];

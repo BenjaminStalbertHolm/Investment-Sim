@@ -508,8 +508,7 @@ function KeyStats({ d, last }: { d: CompanyDetails; last: number }) {
     ['Shares outstanding', count(d.shares)],
     ['Float', `${count(d.shares * d.floatPct)} (${pct(d.floatPct)})`],
     ['Beta', d.beta.toFixed(2)],
-    // Short selling arrives in Phase 7; until then nobody is short.
-    ['Short interest', 'n/a'],
+    ['Short interest', `${pct(d.shortInterest)} of float`],
     ['Next earnings', formatDate(d.nextEarnings)],
     ['Revenue (TTM)', bigMoney(d.revenue)],
   ];

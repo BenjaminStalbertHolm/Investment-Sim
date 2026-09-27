@@ -10,8 +10,9 @@ import { FIRST_NAMES, LAST_NAMES } from '../../world/people-names';
 import { Rng } from '../../world/rng';
 import { companySite, shortName } from '../company/content';
 import {
-  ANALYST, DETAILS, FED_HOLD, FOLLOW, HEADLINES, LEADS, OUTLET_VOICE, REACTION, RUMOURED,
+  ANALYST, DETAILS, FED_HOLD, FOLLOW, HEADLINES, LEADS, OPEK_HEADLINES, OUTLET_VOICE, REACTION, RUMOURED,
 } from '../data/articles';
+import { CONTRACTS, CONTRACT_INDEX, HAZARDS } from '../../sim/data/commodities';
 import { companyOf } from '../hooks';
 import { dollars, percent, write } from '../text';
 
@@ -108,6 +109,18 @@ function words(item: NewsItem, directory: Directory, firmName: string, rng: Rng)
     w.aum = dollars(item.amount!);
   }
   if (item.text) w.client = item.text;
+  if (item.commodity) {
+    // Weather and OPEK stories (spec §12.3, §14): the commodity, the hazard and where, the meeting and its decision.
+    const name = CONTRACTS[CONTRACT_INDEX[item.commodity]].name;
+    const lower = name.toLowerCase().replace('brent', 'Brent');
+    Object.assign(w, { commodity: lower, Commodity: name });
+    const hazard = HAZARDS.find((h) => h.id === item.text);
+    if (hazard) Object.assign(w, { hazard: hazard.name.toLowerCase(), Hazard: hazard.name, region: hazard.region, warning: hazard.warning });
+    if (item.level !== undefined) w.dueDay = DAYS[weekday(item.level)];
+    if (item.prev !== undefined) w.warnedDay = formatDate(item.prev);
+    if (item.kind === 'opekHint') w.decision = { cut: 'a cut in output', hold: 'no change in output', raise: 'higher output' }[item.text!] ?? 'no change';
+    if (item.kind === 'opek') w.decision = { cut: 'cut output', hold: 'keep output unchanged', raise: 'raise output' }[item.text!] ?? 'wait and see';
+  }
   if (item.rumour !== undefined) w.rumourDay = formatDate(dayOf(item.rumour));
   const firms = directory.firms.map((f) => f.name);
   w.analyst = `${rng.pick(FIRST_NAMES.slice(0, 300))} ${rng.pick(LAST_NAMES.slice(0, 300))} of ${firms.length ? rng.pick(firms) : 'Silverman Sacks'}`;
@@ -136,7 +149,8 @@ export function writeArticle(
   const rng = Rng.stream(seed, `article:${item.id}-${outletId}`);
   const w = words(item, directory, firmName, rng);
   const up = upside(item);
-  const heads = item.kind === 'fed' && item.level === item.prev ? FED_HOLD : pickSide(HEADLINES[item.kind], up);
+  const opek = (item.kind === 'opek' || item.kind === 'opekHint') && item.text ? OPEK_HEADLINES[item.kind][item.text] : undefined;
+  const heads = item.kind === 'fed' && item.level === item.prev ? FED_HOLD : opek ?? pickSide(HEADLINES[item.kind], up);
   let headline = write(rng.pick(heads), w, rng);
   if (outlet.id === 'dailyscoop') headline = `${headline.toUpperCase()}!`;
   const article = coverage(item, journalists, factsOf(directory, item.company)).find((a) => a.outlet.id === outletId);

@@ -79,6 +79,8 @@ export interface MarketState {
   /** LISTING code; delisted companies keep their last price and never trade again. */
   status: Uint8Array;
   index: IndexState;
+  /** Other investors' short interest, as a share of each company's float (spec §12.4). */
+  shortInterest: Float32Array;
 }
 
 /** Why a company left the market (spec §11.6): taken over, or bankrupt. */
@@ -109,8 +111,15 @@ export function initialMarket(companies: readonly Company[], model: Model, rng: 
     jumpBars: new Uint8Array(n),
     status: new Uint8Array(n),
     index: { divisor: cap / 1000, members, prevClose: 1000, open: 1000, high: 1000, low: 1000 },
+    shortInterest: model.shortBase.slice(),
   };
 }
+
+/**
+ * Called once per step after the market factor is drawn, with that factor's log move, the step's length in years and the
+ * regime: returns each industry's extra log move (its commodities, spec §11.2), which prices and values both take on.
+ */
+export type FactorHook = (market: number, years: number, regime: number) => Float64Array;
 
 /**
  * The price model of spec §11.2, per bar and in log returns:
@@ -130,7 +139,10 @@ export class Market {
   indexLevel = 0;
   /** The Federal Reservoir's policy rate (sim/macro.ts): value grows at it plus the equity premium. */
   rate = POLICY_RATE;
+  /** Commodity moves by industry (sim/commodities.ts). */
+  onFactors?: FactorHook;
   private readonly sectorMove = new Float64Array(INDUSTRIES.length);
+  private readonly noMove = new Float64Array(INDUSTRIES.length);
 
   constructor(
     readonly state: MarketState,
@@ -215,6 +227,7 @@ export class Market {
     for (let k = 0; k < sectorMove.length; k++) {
       sectorMove[k] = sectorVol[k] * root * rng.normal() + (k === s.bubble ? BUBBLE_DRIFT * years : 0);
     }
+    const commodity = this.onFactors?.(market, years, s.regime) ?? this.noMove;
     const kappa = REVERSION * weight;
     const noise = Math.sqrt(weight);
     const rateDrift = (this.rate - POLICY_RATE) * years;
@@ -229,7 +242,8 @@ export class Market {
       const angle = TAU * rng.float32();
       const tails = -Math.log((1 - rng.float32()) * (1 - rng.float32()));
       const eps = Math.max(-12, Math.min(12, (radius * Math.cos(angle)) / Math.sqrt(tails)));
-      let r = beta[i] * market + sectorMove[sector[i]] + idio[i] * noise * eps + kappa * (lnV[i] - lnP[i]);
+      const c = commodity[sector[i]];
+      let r = beta[i] * market + sectorMove[sector[i]] + c + idio[i] * noise * eps + kappa * (lnV[i] - lnP[i]);
       const jumping = jumpBars[i] > 0;
       if (jumping) {
         const j = jump[i] / jumpBars[i];
@@ -237,7 +251,7 @@ export class Market {
         jumpBars[i]--;
         r += j;
       }
-      lnV[i] += drift[i] * weight + rateDrift;
+      lnV[i] += drift[i] * weight + rateDrift + c;
       const p = Math.exp((lnP[i] += r));
       price[i] = p;
       if (p > dayHigh[i]) dayHigh[i] = p;

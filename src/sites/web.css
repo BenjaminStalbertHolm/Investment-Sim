@@ -1417,3 +1417,348 @@ button:disabled .tb-glyph {
     animation: none;
   }
 }
+
+/* ---------- Markets and institutions (Phase 7) ---------- */
+
+.site-cme,
+.site-nwb,
+.site-opek,
+.site-fed,
+.site-bank,
+.site-equifacts {
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.site-cme {
+  background: #f4f1e8;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+}
+
+.cme-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  background: #1c1c1c;
+  border-bottom: 4px solid #c9a227;
+}
+
+.web-page a.cme-logo {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 22px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.cme-logo span {
+  margin-right: 6px;
+  padding: 0 6px;
+  background: #c9a227;
+  color: #1c1c1c;
+}
+
+.web-page .cme-nav a {
+  color: #f0d77a;
+}
+
+.cme-marquee {
+  padding: 2px 0;
+  background: #000;
+  font-family: 'Courier New', monospace;
+  color: #3f3;
+}
+
+.site-cme > :not(.cme-header, .cme-marquee) {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.cme-table {
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.cme-table th {
+  background: #e0dccb;
+  text-align: left;
+}
+
+.cme-table th.cme-group {
+  background: #1c1c1c;
+  color: #f0d77a;
+}
+
+.cme-table td {
+  border-bottom: 1px solid #e8e4d4;
+}
+
+.cme-specs th {
+  width: 170px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.cme-chart {
+  display: flex;
+  flex-direction: column;
+  max-width: 640px;
+  height: 240px;
+  font-size: 11px;
+}
+
+.cme-footer,
+.nwb-footer,
+.opek-footer,
+.fed-footer,
+.bank-footer,
+.eq-footer {
+  margin: 18px 10px 6px;
+  font-size: 11px;
+  color: #606060;
+}
+
+.site-nwb {
+  background: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+}
+
+.nwb-header {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  background: linear-gradient(#0b3d91, #062a66);
+  color: #dfe9ff;
+}
+
+.web-page a.nwb-logo {
+  font-family: 'Times New Roman', serif;
+  font-size: 26px;
+  font-weight: bold;
+  color: #fff;
+  text-decoration: none;
+}
+
+.nwb-body,
+.opek-body,
+.fed-body,
+.bank-body,
+.eq-body {
+  padding: 0 12px;
+}
+
+.nwb-warning {
+  margin: 6px 0;
+  padding: 6px 8px;
+  background: #fff0f0;
+  border: 2px solid #c00000;
+}
+
+.nwb-small,
+.opek-small {
+  font-size: 11px;
+  color: #404040;
+}
+
+.nwb-table,
+.fed-table,
+.bank-table,
+.eq-table {
+  border-collapse: collapse;
+}
+
+.nwb-table th,
+.nwb-table td {
+  border: 1px solid #b0c4de;
+}
+
+.nwb-table th {
+  background: #dfe9ff;
+}
+
+.web-page .nwb-hit,
+.web-page .nwb-alert {
+  font-weight: bold;
+  color: #c00000;
+}
+
+.site-opek {
+  background: #f7f0de;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.opek-header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 10px 12px;
+  background: #0d4d8c;
+  color: #fff;
+}
+
+.web-page a.opek-logo {
+  font-size: 30px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.opek-marquee {
+  padding: 2px 0;
+  background: #e8d9a8;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+.opek-hint {
+  padding: 6px 8px;
+  background: #fffbe8;
+  border-left: 4px solid #0d4d8c;
+}
+
+.opek-release {
+  margin: 8px 0;
+  padding: 6px 8px;
+  background: #fff;
+  border: 1px solid #d8c890;
+}
+
+.opek-release p {
+  margin: 4px 0 0;
+}
+
+.site-fed {
+  background: #f5f5f0;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.fed-header {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  background: #1e3d2f;
+  border-bottom: 3px double #b8a36a;
+  color: #d8d0b0;
+}
+
+.web-page a.fed-logo {
+  font-size: 26px;
+  font-variant: small-caps;
+  color: #fff;
+  text-decoration: none;
+}
+
+.fed-box {
+  margin: 10px 0;
+  background: #fff;
+  border: 1px solid #1e3d2f;
+}
+
+.fed-box th {
+  text-align: left;
+}
+
+.fed-table th,
+.fed-table td,
+.bank-table th,
+.bank-table td {
+  border-bottom: 1px solid #c8c8c0;
+}
+
+.fed-table th,
+.bank-table th {
+  text-align: left;
+}
+
+.site-bank {
+  background: #fbf8f0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+}
+
+.bank-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #0a2240;
+  border-bottom: 3px solid #b8932f;
+}
+
+.web-page a.bank-logo {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 24px;
+  font-style: italic;
+  color: #f2d27a;
+  text-decoration: none;
+}
+
+.web-page .bank-nav a {
+  color: #fff;
+}
+
+.bank-form {
+  display: inline-block;
+  padding: 10px;
+  background: #c0c0c0;
+  border: 2px outset #fff;
+  font-family: 'Pixelated MS Sans Serif', Arial, sans-serif;
+  font-size: 11px;
+}
+
+.site-equifacts {
+  background: #fff;
+  font-family: Verdana, Geneva, sans-serif;
+  font-size: 12px;
+}
+
+.eq-header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 10px 12px;
+  background: #b0182d;
+  color: #ffe0e4;
+}
+
+.web-page a.eq-logo {
+  font-family: Arial Black, Arial, sans-serif;
+  font-size: 24px;
+  letter-spacing: 2px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.eq-score {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 10px 0;
+}
+
+.eq-number {
+  padding: 6px 12px;
+  background: #000;
+  border: 3px ridge #b0182d;
+  font-family: 'Courier New', monospace;
+  font-size: 36px;
+  font-weight: bold;
+  color: #3f3;
+}
+
+.eq-table th {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.eq-table td,
+.eq-table th {
+  border-bottom: 1px solid #e0e0e0;
+}

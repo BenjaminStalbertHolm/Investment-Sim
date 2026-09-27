@@ -52,6 +52,7 @@ function Tray() {
   const tickerTape = useShell((s) => s.tickerTape);
   const snapshot = useGame((s) => s.snapshot);
   const busy = useGame((s) => s.busy);
+  const bankrupt = useGame((s) => !!s.bankrupt);
   const unread = snapshot?.mail.unread ?? 0;
   const phase = snapshot?.halted ? 'halted' : snapshot?.phase;
   const light = phase === 'open' ? 'open' : phase === 'pre' ? 'pre' : 'closed';
@@ -67,6 +68,11 @@ function Tray() {
   return (
     <div className="tray status-bar-field">
       {busy ? <span className="tray-busy">{busy}</span> : <Notice />}
+      {bankrupt && (
+        <button className="tray-bankrupt" title="The firm is bankrupt: its final report" onClick={() => useGame.setState({ bust: 'report' })}>
+          BANKRUPT
+        </button>
+      )}
       <button
         className={`tray-icon${tickerTape ? ' pressed' : ''}`}
         title="Ticker tape"
@@ -87,13 +93,14 @@ function Tray() {
           <button
             key={s.speed}
             className={speed === s.speed ? 'pressed' : ''}
+            disabled={bankrupt}
             onClick={() => setSpeed(s.speed)}
             title={s.speed === 0 ? 'Pause' : `${s.speed}× speed`}
           >
             {s.label}
           </button>
         ))}
-        <button disabled={!snapshot || !!busy} onClick={skipToNextOpen} title="Skip to next open">
+        <button disabled={!snapshot || !!busy || bankrupt} onClick={skipToNextOpen} title="Skip to next open">
           ⏭
         </button>
       </div>

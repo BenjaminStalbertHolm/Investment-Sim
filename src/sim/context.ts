@@ -16,6 +16,10 @@ export interface Streams {
   macro: Rng;
   clients: Rng;
   mail: Rng;
+  /** Commodity prices, the weather and OPEK (Phase 7). */
+  commodities: Rng;
+  /** The broker's own dealings with the firm: share recalls. Only the firm's positions draw from it. */
+  broker: Rng;
 }
 
 /** What the engine offers the modules that run on its clock: events, macro, clients and mail. */
@@ -35,6 +39,11 @@ export interface Sim {
   nav(): number;
   /** Has the broker sell positions, largest first, until the cash covers `amount`. */
   raiseCash(amount: number): void;
-  /** Shares of a company the firm holds. */
+  /** Shares of a company the firm holds; negative when it is short. */
   held(company: number): number;
+  /**
+   * A news-driven log move for a company, before it reaches the price: good news squeezes heavily shorted stocks further
+   * (spec §12.4), bad news brings the short sellers in.
+   */
+  squeeze(company: number, move: number): number;
 }

@@ -18,7 +18,16 @@ export type NewsKind =
   | 'tvPick'
   | 'fowlPick'
   | 'firmQuarter'
-  | 'mandate';
+  | 'mandate'
+  // Phase 7: the National Weather Bureau's warnings and what came of them, and OPEK's hints and decisions.
+  | 'weather'
+  | 'weatherHit'
+  | 'weatherBust'
+  | 'opekHint'
+  | 'opek';
+
+/** News about commodities rather than companies (spec §11.7: sector and macro events work the same way). */
+export const COMMODITY_KINDS: readonly NewsKind[] = ['weather', 'weatherHit', 'weatherBust', 'opekHint', 'opek'];
 
 /**
  * One piece of news, as the archive stores it: facts only. Every outlet's article about it is written from these when
@@ -50,8 +59,10 @@ export interface NewsItem {
   /** New CEO's code, and the one they replace. */
   ceo?: string;
   prevCeo?: string;
-  /** A name the story needs: the client of a mandate. */
+  /** A name the story needs: the client of a mandate; a weather hazard (data/commodities.ts); OPEK's decision. */
   text?: string;
+  /** The commodity most affected (its contract code), for weather and OPEK stories. */
+  commodity?: string;
 }
 
 /** A rumour on the Raging Bear boards or in the trade press (spec §11.7), true or bait. */

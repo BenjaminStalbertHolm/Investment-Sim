@@ -2,12 +2,14 @@ import * as Comlink from 'comlink';
 import { SAVE_VERSION, checkManifest, migrate } from '../state/migrations';
 import { SAVE_FORMAT, packSave, unpackSave, type Manifest } from '../state/saveFile';
 import type { OrderRequest } from './account';
+import { CONTRACTS } from './data/commodities';
+import type { Structure } from './loans';
 import type { Mail } from './mail';
 import type { NewsQuery } from './news';
 import { dayOf, minutesPerSecond, phaseEnd, setStartYear } from './calendar';
 import { Engine, type NewGameOptions, type SimState } from './engine';
 import type { Player } from './player';
-import { INDEX, type EngineEvent, type Snapshot, type Timeframe } from './types';
+import { INDEX, commodityChart, type EngineEvent, type Snapshot, type Timeframe } from './types';
 
 /**
  * The simulation's Web Worker (spec §11). It paces the engine in real time, posts snapshots of what the UI watches at
@@ -73,6 +75,8 @@ function post(): void {
     quotes[id] = { ...quote, spark: spark(e, id, quote.last) };
     live[id] = e.live(id);
   }
+  // Commodity charts follow the spot through the day.
+  CONTRACTS.forEach((_, k) => (live[commodityChart(k)] = e.live(commodityChart(k))));
   listener({
     time: e.time,
     phase: e.phase,
@@ -89,6 +93,7 @@ function post(): void {
     events,
     mail: e.mailStatus(),
     news: e.newsCount,
+    commodities: e.commodityQuotes(),
   });
   events = [];
 }
@@ -150,6 +155,8 @@ const api = {
       gameTime: e.time,
       netWorth: e.netWorth(),
       savedAt: Date.now(),
+      // A bankrupt firm's save is read-only; the Hall of Shame shows its final report (spec §16).
+      bankrupt: e.bankruptcy(),
     };
     const bytes = packSave({ manifest, sim: e.exportState(), game: ui });
     return Comlink.transfer({ bytes, manifest }, [bytes.buffer]);
@@ -173,7 +180,7 @@ const api = {
 
   /** Companies to quote in snapshots and to keep 5-minute bars for (watchlists, open quote windows). */
   watch(ids: number[]): void {
-    watched = [...new Set(ids)];
+    watched = [...new Set(ids)].filter((id) => id >= 0);
     engine?.watch(watched);
     dirty = true;
   },
@@ -210,6 +217,18 @@ const api = {
   orders: () => game().orders(),
   closedPositions: () => game().closedPositions(),
   stats: () => game().stats(),
+  // Phase 7: short selling, futures and commodities, the weather and OPEK, loans, bankruptcy.
+  borrow: (company: number) => game().borrow(company),
+  futures: () => game().futures(),
+  tradeFuture: (contract: string, contracts: number) => changed(game().tradeFuture(contract, contracts)),
+  rollFuture: (contract: string) => changed(game().rollFuture(contract)),
+  sellGoods: (code: string) => changed(game().sellGoods(code)),
+  outlooks: (limit?: number) => game().outlookViews(limit),
+  loans: () => game().loans(),
+  loanQuote: (amount: number, structure: Structure, months: number) => game().loanQuote(amount, structure, months),
+  takeLoan: (amount: number, structure: Structure, months: number) => changed(game().takeLoan(amount, structure, months)),
+  repayLoan: (id: number, amount: number) => changed(game().repayLoan(id, amount)),
+  bankruptcy: () => game().bankruptcy(),
 };
 
 export type SimulationApi = typeof api;

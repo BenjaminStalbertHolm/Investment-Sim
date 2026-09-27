@@ -18,6 +18,7 @@
     "98.css": "^0.1.21",
     "comlink": "^4.4.2",
     "fflate": "^0.8.3",
+    "financial": "^0.2.4",
     "html-to-image": "^1.11.13",
     "idb-keyval": "^6.3.0",
     "js-crc": "^0.3.1",

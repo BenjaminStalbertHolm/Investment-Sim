@@ -256,7 +256,7 @@ export function settle(sim: Sim, id: number): void {
 
 const PATIENCE: Record<Level, number> = { low: 4, normal: 3, high: 2 };
 
-/** Whether the book breaks a constraint today. */
+/** Whether the book breaks a constraint today. Short positions count as positions too. */
 function breaks(sim: Sim, k: Constraint, c: Client, unit: number): boolean {
   const { price } = sim.market;
   const nav = sim.nav();
@@ -265,7 +265,7 @@ function breaks(sim: Sim, k: Constraint, c: Client, unit: number): boolean {
     case 'exclude':
       return positions.some((p) => k.industries!.includes(sim.model.sector[p.company]));
     case 'maxPosition':
-      return nav > 0 && positions.some((p) => (p.shares * price[p.company]) / nav > k.limit);
+      return nav > 0 && positions.some((p) => (Math.abs(p.shares) * price[p.company]) / nav > k.limit);
     case 'minCap':
       return positions.some((p) => price[p.company] * sim.model.shares[p.company] < k.limit);
     case 'maxDrawdown':
@@ -393,12 +393,13 @@ export function morningClients(sim: Sim, day: number, fees: Fees): void {
   state.nextOffer = addTradingDays(day, gap);
 }
 
-/** Would holding `shares` of a company break a mandate? The order ticket warns before you send it. */
-export function mandateWarnings(sim: Sim, company: number, shares: number): string[] {
+/** Would holding `shares` of a company (negative: short) break a mandate? The order ticket warns before you send it. */
+export function mandateWarnings(sim: Sim, company: number, held: number): string[] {
   const { price } = sim.market;
   const nav = sim.nav();
   const out: string[] = [];
-  if (shares <= 0) return out;
+  const shares = Math.abs(held);
+  if (!shares) return out;
   for (const c of sim.s.clients.clients) {
     if (c.status !== 'active') continue;
     for (const k of c.constraints) {

@@ -1,7 +1,9 @@
 import 'fake-indexeddb/auto';
 import { createStore, keys, set } from 'idb-keyval';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { CLOSE, START_DAY, at, nextTradingDay } from '../src/sim/calendar';
+import { CLOSE, START_DAY, at, dayOf, nextTradingDay } from '../src/sim/calendar';
+import { chain } from '../src/sim/commodities';
+import { CONTRACT_INDEX } from '../src/sim/data/commodities';
 import { Engine, type SimState } from '../src/sim/engine';
 import { DEFAULT_LOGO as PLAYER_LOGO, decodeLogo, encodeLogo } from '../src/art/logo/code';
 import { defaultPlayer } from '../src/sim/player';
@@ -33,22 +35,47 @@ const sessions = (n: number) => {
 /** The player's actions in session `s`, placed at 10:30: the same in every run. */
 function trade(e: Engine, s: number): void {
   const i = (s * 37) % 1000;
-  if (s % 3 === 0) e.placeOrder({ company: i, side: 'buy', type: 'market', shares: 100, tif: 'day' });
+  if (s % 3 === 0 && e.held(i) >= 0) e.placeOrder({ company: i, side: 'buy', type: 'market', shares: 100, tif: 'day' });
   if (s % 5 === 0) {
     const j = (i + 1) % 1000;
-    e.placeOrder({ company: j, side: 'buy', type: 'limit', limit: e.market.price[j] * 0.97, shares: 200, tif: 'gtc' });
+    if (e.held(j) >= 0) e.placeOrder({ company: j, side: 'buy', type: 'limit', limit: e.market.price[j] * 0.97, shares: 200, tif: 'gtc' });
   }
   if (s % 7 === 0) {
-    const p = e.positions()[0];
+    const p = e.positions().find((x) => x.shares > 0);
     if (p) e.placeOrder({ company: p.company, side: 'sell', type: 'market', shares: Math.ceil(p.shares / 2), tif: 'day' });
   }
+  // Phase 7: short sales covered by trailing stops, futures (some rolled, some held to expiry), bank loans, and a corn
+  // contract bought before the save and delivered after it.
+  if (s % 4 === 1) {
+    const k = (s * 53) % 100;
+    if (e.held(k) <= 0 && e.placeOrder({ company: k, side: 'short', type: 'market', shares: 50, tif: 'day' })) {
+      e.placeOrder({ company: k, side: 'cover', type: 'trailingStop', trail: 0.04, shares: 50, tif: 'gtc' });
+    }
+  }
+  if (s === 3) e.takeLoan(250_000, 'amortising', 24);
+  if (s === 20) e.takeLoan(100_000, 'interestOnly', 12);
+  const day = dayOf(e.time);
+  if (s % 13 === 4) e.tradeFuture(chain(s % 22, day)[0].key, s % 2 ? 1 : -1);
+  const roll = e.futures().positions.find((p) => !p.contract.startsWith('ZC:'));
+  if (s % 13 === 9 && roll) e.rollFuture(roll.contract);
+  if (s === 45) e.tradeFuture(chain(CONTRACT_INDEX.ZC, day).find((c) => c.expiry > day + 20)!.key, 1);
+  if (s === 110) e.sellGoods('ZC');
 }
 
-/** A state without what Phase 6 added. */
+/** A state without what Phase 7 added. */
+function beforePhase7(state: SimState) {
+  const { commodities: _c, loans: _l, bankruptcy: _b, ...rest } = state;
+  const { commodities: _rc, broker: _rb, ...rng } = state.rng;
+  const { shortInterest: _si, ...market } = state.market;
+  const { futures: _f, goods: _g, charges: _ch, call: _call, ...account } = state.account;
+  return { ...rest, rng, market, account };
+}
+
+/** A state without what Phases 6 and 7 added. */
 function beforePhase6(state: SimState) {
-  const { macro: _m, events: _e, journalists: _j, clients: _c, mail: _mail, ...rest } = state;
-  const { events: _re, macro: _rm, clients: _rc, mail: _rmail, ...rng } = state.rng;
-  const { dividend: _d, ...fundamentals } = state.fundamentals;
+  const { macro: _m, events: _e, journalists: _j, clients: _c, mail: _mail, ...rest } = beforePhase7(state);
+  const { events: _re, macro: _rm, clients: _rc, mail: _rmail, ...rng } = rest.rng as SimState['rng'];
+  const { dividend: _d, ...fundamentals } = rest.fundamentals;
   return { ...rest, rng, fundamentals };
 }
 
@@ -106,12 +133,48 @@ describe('save system (spec §18)', () => {
     const quarters = saved.details(5).quarters;
     expect(quarters.at(-1)!.reported).toBeGreaterThan(START_DAY);
     expect(quarters).toEqual(straight.details(5).quarters);
+    // Phase 7: shorts and their stops, futures and their settlements, a delivery after the save, loans and commodities.
+    const ledger = state.account.ledger;
+    expect(ledger.filter((l) => l.kind === 'short').length).toBeGreaterThan(10);
+    expect(state.account.orders.filter((o) => o.type === 'trailingStop' && o.triggered).length).toBeGreaterThan(0);
+    expect(ledger.filter((l) => l.kind === 'variation').length).toBeGreaterThan(20);
+    expect(ledger.filter((l) => l.kind === 'borrowFee').length).toBeGreaterThan(50);
+    expect(ledger.some((l) => l.kind === 'delivery' && l.contract?.startsWith('ZC:') && dayOf(l.time) > days[60])).toBe(true);
+    expect(ledger.some((l) => l.kind === 'goods' && l.contract === 'ZC')).toBe(true);
+    expect(state.loans.loans.map((l) => l.status)).toEqual(['active', 'active']);
+    expect(state.loans.loans[0].paid).toBeGreaterThanOrEqual(5);
+    expect(state.commodities.outlooks.length).toBeGreaterThan(3);
+    expect(state.commodities.days).toHaveLength(120);
+    const a = saved.account();
+    expect(a.netWorth - a.deposits).toBeCloseTo(a.realized + a.unrealized, 3);
     // Phase 5: the firm, its logo and CEO, and the Custom settings carry over.
     expect(saved.player).toMatchObject({ firmName: 'Renamed Capital', ceoName: 'Pat Doe-Ray', ceoCode: player.ceoCode });
     expect(decodeLogo(saved.player.logoCode).effect).toBe('bevel');
     expect(saved.settings).toEqual(settings);
     expect(saved.settings.difficulty).toBe('custom');
   }, 60_000);
+
+  it('upgrades a version 4 save: a margin account, commodities at their 1998 levels, short interest and no loans', () => {
+    const e = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Old Firm' });
+    e.placeOrder({ company: 3, side: 'buy', type: 'market', shares: 100, tif: 'day' });
+    e.runSessions(4);
+    const old = beforePhase7(e.exportState());
+    const upgraded = migrate(unpackSave(packSave({ manifest: manifest({ version: 4 }), sim: old, game: {} })));
+    const loaded = Engine.restore(upgraded.sim as SimState);
+    const state = loaded.exportState();
+    // Nothing that was there changes; what Phase 7 adds starts empty, or as a new game has it.
+    expect(difference(beforePhase7(state), old)).toBeUndefined();
+    expect(state.account).toMatchObject({ futures: [], goods: [], charges: 0 });
+    expect(state.loans.loans).toEqual([]);
+    const fresh = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Old Firm' }).exportState();
+    expect(difference(state.market.shortInterest, fresh.market.shortInterest)).toBeUndefined();
+    expect(difference(state.commodities, fresh.commodities)).toBeUndefined();
+    expect(state.rng.commodities).toEqual(fresh.rng.commodities);
+    loaded.runSessions(5);
+    expect(loaded.futures().chains.every((c) => c.length >= 4)).toBe(true);
+    const a = loaded.account();
+    expect(a.netWorth - a.deposits).toBeCloseTo(a.realized + a.unrealized, 4);
+  });
 
   it('upgrades a version 3 save: mail, news, clients and the economy start where the game stands', () => {
     const e = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Old Firm' });
