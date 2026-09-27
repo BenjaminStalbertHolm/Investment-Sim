@@ -86,6 +86,7 @@ function Tray() {
           <span className="heat-bulb" />
         </button>
       )}
+      <PagerTray />
       <button
         className={`tray-icon${tickerTape ? ' pressed' : ''}`}
         title="Ticker tape"
@@ -122,6 +123,30 @@ function Tray() {
         {snapshot ? formatClock(snapshot.time) : 'Starting…'}
       </span>
     </div>
+  );
+}
+
+/** The pager on the belt (spec §4A): the newest page's code, blinking until the pager is opened. */
+function PagerTray() {
+  const latest = useGame((s) => s.snapshot?.desk.page);
+  const [seen, setSeen] = useState<number>();
+  // Pages from before this session (a loaded game's) count as read.
+  useEffect(() => {
+    if (seen === undefined && latest !== undefined) setSeen(latest);
+  }, [seen, latest]);
+  const fresh = seen !== undefined && latest !== undefined && latest > seen;
+  return (
+    <button
+      className={`tray-icon tray-pager${fresh ? ' fresh' : ''}`}
+      title={fresh ? 'New page' : 'Pager'}
+      onClick={() => {
+        setSeen(latest);
+        useWindows.getState().open('pager');
+      }}
+    >
+      <Icon name="pager" size={16} />
+      {fresh && <span className="tray-badge">{latest! - seen! > 9 ? '9+' : latest! - seen!}</span>}
+    </button>
   );
 }
 

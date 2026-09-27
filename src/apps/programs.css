@@ -1,0 +1,650 @@
+/* Phase 10's desktop programs (spec §4A). */
+
+/* ---------- Notepad ---------- */
+.notepad-text {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+/* ---------- Calculator ---------- */
+.calc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  outline: none;
+}
+.calc-display {
+  position: relative;
+  padding: 2px 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 20px;
+  text-align: right;
+  background: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.calc-memory {
+  position: absolute;
+  left: 6px;
+  font-size: 11px;
+}
+.calc-row {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+}
+.calc-grid button {
+  min-width: 0;
+  padding: 4px 0;
+}
+.calc-sci {
+  grid-template-columns: repeat(5, 1fr);
+}
+.calc-digit {
+  color: #000080;
+}
+.calc-op {
+  color: #c00000;
+}
+.calc-mem {
+  color: #800080;
+}
+.calc-financial {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: auto;
+}
+.calc-financial label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  margin-right: 8px;
+}
+.calc-financial input {
+  width: 90px;
+}
+
+/* ---------- ISeekYou ---------- */
+.messenger-body {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  min-height: 0;
+}
+.messenger-contacts {
+  flex: 0 0 140px;
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+  list-style: none;
+  background: #fff;
+}
+.messenger-contacts ul {
+  margin: 2px 0 6px;
+  padding: 0;
+  list-style: none;
+}
+.messenger-contact {
+  padding: 1px 2px;
+  cursor: default;
+}
+.messenger-contact.selected {
+  color: #fff;
+  background: #000080;
+}
+.messenger-flower.online {
+  color: #20a020;
+}
+.messenger-flower.away {
+  color: #c02020;
+}
+.messenger-unread {
+  margin-left: 4px;
+  padding: 0 4px;
+  color: #fff;
+  background: #c00000;
+  border-radius: 6px;
+}
+.messenger-chat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.messenger-header {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.messenger-log {
+  flex: 1;
+  padding: 4px;
+  overflow: auto;
+  background: #fff;
+}
+.messenger-message {
+  margin-bottom: 6px;
+}
+.messenger-who.them {
+  color: #c00000;
+  font-weight: bold;
+}
+.messenger-who.me {
+  color: #000080;
+  font-weight: bold;
+}
+
+/* ---------- MajorWord ---------- */
+.word-page-area {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-height: 0;
+  padding: 8px;
+  overflow: auto;
+  background: #808080;
+}
+.word-page {
+  width: min(560px, 100%);
+  min-height: 100%;
+  padding: 24px 32px;
+  resize: none;
+  box-shadow: 3px 3px 0 #404040;
+}
+.word-preview {
+  max-height: 160px;
+  padding: 6px;
+  overflow: auto;
+  white-space: pre-wrap;
+  background: #fff;
+}
+
+/* ---------- Exceed ---------- */
+.sheet-at {
+  min-width: 36px;
+  text-align: center;
+}
+.sheet-formula {
+  flex: 1;
+}
+.sheet-grid {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #fff;
+  outline: none;
+}
+.sheet-grid table {
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.sheet-grid th {
+  position: sticky;
+  top: 0;
+  min-width: 24px;
+  padding: 0 4px;
+  font-weight: normal;
+  background: #c0c0c0;
+  border: 1px solid #808080;
+}
+.sheet-grid tbody th {
+  position: sticky;
+  left: 0;
+}
+.sheet-grid td {
+  min-width: 64px;
+  max-width: 120px;
+  height: 16px;
+  padding: 0 3px;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 1px solid #d8d8d8;
+}
+.sheet-grid td.num {
+  text-align: right;
+}
+.sheet-grid td.err {
+  color: #c00000;
+}
+.sheet-grid td.selected {
+  outline: 2px solid #000;
+  outline-offset: -2px;
+}
+
+/* ---------- PeopleSoftie HR ---------- */
+.hr-people {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: auto;
+}
+.hr-card {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #808080;
+}
+.hr-card-text {
+  flex: 1;
+}
+.hr-card-text .hint {
+  margin: 2px 0 0;
+}
+.hr-card-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hr-meter {
+  display: inline-block;
+  width: 60px;
+  height: 8px;
+  margin-right: 6px;
+  vertical-align: middle;
+  background: #fff;
+  border: 1px solid #808080;
+}
+.hr-meter span {
+  display: block;
+  height: 100%;
+  background: #000080;
+}
+.hr-rules {
+  overflow: auto;
+}
+
+/* ---------- Rolodex ---------- */
+.rolodex-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 8px;
+  padding: 12px;
+  background: #fffbe0;
+  border: 1px solid #806040;
+  border-radius: 4px 4px 0 0;
+  box-shadow: 2px 2px 0 #a09070;
+}
+.rolodex-card h3 {
+  margin: 0;
+}
+.rolodex-blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 90px;
+  font-size: 40px;
+  color: #808080;
+  background: #e0e0e0;
+}
+
+/* ---------- Portfolio Defragmenter ---------- */
+.defrag-disk {
+  display: grid;
+  grid-template-columns: repeat(40, 1fr);
+  gap: 1px;
+  padding: 4px;
+  background: #fff;
+}
+.defrag-disk span {
+  height: 10px;
+  border: 1px solid #00000030;
+}
+.defrag-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.defrag-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1px solid #000;
+}
+
+/* ---------- Pager ---------- */
+.pager-screen {
+  min-height: 40px;
+  padding: 4px 6px;
+  font-family: 'Courier New', monospace;
+  color: #203020;
+  background: #9fc08f;
+  border: 2px inset #fff;
+}
+.pager-list {
+  flex: 1;
+  margin: 0;
+  padding: 2px 4px;
+  overflow: auto;
+  list-style: none;
+  background: #fff;
+}
+.pager-list li {
+  padding: 2px 0;
+  border-bottom: 1px dotted #c0c0c0;
+}
+.pager-alerts {
+  margin: 4px 0 0;
+  padding-left: 16px;
+}
+
+/* ---------- MajorPaint ---------- */
+.paint-body {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+  min-height: 0;
+  overflow: auto;
+}
+.paint-tools {
+  display: grid;
+  grid-template-columns: 26px 26px;
+  gap: 2px;
+  align-content: start;
+}
+.paint-tools button {
+  min-width: 0;
+  padding: 0;
+}
+.paint-tools button.pressed {
+  box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #fff;
+}
+.paint-canvas {
+  display: grid;
+  grid-template-columns: repeat(32, 1fr);
+  flex: none;
+  border: 2px inset #fff;
+  cursor: crosshair;
+  user-select: none;
+}
+.paint-canvas span {
+  width: 100%;
+  height: 100%;
+}
+.paint-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: center;
+}
+.paint-palette button {
+  width: 18px;
+  min-width: 0;
+  height: 18px;
+  padding: 0;
+}
+.paint-current {
+  position: relative;
+  width: 30px;
+  height: 26px;
+  margin-right: 6px;
+}
+.paint-current i {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid #000;
+}
+.paint-current i:first-child {
+  z-index: 1;
+}
+.paint-current i:last-child {
+  top: 8px;
+  left: 10px;
+}
+
+/* ---------- WinRamp ---------- */
+.winramp {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  padding: 4px;
+  color: #30d030;
+  font-family: 'Courier New', monospace;
+  background: #232323;
+}
+.winramp.skin-1 {
+  color: #b0ff80;
+  background: #103010;
+}
+.winramp.skin-2 {
+  color: #ffb0a0;
+  background: #301010;
+}
+.winramp-top {
+  display: flex;
+  justify-content: space-between;
+}
+.winramp-logo {
+  font-weight: bold;
+  font-style: italic;
+  letter-spacing: 2px;
+}
+.winramp-close {
+  min-width: 0;
+  padding: 0 4px;
+}
+.winramp-display {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: #000;
+  border: 2px inset #555;
+}
+.winramp-time {
+  font-size: 22px;
+}
+.winramp-title {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.winramp-title span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 14s linear infinite;
+}
+.winramp-buttons {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+.winramp-buttons button {
+  min-width: 26px;
+  padding: 0;
+}
+.winramp-buttons input {
+  flex: 1;
+}
+.winramp-playlist {
+  flex: 1;
+  margin: 0;
+  padding: 2px 2px 2px 24px;
+  overflow: auto;
+  background: #000;
+}
+.winramp-playlist li.current {
+  color: #fff;
+}
+.winramp-skins button {
+  min-width: 0;
+  padding: 0 4px;
+  font-size: 10px;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* ---------- Margin Sweeper ---------- */
+.sweeper-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px;
+  border: 2px inset #fff;
+}
+.sweeper-lcd {
+  padding: 0 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 20px;
+  font-weight: bold;
+  color: #ff0000;
+  background: #000;
+}
+.sweeper-face {
+  min-width: 0;
+  padding: 0 4px;
+  font-size: 16px;
+}
+.sweeper-grid {
+  display: grid;
+  align-self: center;
+  border: 3px inset #fff;
+}
+.sweeper-cell {
+  width: 18px;
+  min-width: 0;
+  height: 18px;
+  padding: 0;
+  font-size: 11px;
+  font-weight: bold;
+}
+.sweeper-cell.open {
+  background: #c0c0c0;
+  box-shadow: none;
+  border: 1px solid #808080;
+}
+.sweeper-cell.boom {
+  background: #ff0000;
+}
+
+/* ---------- Soli-Tear ---------- */
+.sol-table {
+  flex: 1;
+  padding: 8px;
+  overflow: auto;
+  background: #008000;
+}
+.sol-row {
+  display: flex;
+  gap: 8px;
+}
+.sol-row.tableau {
+  margin-top: 12px;
+}
+.sol-gap {
+  flex: 0 0 62px;
+}
+.sol-slot,
+.sol-column {
+  position: relative;
+  flex: 0 0 62px;
+  height: 84px;
+}
+.sol-column {
+  min-height: 300px;
+}
+.sol-stacked {
+  position: absolute;
+  left: 0;
+}
+.sol-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 60px;
+  height: 82px;
+  padding: 2px 4px;
+  font-family: Georgia, serif;
+  color: #000;
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 4px;
+  cursor: default;
+}
+.sol-card b {
+  align-self: center;
+  font-size: 28px;
+}
+.sol-card.red {
+  color: #c00000;
+}
+.sol-card.selected {
+  outline: 3px solid #ffd000;
+}
+.sol-card.back {
+  align-items: center;
+  justify-content: center;
+  background: repeating-linear-gradient(45deg, #2050d0 0 4px, #1840a8 4px 8px);
+}
+.sol-card.empty {
+  align-items: center;
+  justify-content: center;
+  color: #80c080;
+  background: transparent;
+  border: 1px dashed #80c080;
+}
+.sol-card.hint-drop {
+  border-color: #ffd000;
+}
+.bouncing-cards {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  cursor: pointer;
+}
+
+/* ---------- Stapley ---------- */
+.stapley {
+  position: fixed;
+  right: 16px;
+  bottom: 40px;
+  z-index: 50000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 280px;
+}
+.stapley-bubble {
+  padding: 8px;
+  color: #000;
+  background: #ffffe1;
+  border: 1px solid #000;
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 #00000060;
+}
+.stapley-bubble p {
+  margin: 0 0 6px;
+}
+.stapley-body {
+  margin-right: 24px;
+  animation: stapley-bob 1.6s ease-in-out infinite;
+}
+@keyframes stapley-bob {
+  50% {
+    transform: translateY(-3px) rotate(-2deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stapley-body,
+  .winramp-title span {
+    animation: none;
+  }
+}

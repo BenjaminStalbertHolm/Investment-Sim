@@ -34,4 +34,6 @@ export const FORCED: Record<NonNullable<Order['forced']>, string> = {
   loan: 'Sold for First Continental Bank',
   fine: 'Sold to pay an SOB fine',
   shark: 'Seized by a loan shark’s collectors',
+  bills: 'Sold to pay the month’s bills',
+  payroll: 'Sold to pay wages owed',
 };

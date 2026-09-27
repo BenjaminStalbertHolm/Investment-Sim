@@ -32,7 +32,11 @@ export type NewsKind =
   // Phase 9: articles bought on the dark web — puff pieces and hit pieces — and exposés naming the firm.
   | 'puff'
   | 'hitPiece'
-  | 'expose';
+  | 'expose'
+  // Phase 10: new listings and stock splits; and stories told by their `text` (the Y2K scare, a hack of the firm).
+  | 'ipo'
+  | 'split'
+  | 'story';
 
 /** News about commodities rather than companies (spec §11.7: sector and macro events work the same way). */
 export const COMMODITY_KINDS: readonly NewsKind[] = ['weather', 'weatherHit', 'weatherBust', 'opekHint', 'opek'];

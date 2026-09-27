@@ -12,8 +12,9 @@ import { HAZARDS } from '../../sim/data/commodities';
 import { useOutlooks } from '../hooks';
 import { useStories } from '../news/NewsSites';
 import {
-  BANK, BARRENS, EQUIFACTS, EXCHANGE, FED, NEWSWIRE, OPEK, QUOTEZONE, RAGINGBEAR, SOB, TUCATS, WEATHER, YEEHAW, companyUrl, firmUrl, helpUrl, playerUrl, quoteUrl, storyUrl,
-  searchUrl, sites,
+  BANK, BARRENS, DANCING_BABY, DAVOZ, EBUY, EQUIFACTS, EXCHANGE, FED, GREGSLIST, HAMSTERS, HINDSIGHT, HOMECITIES, IPO_HOTLINE, LIFESTYLES, LOTTO, MAJORSOFT,
+  MONSTROUS, MOODY, NEWSWIRE, OPEK, QUOTEZONE, RAGINGBEAR, SOB, STANDARD_POURS, TUCATS, WEATHER, Y2K, YEEHAW, companyUrl, firmUrl, helpUrl, intranetHost,
+  playerUrl, quoteUrl, storyUrl, searchUrl, sites,
 } from '../urls';
 import { Link, usePage, useTitle } from '../web';
 
@@ -149,7 +150,26 @@ function Front() {
             <Link href={`http://${EXCHANGE}/`}>Futures</Link> · <Link href={`http://${FED}/`}>Interest rates</Link> ·{' '}
             <Link href={`http://${OPEK}/`}>Oil</Link> · <Link href={`http://${BANK}/`}>Business loans</Link> ·{' '}
             <Link href={`http://${EQUIFACTS}/`}>Your credit score</Link> · <Link href={`http://${SOB}/`}>Securities regulator</Link> ·{' '}
-            <Link href={`http://${BARRENS}/league`}>Fund league table</Link>
+            <Link href={`http://${BARRENS}/league`}>Fund league table</Link> · <Link href={`http://${STANDARD_POURS}/`}>Standard &amp; Pours</Link> ·{' '}
+            <Link href={`http://${MOODY}/`}>Moody Blues</Link> · <Link href={`http://${IPO_HOTLINE}/`}>IPO Hotline</Link> ·{' '}
+            <Link href={`http://${HINDSIGHT}/`}>Hindsight Research</Link>
+          </p>
+        </div>
+        <div className="yh-box">
+          <b>Business &amp; Lifestyle</b>
+          <p>
+            <Link href={`http://${MONSTROUS}/`}>Jobs</Link> · <Link href={`http://${GREGSLIST}/offices`}>Office space</Link> ·{' '}
+            <Link href={`http://${LIFESTYLES}/`}>Luxury</Link> · <Link href={`http://${EBUY}/`}>Auctions</Link> ·{' '}
+            <Link href={`http://${DAVOZ}/`}>Conferences</Link> · <Link href={`http://${LOTTO}/`}>Lotto</Link> ·{' '}
+            <Link href={`http://${intranetHost(firmName)}/`}>Your intranet</Link>
+          </p>
+        </div>
+        <div className="yh-box">
+          <b>Cool Sites</b>
+          <p>
+            <Link href={`http://${HOMECITIES}/`}>HomeCities</Link> · <Link href={`http://${Y2K}/`}>Y2K Countdown</Link> ·{' '}
+            <Link href={`http://${HAMSTERS}/`}>Hamster Prance</Link> · <Link href={`http://${DANCING_BABY}/`}>Dancing Baby</Link> ·{' '}
+            <Link href={`http://${MAJORSOFT}/`}>Majorsoft</Link>
           </p>
         </div>
       </div>

@@ -7,7 +7,13 @@ import { MARGIN_SPREAD, maintenanceRates } from '../../sim/margin';
 import { FINE_DAYS, HEAT_DECAY } from '../../sim/regulator';
 import { MAX_LEVERAGE, type GameSettings } from '../../sim/settings';
 import { ALWAYS_AVAILABLE, GC_FEE, MAX_FEE, RECALL_DAYS } from '../../sim/shorts';
-import { BANK, EQUIFACTS, EXCHANGE, FED, OPEK, QUOTEZONE, RAGINGBEAR, TUCATS, WEATHER } from '../urls';
+import {
+  BANK, DAVOZ, EBUY, EQUIFACTS, EXCHANGE, FED, GREGSLIST, HINDSIGHT, IPO_HOTLINE, LIFESTYLES, LOTTO as LOTTO_HOST, MONSTROUS, MOODY, OPEK, QUOTEZONE,
+  RAGINGBEAR, STANDARD_POURS, TUCATS, WEATHER,
+} from '../urls';
+import { OFFICES, POACH_DAYS, ROLES, SEVERANCE_MONTHS, UNPAID_MONTHS } from '../../sim/data/staff';
+import { CONFERENCES, EBUY_FEE, HINDSIGHT_FEE, HINDSIGHT_LEAD, LOTTO } from '../../sim/data/lifestyle';
+import { SPLIT_PRICE } from '../../sim/ipo';
 import { PRICES, SEIZE_DISCOUNT, SHARK_RANGE, SHARK_WEEKLY, SHELL_FEE } from '../../sim/data/darkweb';
 import { usd } from '../darkweb/terms';
 import { Link } from '../web';
@@ -25,6 +31,7 @@ export const SECTIONS = [
   { id: 'futures', title: 'Futures and Commodities' },
   { id: 'loans', title: 'Loans and Credit' },
   { id: 'firm', title: 'Clients, News and Your Firm' },
+  { id: 'office', title: 'Staff, the Office and the Good Life' },
 ] as const;
 
 export type SectionId = (typeof SECTIONS)[number]['id'];
@@ -1102,6 +1109,146 @@ export const TOPICS: Topic[] = [
           <Tip>A journalist who took your money once is cheaper the next time — and may one day ask for more.</Tip>
         </>
       ),
+  },
+  // ---------- Staff, the office and the good life (Phase 10) ----------
+  {
+    id: 'staff',
+    title: 'Hiring staff, and what they do',
+    section: 'office',
+    questions: ['How do I hire staff?', 'What does an analyst do?', 'Why did my employee leave?', 'What happens if I cannot pay wages?', 'How do I get a bigger office?'],
+    keywords: 'staff employee hire fire salary wages payroll analyst trader compliance pr it admin assistant monstrous peoplesoftie hr poach whistleblower loyalty office garage penthouse rent greg',
+    body: () => (
+      <>
+        <p>
+          Your firm starts as you, in a garage. Applicants post their résumés on <Link href={`http://${MONSTROUS}/`}>Monstrous.com</Link>; hire
+          them there or in <Go app="hr">PeopleSoftie HR</Go>. Each role does something for you:
+        </p>
+        <ul>
+          {ROLES.map((r) => (
+            <li key={r.id}>
+              <b>{r.title}</b>: {r.duty}
+            </li>
+          ))}
+        </ul>
+        <p>
+          The more skilled the person, the better they do it — and the more they cost. Wages are paid on the first trading day
+          of each month. When cash runs short, wages are owed; after {UNPAID_MONTHS} months unpaid, people walk out and their wages
+          fall due at once. Letting someone go costs {SEVERANCE_MONTHS} month’s salary.
+        </p>
+        <h3>Loyalty</h3>
+        <p>
+          Raises, good quarters and being paid on time keep people loyal. Rivals try to poach your best people: a letter gives you{' '}
+          {POACH_DAYS} trading days to match the offer. Disloyal staff quit — and when the regulator is already interested in
+          you, one may blow the whistle.
+        </p>
+        <h3>Offices</h3>
+        <p>
+          Your office sets how many people you can employ, and impresses prospective clients. Move on{' '}
+          <Link href={`http://${GREGSLIST}/offices`}>Greg’s List</Link>:
+        </p>
+        <ul>
+          {OFFICES.map((o) => (
+            <li key={o.id}>
+              <b>{o.name}</b>: {money(o.rent)} a month, room for {o.capacity}
+            </li>
+          ))}
+        </ul>
+        <Tip>An IT Admin is cheap insurance: hacked firms lose reputation, and their web site goes down.</Tip>
+      </>
+    ),
+  },
+  {
+    id: 'desk',
+    title: 'Your desk: rules, alerts, the pager and ISeekYou',
+    section: 'office',
+    questions: ['How do I set a stop-loss?', 'How do I get price alerts?', 'What is dollar-cost averaging?', 'How do I rebalance my portfolio?', 'Who is messaging me?'],
+    keywords: 'rule stop loss stoploss dca dollar cost averaging rebalance defragmenter defrag alert pager page iseekyou messenger contact task mangler trader automatic',
+    body: () => (
+      <>
+        <p>With a <b>Trader</b> on staff, you can give standing orders in PeopleSoftie HR:</p>
+        <ul>
+          <li>
+            <b>Stop-loss</b>: sell a holding when it falls a set percentage below what you paid.
+          </li>
+          <li>
+            <b>Dollar-cost averaging</b>: buy a fixed sum of a stock or a fund every week or month.
+          </li>
+          <li>
+            <b>Rebalancing</b>: set target weights in the <Go app="defrag">Portfolio Defragmenter</Go>, and the Trader brings the
+            portfolio back to them each month. You can also defragment by hand at any time.
+          </li>
+        </ul>
+        <p>
+          <Go app="taskmangler">Task Mangler</Go> (Ctrl+Alt+Del) lists everything running — rules, open orders, alerts, IPO
+          applications — and ends what can be ended.
+        </p>
+        <p>
+          The <Go app="pager">Pager</Go> beeps for price alerts you set, margin calls, stop-losses and urgent mail.{' '}
+          <Go app="messenger">ISeekYou</Go> is where your broker, your staff, your mother, the contacts you meet at conferences and
+          your rivals send messages. Answer them with the buttons.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'ipos',
+    title: 'IPOs, stock splits and credit ratings',
+    section: 'office',
+    questions: ['How do I buy shares in an IPO?', 'What is a stock split?', 'What is a credit rating?', 'Why did my shares double?'],
+    keywords: 'ipo initial public offering listing allocation allotment calendar pop flop split ratio credit rating upgrade downgrade standard pours moody junk investment grade aaa hindsight short seller report',
+    body: () => (
+      <>
+        <p>
+          New companies go public all the time. The <Link href={`http://${IPO_HOTLINE}/`}>IPO Hotline</Link> lists them two or three weeks
+          ahead with a price range. Apply for up to a tenth of a deal; the morning it lists, the deal is priced and allotted by lottery —
+          the better your reputation, the likelier you are to get shares, and hot deals allot less. You pay the offer price only for what
+          you get. Hot deals tend to pop on the first day; cold ones flop.
+        </p>
+        <p>
+          A company whose shares climb past {money(SPLIT_PRICE)} may split them when it reports: a 2-for-1 split doubles your shares and
+          halves the price. Your holding is worth exactly the same, and charts are adjusted.
+        </p>
+        <p>
+          <Link href={`http://${STANDARD_POURS}/`}>Standard &amp; Pours</Link> and <Link href={`http://${MOODY}/`}>Moody Blues</Link> rate
+          every company from AAA down to D. Upgrades and downgrades are news, and move prices. Below BBB− is “speculative grade”.
+        </p>
+        <p>
+          <Link href={`http://${HINDSIGHT}/`}>Hindsight Research</Link> is a short seller: its reports knock 10–40% off a stock. Subscribers
+          ({money(HINDSIGHT_FEE)} a month) get each report {HINDSIGHT_LEAD} minutes early — legally.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'lifestyle',
+    title: 'Luxuries, collectibles, conferences and the lotto',
+    section: 'office',
+    questions: ['Should I buy a yacht?', 'What is prestige?', 'How does eBuy work?', 'Are conferences worth it?', 'Can I win the lotto?'],
+    keywords: 'luxury yacht jet mansion car watch art team prestige upkeep resale lifestyles catalogue ebuy auction bid collectible meanie babies trading cards retro computer hype bubble conference davoz ticket networking lotto lottery',
+    body: () => (
+      <>
+        <p>
+          The <Link href={`http://${LIFESTYLES}/`}>Lifestyles Catalogue</Link> sells cars, watches, art, a yacht, a jet, a mansion and a
+          minor-league baseball team. Each costs upkeep every month and is worth what a dealer would pay, which counts towards your net
+          worth. Most things lose value; art may gain. Together with your office they give your firm <b>prestige</b>, which brings bigger
+          mandate offers, more often.
+        </p>
+        <p>
+          <Link href={`http://${EBUY}/`}>eBuy</Link> auctions collectibles whose prices go through hype cycles: steady, heating up, mania,
+          crash. Set the most you will pay and eBuy bids for you against other collectors. Sell what you own at auction; eBuy keeps{' '}
+          {Math.round(EBUY_FEE * 100)}%.
+        </p>
+        <p>
+          A ticket to one of {CONFERENCES.length} conferences at <Link href={`http://${DAVOZ}/`}>the Davoz Economic Forum’s site</Link>{' '}
+          buys networking: mandate offers, new contacts on ISeekYou, and sometimes their tips.
+        </p>
+        <p>
+          The <Link href={`http://${LOTTO_HOST}/`}>State Lotto</Link> costs {money(LOTTO.price)} a ticket and pays back a good deal less, on
+          average. The jackpot is {money(LOTTO.jackpot)}.
+        </p>
+        <Tip>Upkeep is paid every month whatever the markets do. A yacht is a poor hedge.</Tip>
+      </>
+    ),
   },
   {
     id: 'bankruptcy',

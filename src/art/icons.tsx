@@ -253,6 +253,45 @@ const ICONS = {
       <rect x="12.5" y="8.5" width="7" height="4" fill={G} />
     </>
   ),
+  /** Phase 10: a pager with its little screen. */
+  pager: (
+    <>
+      <rect x="6.5" y="4.5" width="19" height="24" rx="2" fill="#303030" stroke={K} />
+      <rect x="9" y="7" width="14" height="7" fill="#9fc08f" stroke={D} />
+      <path d="M10 11h2M13 11h2M16 11h2M19 11h2" stroke="#203020" />
+      <circle cx="12" cy="20" r="2" fill={G} />
+      <circle cx="20" cy="20" r="2" fill={G} />
+      <rect x="11" y="24" width="10" height="2" fill="#606060" />
+    </>
+  ),
+  /** WinRamp: a llama-free lightning bolt over an equaliser. */
+  winramp: (
+    <>
+      <rect x="2.5" y="6.5" width="27" height="19" fill="#1c2a1c" stroke={K} />
+      {[5, 9, 4, 11, 7, 12, 6].map((h, i) => (
+        <rect key={i} x={5 + i * 3.4} y={23 - h} width="2.4" height={h} fill={i % 2 ? '#e0c020' : '#30d030'} />
+      ))}
+      <path d="M19 3l-6 12h5l-3 13 9-16h-5l3-9z" fill="#ffd000" stroke="#704000" />
+    </>
+  ),
+  /** Margin Sweeper: a mine with a dollar sign. */
+  sweeper: (
+    <>
+      <rect x="3.5" y="3.5" width="25" height="25" fill={G} stroke={D} />
+      <path d="M16 6v20M6 16h20M9 9l14 14M23 9L9 23" stroke={K} strokeWidth="2" />
+      <circle cx="16" cy="16" r="7" fill={K} />
+      <text x="16" y="20" fontSize="10" fontWeight="bold" fontFamily="Arial, sans-serif" textAnchor="middle" fill="#ffd000">$</text>
+    </>
+  ),
+  /** Soli-Tear: two cards and a tear. */
+  solitear: (
+    <>
+      <rect x="4.5" y="7.5" width="14" height="20" rx="1.5" fill="#2050d0" stroke={K} />
+      <rect x="12.5" y="4.5" width="14" height="20" rx="1.5" fill={W} stroke={K} />
+      <path d="M19.5 9c2-2 5 0 3 3l-3 3-3-3c-2-3 1-5 3-3z" fill="#c02020" />
+      <path d="M8 16c1 2 1 3 0 4-1-1-1-2 0-4z" fill="#80c0ff" />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof ICONS;

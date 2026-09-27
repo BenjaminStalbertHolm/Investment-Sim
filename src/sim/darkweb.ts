@@ -18,6 +18,8 @@ import type { Mail, MailDraft, MailLine } from './mail';
 import { isPaymentDay } from './loans';
 import { hash, publishTime } from './press';
 import { STRICTNESS, addHeat, imposeFine, openAudit, surveil } from './regulator';
+import { damage } from './staff';
+import { contactOf } from './desk';
 
 /**
  * The dark web (spec §14A), reached through the Garlic Browser. Vendors in eleven markets sell bribed articles, leaks,
@@ -148,6 +150,8 @@ export interface Leak {
 export interface Outage {
   firm?: number;
   company?: number;
+  /** The player's own web site, hacked (Phase 10). */
+  player?: boolean;
   until: number;
   crew?: string;
 }
@@ -693,6 +697,8 @@ function press(sim: Sim, p: Purchase, ok: boolean, mail: (extra?: Partial<MailDr
   const list = sim.s.darkweb.bribed;
   let bribed = list.find((b) => b.journalist === j.id);
   if (!bribed) list.push((bribed = { journalist: j.id, bribes: 0, last: 0 }));
+  // A bought journalist becomes an ISeekYou contact (spec §14A).
+  if (!sim.s.desk.contacts.some((x) => x.kind === 'journalist' && x.ref === j.id)) sim.im({ contact: contactOf(sim, 'journalist', j.id), topic: 'hello', variant: j.id });
   bribed.bribes++;
   bribed.last = p.terms.price;
   const outlets = [j.outlet];
@@ -732,11 +738,13 @@ export function expose(
   const outlets = [...new Set([...(o.outlet ? [o.outlet] : ['nyjournal', 'jottings']), 'newswire', 'dailyscoop'])];
   sim.report({ kind: 'expose', company: -1, text: what, outlets, journalist: o.journalist, amount: o.amount });
   const c = sim.s.clients;
-  c.reputation = Math.max(0, c.reputation - o.reputation);
+  // A PR manager softens the damage (spec §4A), bribe exposés included.
+  const shield = damage(sim);
+  c.reputation = Math.max(0, c.reputation - o.reputation * shield);
   addHeat(sim, o.heat);
   for (const client of c.clients) {
     if (client.status !== 'active') continue;
-    if (sim.rng.darkweb.chance(client.kind === 'founder' ? (o.founders ?? 0) : o.redeem)) redeem(sim, client, 1, 'scandal');
+    if (sim.rng.darkweb.chance((client.kind === 'founder' ? (o.founders ?? 0) : o.redeem) * shield)) redeem(sim, client, 1, 'scandal');
   }
 }
 

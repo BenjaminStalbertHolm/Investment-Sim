@@ -10,7 +10,7 @@ import { FIRST_NAMES, LAST_NAMES } from '../../world/people-names';
 import { Rng } from '../../world/rng';
 import { companySite, shortName } from '../company/content';
 import {
-  ANALYST, DARK, DETAILS, FED_HOLD, FOLLOW, HEADLINES, LEADS, OPEK_HEADLINES, OUTLET_VOICE, REACTION, RUMOURED,
+  ANALYST, DARK, DETAILS, FED_HOLD, FOLLOW, HEADLINES, LEADS, OPEK_HEADLINES, OUTLET_VOICE, REACTION, RUMOURED, STORIES,
 } from '../data/articles';
 import { CONTRACTS, CONTRACT_INDEX, HAZARDS } from '../../sim/data/commodities';
 import { companyOf } from '../hooks';
@@ -95,6 +95,11 @@ function words(item: NewsItem, directory: Directory, firmName: string, rng: Rng)
     w.premium = percent(item.level! / item.prev! - 1);
   }
   if (item.kind === 'activist' || item.kind === 'stake') w.stake = percent(item.level!);
+  if (item.kind === 'ipo') {
+    w.offer = `$${item.level!.toFixed(2)}`;
+    w.range = `$${item.prev!.toFixed(item.prev! < 5 ? 2 : 0)}–$${item.expect!.toFixed(item.expect! < 5 ? 2 : 0)}`;
+  }
+  if (item.kind === 'split') w.ratio = item.level!;
   if (item.kind === 'league') {
     const signed = (v: number) => `${v >= 0 ? '+' : '−'}${percent(v)}`;
     Object.assign(w, {
@@ -123,7 +128,7 @@ function words(item: NewsItem, directory: Directory, firmName: string, rng: Rng)
     w.indexRet = `${item.expect! >= 0 ? '+' : '−'}${percent(item.expect!)}`;
     w.aum = dollars(item.amount!);
   }
-  if (item.text) w.client = item.text;
+  if (item.text && item.kind !== 'story') w.client = item.text;
   if (item.commodity) {
     // Weather and OPEK stories (spec §12.3, §14): the commodity, the hazard and where, the meeting and its decision.
     const name = CONTRACTS[CONTRACT_INDEX[item.commodity]].name;
@@ -167,6 +172,7 @@ export function writeArticle(
   const w = words(item, directory, firmName, rng);
   const up = upside(item);
   const dark = darkText(item);
+  const story = item.kind === 'story' ? STORIES[item.text ?? ''] : undefined;
   if (dark) {
     // Who was bribed, and at which paper.
     const bribed = item.outlets?.[0] ? OUTLET[item.outlets[0]] : undefined;
@@ -174,7 +180,7 @@ export function writeArticle(
     w.journalist = (item.journalist !== undefined ? journalists[item.journalist]?.name : undefined) ?? 'a reporter';
   }
   const opek = (item.kind === 'opek' || item.kind === 'opekHint') && item.text ? OPEK_HEADLINES[item.kind][item.text] : undefined;
-  const heads = dark ? DARK[dark].head : item.kind === 'fed' && item.level === item.prev ? FED_HOLD : opek ?? pickSide(HEADLINES[item.kind], up);
+  const heads = dark ? DARK[dark].head : story ? story.head : item.kind === 'fed' && item.level === item.prev ? FED_HOLD : opek ?? pickSide(HEADLINES[item.kind], up);
   let headline = write(rng.pick(heads), w, rng);
   if (outlet.id === 'dailyscoop') headline = `${headline.toUpperCase()}!`;
   const article = coverage(item, journalists, factsOf(directory, item.company)).find((a) => a.outlet.id === outletId);
@@ -184,11 +190,11 @@ export function writeArticle(
   const voice = OUTLET_VOICE[outlet.id] ?? {};
   const later = outlet.cadence === 'morning' || outlet.cadence === 'weekly';
   const paragraphs: string[] = [];
-  const lead = write(rng.pick(dark ? DARK[dark].lead : pickSide(LEADS[item.kind], up)), w, rng);
+  const lead = write(rng.pick(dark ? DARK[dark].lead : story ? story.lead : pickSide(LEADS[item.kind], up)), w, rng);
   paragraphs.push(voice.open ? `${rng.pick(voice.open)} ${lead}` : lead);
   const company = item.company >= 0 && !isMacro(item);
   if (later && company && item.move !== undefined && item.kind !== 'takeoverDone') paragraphs.push(write(rng.pick(REACTION[up ? 'up' : 'down']), w, rng));
-  const detail = dark ? DARK[dark].detail : DETAILS[item.kind];
+  const detail = dark ? DARK[dark].detail : story ? story.detail : DETAILS[item.kind];
   if (detail && outlet.id !== 'newswire') paragraphs.push(write(rng.pick(detail), w, rng));
   if (company && outlet.id !== 'newswire' && item.kind !== 'tvPick' && item.kind !== 'fowlPick') {
     paragraphs.push(write(rng.pick(ANALYST[up ? 'up' : 'down']), w, rng));

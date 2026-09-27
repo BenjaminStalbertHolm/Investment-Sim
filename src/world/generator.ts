@@ -88,7 +88,8 @@ export function generateWorld(options: WorldOptions): World {
 
 const blocked = (letters: string) => BLOCKED_LETTERS.some((b) => letters.includes(b));
 
-function fit({ curated, name, ticker, genes }: Company): boolean {
+/** Whether a generated company is acceptable: a clean 3–4 letter ticker, no stuttering name, no rude initials. */
+export function fit({ curated, name, ticker, genes }: Company): boolean {
   if (curated) return true;
   if (!/^[A-Z]{3,4}$/.test(ticker) || blocked(ticker)) return false;
   // No stutters: "Southern Computer Computer", "Netnet".

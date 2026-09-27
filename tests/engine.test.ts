@@ -80,7 +80,8 @@ describe('market engine (spec §11)', () => {
     const e = game();
     const next = world.companies.map((_, i) => e.details(i).nextEarnings);
     e.runSessions(45);
-    const reported = Array.from(e.exportState().fundamentals.reported);
+    // Companies listed since (Phase 10's IPOs) report in later seasons.
+    const reported = Array.from(e.exportState().fundamentals.reported).slice(0, world.companies.length);
     // Each company reported once, on the day it was announced for, spread over the season's 30 trading days.
     expect(reported).toEqual(next);
     expect(new Set(reported).size).toBe(30);

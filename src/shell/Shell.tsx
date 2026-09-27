@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect } from 'react';
 import { boot, saveGame, useGame } from '../state/game';
 import { useShell } from '../state/shell';
+import { useWindows } from '../state/windows';
 import { MessageBox } from '../ui98/MessageBox';
 import { TickerTape } from '../ui98/TickerTape';
 import { BlueScreen } from './BlueScreen';
@@ -11,6 +12,8 @@ import { Taskbar } from './Taskbar';
 
 const SetupWizard = lazy(() => import('../apps/mycomputer/SetupWizard'));
 const FinalReportDialog = lazy(() => import('../apps/mycomputer/FinalReport'));
+const BouncingCards = lazy(() => import('../apps/games/BouncingCards').then((m) => ({ default: m.BouncingCards })));
+const Stapley = lazy(() => import('../apps/stapley/Stapley'));
 
 export function Shell() {
   const power = useShell((s) => s.power);
@@ -21,6 +24,8 @@ export function Shell() {
   const setup = useShell((s) => s.setup);
   const bankrupt = useGame((s) => s.bankrupt);
   const bust = useGame((s) => s.bust);
+  const bounce = useGame((s) => s.bounce);
+  const stopBounce = useCallback(() => useGame.setState({ bounce: false }), []);
   const toReport = useCallback(() => useGame.setState({ bust: 'report' }), []);
   const booted = useCallback(() => setPower('running'), [setPower]);
 
@@ -32,6 +37,12 @@ export function Shell() {
   // Cmd/Ctrl+S saves anywhere (spec §18).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Ctrl+Alt+Del: Task Mangler (spec §4A).
+      if (e.ctrlKey && e.altKey && (e.key === 'Delete' || e.key === 'Backspace') && useShell.getState().power === 'running') {
+        e.preventDefault();
+        useWindows.getState().open('taskmangler');
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         const { power, setup } = useShell.getState();
@@ -63,6 +74,10 @@ export function Shell() {
         </Suspense>
       )}
       {bust === 'blueScreen' && <BlueScreen report={bankrupt} onDone={toReport} />}
+      <Suspense fallback={null}>
+        <Stapley />
+        {bounce && <BouncingCards onDone={stopBounce} />}
+      </Suspense>
       {alert && <MessageBox text={alert} onClose={() => useGame.setState({ alert: undefined })} />}
     </div>
   );

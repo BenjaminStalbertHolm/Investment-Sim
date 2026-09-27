@@ -13,8 +13,10 @@ import type { Player } from '../sim/player';
 import { DIFFICULTIES, type GameSettings } from '../sim/settings';
 import type { Directory, Snapshot } from '../sim/types';
 import { chime } from '../audio/chime';
+import { uhOh } from '../audio/uhoh';
 import { newBrowserState, useBrowser, type Dialup, type Favourite } from './browser';
 import { newMailView, useMailView, type MailView } from './mail';
+import { newPrograms, usePrograms, type Programs } from './programs';
 import { cleanUp, listSaves, nextAutosave, readSave, writeSave, type SaveSlot } from './saves';
 import { useShell, type Speed } from './shell';
 import { newTradeState, useTrade, type TradeTab, type Watchlist } from './trade';
@@ -42,6 +44,8 @@ interface GameStore {
   bankrupt?: BankruptcyReport;
   /** What the bankruptcy is showing: the Blue Screen of Debt, then the final report (closed: the desktop, read-only). */
   bust?: 'blueScreen' | 'report';
+  /** Soli-Tear's bouncing cards, for a trade closed at +100% (Phase 10). */
+  bounce?: boolean;
 }
 
 export const useGame = create<GameStore>()(() => ({
@@ -59,6 +63,8 @@ export interface GameState {
   browser: { favourites: Favourite[]; history: string[]; dialup: Dialup };
   /** Outbox Express's folder, sort and junk filter (Phase 6). */
   mail?: MailView;
+  /** The desktop programs' files and preferences (Phase 10). */
+  programs?: Programs;
 }
 
 export function gameState(): GameState {
@@ -73,6 +79,7 @@ export function gameState(): GameState {
     trade: { watchlists, active, tab },
     browser: { favourites, history, dialup },
     mail: { folder, sort, junkFilter, selected },
+    programs: usePrograms.getState(),
   };
 }
 
@@ -125,6 +132,7 @@ export async function newGame(options: NewGameOptions): Promise<void> {
   useTrade.setState(newTradeState());
   useBrowser.setState(newBrowserState());
   useMailView.setState(newMailView(), true);
+  usePrograms.setState(newPrograms(), true);
   useGame.setState({ ...started, ready: true, busy: undefined, slot: undefined, snapshot: undefined, bankrupt: undefined, bust: undefined });
   resume();
 }
@@ -140,6 +148,8 @@ export async function loadGame(id: string): Promise<void> {
     useTrade.setState({ ...ui.trade, ticket: newTradeState().ticket });
     useBrowser.setState(ui.browser);
     useMailView.setState(ui.mail ?? newMailView(), true);
+    // Saves from before Phase 10 have no programs' files.
+    usePrograms.setState({ ...newPrograms(), ...ui.programs }, true);
     // Ctrl+S goes back to a manual slot; after loading an autosave it starts a new one.
     const saved = (await listSaves()).find((s) => s.id === id);
     const { directory, seed, firmName, player, settings } = loaded;
@@ -294,9 +304,19 @@ function resume(): void {
   void simulation().setSpeed(useShell.getState().speed);
 }
 
+let fetchingDirectory = false;
+
 function receive(snapshot: Snapshot): void {
   useGame.setState({ snapshot });
   const { tickers } = useGame.getState().directory;
+  // IPOs add companies (Phase 10): the directory is fetched again when the market has grown.
+  if (snapshot.desk.companies !== tickers.length && tickers.length && !fetchingDirectory) {
+    fetchingDirectory = true;
+    void simulation()
+      .directory()
+      .then((directory) => useGame.setState({ directory }))
+      .finally(() => (fetchingDirectory = false));
+  }
   const mail = snapshot.events.filter((e) => e.kind === 'mail').length;
   if (mail) {
     chime();
@@ -315,6 +335,8 @@ function receive(snapshot: Snapshot): void {
     } else if (event.kind === 'achievement') {
       notify(`Achievement unlocked: ${ACHIEVEMENTS.find((a) => a.id === event.id)?.name ?? event.id}!`);
     } else if (event.kind === 'bankrupt') void goneBust();
+    else if (event.kind === 'bounce') useGame.setState({ bounce: true });
+    else if (event.kind === 'im') uhOh();
   }
 }
 

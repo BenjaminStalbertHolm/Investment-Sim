@@ -15,6 +15,9 @@ import { JOTTINGS, RAGINGBEAR, TUCATS, sites, slugOf, storyUrl } from '../../sit
 import { MARKET, SERVICE } from '../../sim/data/darkweb';
 import { OUTLET } from '../../sim/data/outlets';
 import type { Journalist } from '../../sim/press';
+import type { Employee } from '../../sim/staff';
+import { ROLE } from '../../sim/data/staff';
+import { CATEGORIES, CONFERENCES, HINDSIGHT_FEE } from '../../sim/data/lifestyle';
 import { count, money, price, signedPct } from '../format';
 import { MOM, PARTY, SPAM, TIP_CLAIMS, TIP_CLOSERS, TIP_OPENERS, TIP_SENDERS, TIP_SUBJECTS } from './data';
 
@@ -42,6 +45,8 @@ export interface LetterContext {
   news: ReadonlyMap<number, NewsItem>;
   /** The press, for letters from journalists (Phase 9). */
   journalists?: readonly Journalist[];
+  /** Staff and former staff, for their letters (Phase 10). */
+  staff?: readonly Employee[];
 }
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -351,7 +356,7 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
       ]);
     case 'bankrupt':
       return letter(COURT, `In re ${firmName}: order for relief`, () => [
-        { p: `TAKE NOTICE that ${firmName} could not meet ${mail.reason === 'loan' ? 'its obligations to First Continental Bank' : mail.reason === 'fine' ? 'a fine owed to the Securities Oversight Bureau' : mail.reason === 'shark' ? 'a debt to a private lender who prefers not to be named' : 'a margin call from its broker'} even after the sale of everything it owned, falling ${money(mail.amount!)} short.` },
+        { p: `TAKE NOTICE that ${firmName} could not meet ${mail.reason === 'loan' ? 'its obligations to First Continental Bank' : mail.reason === 'fine' ? 'a fine owed to the Securities Oversight Bureau' : mail.reason === 'shark' ? 'a debt to a private lender who prefers not to be named' : mail.reason === 'bills' ? 'its monthly bills' : mail.reason === 'payroll' ? 'wages owed to its former staff' : 'a margin call from its broker'} even after the sale of everything it owned, falling ${money(mail.amount!)} short.` },
         { p: 'The firm is hereby declared bankrupt. Its clients have been notified. Its office furniture is being counted.' },
         { p: `The Court thanks ${ceoName} for their service to the capital markets, such as it was.` },
       ]);
@@ -532,6 +537,127 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
         { p: `The Bureau has found that statements ${firmName} sent its clients reported returns the firm never earned. The clients have been informed.` },
         { p: `${firmName} is fined ${money(mail.amount!)}, payable by ${words.date}. The matter has been announced to the press.` },
       ]);
+    default:
+      return staffLetter(mail, ctx, letter, words, rng);
+  }
+}
+
+type LetterOf = (from: string, subject: string, body: () => Block[], to?: string) => Letter;
+
+/** Phase 10's letters: staff, the letter to clients, eBuy, conferences, the lotto, Hindsight Research, IPOs and splits. */
+function staffLetter(mail: Mail, ctx: LetterContext, letter: LetterOf, words: Record<string, string>, rng: Rng): Letter {
+  const { directory, firmName, ceoName } = ctx;
+  const domain = slugOf(firmName) || 'firm';
+  const person = ctx.staff?.find((p) => p.id === mail.employee);
+  const from = person ? `${person.name} <${slugOf(person.name)}@${domain}.com>` : `Human Resources <hr@${domain}.com>`;
+  const c = mail.company;
+  const mention = (i: number) => `{c:${i}}`;
+  const ticker = c !== undefined ? directory.tickers[c] : '';
+  const item = mail.category !== undefined ? CATEGORIES[mail.category].items[mail.item!][0] : 'the item';
+  switch (mail.kind) {
+    case 'research': {
+      const call = mail.direction! > 0 ? 'BUY' : 'SELL';
+      return letter(from, `Research: ${ticker} — ${call}, target ${price(mail.amount!)}`, () => [
+        { p: `${ceoName}, my note on ${mention(c!)} this week.` },
+        { p: write(mail.direction! > 0
+          ? 'I think the market has [missed something here|got this one wrong|been too gloomy]. [The balance sheet is better than it looks|Management is underrated|The next quarters should surprise]. My rating is BUY, with a target of {target}.'
+          : 'I think the market is [too optimistic|paying for a future that won’t come|ignoring the risks]. [The numbers don’t support the price|Competition is catching up|Growth is slowing]. My rating is SELL, with a target of {target}.', { target: price(mail.amount!) }, rng) },
+        { p: `Analysts are right more often than not only if they are good. ${person ? `(${person.name}, ${ROLE[person.role].title})` : ''}` },
+      ]);
+    }
+    case 'poached': {
+      const firm = directory.firms[mail.firm!]?.name ?? 'a competitor';
+      return letter(from, `An offer from ${firm}`, () => [
+        { p: `${ceoName}, I wanted you to hear it from me: ${firm} has offered me ${money(mail.amount!)} a year to join them.` },
+        { p: `I would rather stay. If ${firmName} can match it by ${words.date}, I will. Otherwise I will accept their offer.` },
+      ]);
+    }
+    case 'staffLeft': {
+      const body: Record<string, string> = {
+        payroll: `I have not been paid for two months. I quit. You owe me ${money(mail.amount ?? 0)}, and my lawyer knows it.`,
+        quit: 'I have decided to move on. My desk is cleared; my access card is on it. Good luck.',
+        whistleblower: 'By the time you read this I will have spoken to the Securities Oversight Bureau. I could not stay quiet about what I have seen here.',
+      };
+      return letter(from, mail.reason === 'whistleblower' ? 'I have gone to the SOB' : 'My resignation', () => [{ p: body[mail.reason ?? 'quit'] ?? body.quit }]);
+    }
+    case 'compliance': {
+      const client = mail.client !== undefined ? ctx.clients.get(mail.client) : undefined;
+      const k = client?.constraints[mail.constraint ?? 0];
+      return letter(from, `Compliance: ${client?.name ?? 'a client'} is close to a breach`, () => [
+        { p: `${ceoName}, a heads-up from compliance. We are close to breaking a mandate: ${k ? describeConstraint(k).toLowerCase() : 'one of its limits'} (${client?.name ?? 'a client'}).` },
+        ...(c !== undefined ? [{ p: `The position to watch is ${mention(c)}.` }] : []),
+        { p: 'Nothing is broken yet. I would rather it stayed that way.' },
+      ]);
+    }
+    case 'hackBlocked':
+      return letter(from, 'We were attacked last night (we won)', () => [
+        { p: `Someone tried to break into our computers overnight. The firewall held and the logs are with me. Nothing was taken and the web site stayed up.` },
+        { p: 'I have changed every password. Please stop using “password”.' },
+      ]);
+    case 'hacked':
+      return letter(`Systems <it@${domain}.com>`, 'Our web site has been hacked', () => [
+        { p: `Hackers got into ${firmName}’s systems overnight and took the web site offline. It will be back in a few days. The press has noticed.` },
+        { p: 'An IT administrator would have stopped them. PeopleSoftie HR has applicants.' },
+      ]);
+    case 'clientLetter': {
+      const tones = [
+        ['Confident', 'Another quarter of disciplined, first-class investing. We are exactly where we planned to be, and we see no reason to change course.'],
+        ['Humble', 'Markets humble everyone, and we are no exception. We are grateful for your trust and are working hard to deserve it.'],
+        ['Blame the Federal Reservoir', 'The Federal Reservoir’s erratic policy made this a difficult quarter for every investor. We are confident its mistakes will not last.'],
+        ['Say nothing', '(This page is intentionally left blank.)'],
+      ];
+      const [tone, text] = tones[mail.variant ?? 0];
+      return letter(`${ceoName} <ceo@${domain}.com>`, `A letter to our clients (${tone.toLowerCase()})`, () => [
+        { p: 'Dear clients,' },
+        ...(mail.returns ? [{ p: `Last quarter your portfolio returned ${signedPct(mail.returns[0])} against ${signedPct(mail.returns[1])} for the MAJOR 500.` }] : []),
+        { p: text },
+        { p: `Yours,\n${ceoName}` },
+      ], 'All clients');
+    }
+    case 'ebuy': {
+      const subjects: Record<string, string> = { won: `You won: ${item}`, lost: `You were outbid: ${item}`, sold: `Your item sold: ${item}`, unpaid: `Unpaid item: ${item}` };
+      const bodies: Record<string, string> = {
+        won: `Congratulations! You won ${item} for ${money(mail.amount!)}. It is on its way, bubble-wrapped.`,
+        lost: `Another bidder won ${item} for ${money(mail.amount!)}. Better luck next time!`,
+        sold: `${item} sold for ${money(mail.amount!)}. eBuy’s 5% fee has been deducted from the proceeds.`,
+        unpaid: `You won ${item} but could not pay ${money(mail.amount!)}. It has gone to the next bidder, and a note has gone on your feedback.`,
+      };
+      return letter('eBuy <noreply@ebuy.com>', subjects[mail.result ?? 'won'], () => [{ p: bodies[mail.result ?? 'won'] }]);
+    }
+    case 'conference': {
+      const conf = CONFERENCES.find((x) => x.id === mail.text);
+      return letter(`${conf?.name ?? 'The conference'} <delegates@${slugOf(conf?.name ?? 'conference')}.org>`, `Welcome to ${conf?.name ?? 'the conference'}`, () => [
+        { p: `Your badge is at the registration desk in ${conf?.where ?? 'the lobby'}. ${rng.pick(['Lanyards are compulsory.', 'The coffee is free until 10.', 'Please do not pitch to the keynote speaker in the lavatory.'])}` },
+        { p: 'Delegates are reminded that the most valuable conversations happen at the bar.' },
+      ]);
+    }
+    case 'lotto':
+      return letter('State Lotto <results@statelotto.gov>', mail.amount ? `You won ${money(mail.amount)}!` : 'This week’s draw', () => [
+        { p: mail.amount ? `Congratulations! Your tickets won ${money(mail.amount)}, paid to your account.` : 'Your numbers did not come up this week. Somebody has to win. Keep playing!' },
+        { p: 'The State Lotto: a tax on people who are bad at maths.' },
+      ]);
+    case 'hindsight':
+      return letter('Hindsight Research <subscribers@hindsightresearch.com>', `Subscriber preview: ${ticker}`, () => [
+        { p: `Subscriber preview. In one hour we will publish a report on ${mention(c!)}. We are short the stock.` },
+        { p: `Our findings: ${rng.pick(['aggressive accounting', 'sales that look inflated', 'a management team with a history', 'related-party deals nobody explains'])}. Full report at the publication time.` },
+        { p: `You are receiving this as a paying subscriber (${money(HINDSIGHT_FEE)} a month). Reading it early is legal; forwarding it is not.` },
+      ]);
+    case 'ipo': {
+      const allotted = mail.contracts ?? 0;
+      return letter('MajorTrade Pro Syndicate Desk <ipo@majortrade.com>', `IPO allocation: ${ticker}`, () => [
+        { p: `${mention(c!)} priced its IPO at ${price(mail.amount!)} a share. You applied for ${count(mail.shares!)} shares.` },
+        allotted
+          ? { p: `You were allotted ${count(allotted)} shares, bought at the offer price for ${money(allotted * mail.amount!)}. They are in your portfolio.` }
+          : { p: 'The deal was oversubscribed and your application was not filled this time. Allocations favour firms with the best reputations.' },
+      ]);
+    }
+    case 'split':
+      return letter('MajorTrade Pro Brokerage Services <confirms@majortrade.com>', `Stock split: ${ticker} ${mail.amount}-for-1`, () => [
+        { p: `${mention(c!)} has split its shares ${mail.amount} for 1. Your holding is now ${count(mail.shares!)} shares; what it is worth has not changed.` },
+        { p: 'Open orders in the stock have been adjusted to match.' },
+      ]);
+    default:
+      return letter('Majorsoft Doors 98 <system@majorsoft.com>', 'A message', () => [{ p: 'This message could not be displayed.' }]);
   }
 }
 

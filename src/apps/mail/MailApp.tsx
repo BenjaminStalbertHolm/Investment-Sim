@@ -32,7 +32,7 @@ type Row = Mail & { from: string; subject: string };
 
 /** Which folder a letter shows in. */
 const folderOf = (m: Mail, junkFilter: boolean): MailFolder =>
-  m.deleted ? 'deleted' : m.kind === 'spam' && !junkFilter ? 'inbox' : FOLDER_OF[m.kind];
+  m.deleted ? 'deleted' : m.kind === 'spam' && !junkFilter && !m.filed ? 'inbox' : FOLDER_OF[m.kind];
 
 /**
  * Outbox Express (spec §15): the consequence layer. Folders with unread counts, a sortable, searchable message list,
@@ -59,6 +59,7 @@ export default function MailApp({ windowId }: AppProps) {
   }, [messages, selected?.id]);
   const news = useFetched(() => simulation().news({ ids }), [ids.join()]);
   const journalists = useFetched(() => simulation().journalists(), []);
+  const staff = useFetched(() => simulation().staff(), [latest, revision]);
   const ctx: LetterContext = useMemo(
     () => ({
       directory,
@@ -68,8 +69,9 @@ export default function MailApp({ windowId }: AppProps) {
       clients: new Map((clients?.clients ?? []).map((c) => [c.id, c])),
       news: new Map((news ?? []).map((n) => [n.id, n])),
       journalists,
+      staff: staff?.people,
     }),
-    [clients, news, journalists, firmName, player?.ceoName],
+    [clients, news, journalists, staff, firmName, player?.ceoName],
   );
 
   const rows: Row[] = useMemo(() => (messages ?? []).map((m) => ({ ...m, ...letterHeader(m, ctx) })), [messages, ctx]);
@@ -290,6 +292,7 @@ const ACTIONS: Partial<Record<Mail['kind'], [MailAction, string][]>> = {
   stakeBid: [['accept', 'Sell the Shares'], ['decline', 'Decline']],
   investmentOffer: [['accept', 'Accept the Investment'], ['decline', 'Decline']],
   blackmail: [['pay', 'Pay'], ['refuse', 'Refuse']],
+  poached: [['match', 'Match the Offer'], ['letGo', 'Let Them Go']],
 };
 
 /** Letters from the broker and the bank open the MajorTrade tab they are about. */

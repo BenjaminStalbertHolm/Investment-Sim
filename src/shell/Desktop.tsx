@@ -5,6 +5,8 @@ import { Icon } from '../art/icons';
 import { formatDate } from '../sim/calendar';
 import { importSave, useGame } from '../state/game';
 import { useShell } from '../state/shell';
+import { usePrograms } from '../state/programs';
+import { wallpaperStyle } from '../art/wallpapers';
 import { useTrade } from '../state/trade';
 import { activeWindowId, useWindows } from '../state/windows';
 import { Window } from './Window';
@@ -21,6 +23,7 @@ export function Desktop() {
   // The loan sharks' collectors took the furniture (spec §14A): no desktop icons for a week.
   const repossessed = useGame((s) => s.snapshot?.darkweb.repossessed);
   const icons = repossessed ? [] : DESKTOP_ICONS.filter((icon) => available(icon.opens, installed));
+  const wallpaper = usePrograms((s) => s.wallpaper);
 
   useEffect(() => {
     const el = ref.current!;
@@ -35,6 +38,7 @@ export function Desktop() {
     <div
       className="desktop"
       ref={ref}
+      style={wallpaperStyle(wallpaper)}
       onMouseDown={(e) => e.target === e.currentTarget && setSelected(undefined)}
       // A .d98 file dropped on the desktop is imported and loaded (spec §18).
       onDragOver={(e) => e.preventDefault()}

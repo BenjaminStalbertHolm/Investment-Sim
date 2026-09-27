@@ -17,7 +17,7 @@ export function BlueScreen({ report, onDone }: { report?: BankruptcyReport; onDo
       window.removeEventListener('keydown', done);
     };
   }, [onDone]);
-  const cause = report?.cause === 'loan' ? 'LOAN_DEFAULT' : 'MARGIN_CALL_NOT_MET';
+  const cause = { margin: 'MARGIN_CALL_NOT_MET', loan: 'LOAN_DEFAULT', fine: 'UNPAID_FINE', shark: 'COLLECTORS_AT_THE_DOOR', bills: 'BILLS_NOT_PAID', payroll: 'PAYROLL_EXCEPTION' }[report?.cause ?? 'margin'];
   return (
     <div className="bsod" role="alertdialog" aria-label="Blue Screen of Debt" onClick={onDone}>
       <div className="bsod-text">

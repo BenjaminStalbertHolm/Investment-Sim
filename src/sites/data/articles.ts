@@ -114,6 +114,24 @@ export const HEADLINES: Record<NewsKind, Sided> = {
   // OPEK's stories are worded by decision (OPEK_HEADLINES); these are what a stray one falls back on.
   opekHint: { up: p('OPEK Talk Lifts Oil'), down: p('OPEK Talk Weighs on Oil') },
   opek: { up: p('OPEK Decision Lifts Oil'), down: p('OPEK Decision Sinks Oil') },
+  ipo: { up: p('{short} Prices IPO at {offer}|{short} Goes Public, Raising {amount}|IPO: {short} Makes Its Debut|{short} Sells Shares to the Public at {offer}') },
+  split: { up: p('{short} Announces {ratio}-for-1 Stock Split|{short} to Split Its Shares {ratio} for 1|More Shares, Same Company: {short} Splits {ratio}-for-1') },
+  // Stories are worded by what they are about (STORIES); this is what a stray one falls back on.
+  story: { up: p('Markets in Brief'), down: p('Markets in Brief') },
+};
+
+/** Stories the archive tells by their `text` (Phase 10 onwards): their headlines, openings and a line of detail. */
+export const STORIES: Record<string, { head: readonly string[]; lead: readonly string[]; detail?: readonly string[] }> = {
+  y2k: {
+    head: p('Y2K Jitters Grip Wall Street|The Millennium Bug Bites (a Little)|Stocks Slip as Y2K Nerves Linger'),
+    lead: p('Investors sold first and asked questions later on {day} as the year 2000 began, dumping technology and bank shares on fears that computers might [confuse the year 2000 with 1900|mistake every loan for a century overdue|stop working altogether]. By lunchtime, nothing had broken.|The millennium bug was supposed to [end civilisation|shut down the banks|crash every computer on Earth]. On {day}, the first trading day of 2000, it managed a mild wobble in the stock market.'),
+    detail: p('“My VCR still blinks 12:00, same as ever,” said one trader.|Y2K compliance consultants said the calm proved their work had been worth every penny.'),
+  },
+  firmHacked: {
+    head: p('Hackers Break Into {firmName}|{firmName} Web Site Knocked Offline|Cyber Attack Hits {firmName}'),
+    lead: p('Hackers broke into the computers of {firmName} on {day} and took its web site offline, the firm confirmed.|{firmName}’s web site went dark on {day} after what the firm called “unauthorised access” to its systems.'),
+    detail: p('The firm said client money was safe. Clients were said to be less sure.|Security experts said the attack bore the hallmarks of [a rival|bored teenagers|a crew known as the Phantom].'),
+  },
 };
 
 /** OPEK's hints and decisions (spec §12.3), by decision. */
@@ -194,6 +212,9 @@ export const LEADS: Record<NewsKind, Sided> = {
     up: p('OPEK agreed on {day} to {decision}. Crude oil [jumped|rose|climbed] about {pct}.|Oil ministers meeting on {day} agreed to {decision}, and crude oil rose about {pct}.'),
     down: p('OPEK agreed on {day} to {decision}. Crude oil [fell|slid|dropped] about {pct}.|Oil ministers meeting on {day} agreed to {decision}, and crude oil fell about {pct}.'),
   },
+  ipo: { up: p('{c} sold shares to the public for the first time on {day}, pricing its offering at {offer} a share against a range of {range} and raising {amount}. The shares begin trading this morning.|{c}, a {sub} company from {city}, priced its initial public offering at {offer} on {day}, raising {amount}. Bankers had marketed the shares at {range}.') },
+  split: { up: p('{c} said on {day} it would split its shares {ratio} for 1, bringing the price back within reach of ordinary investors.|{c} announced a {ratio}-for-1 stock split on {day}. Each shareholder will receive {ratio} new shares for every one they own.') },
+  story: { up: p('Markets were busy on {day}.'), down: p('Markets were busy on {day}.') },
 };
 
 /** Second paragraphs: context, by kind. */

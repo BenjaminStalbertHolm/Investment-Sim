@@ -95,6 +95,42 @@ export function recordDay(h: HistoryState, day: number, p: DayPrices, index: [nu
   }
 }
 
+/**
+ * A company joins (an IPO): every row of the ring and the weekly archive gains a column, holding its listing price for
+ * the days before it existed (charts start at its listing, so nobody sees them).
+ */
+export function addToHistory(h: HistoryState, price: number): void {
+  const n = h.count;
+  const widen = <T extends Int32Array | Int16Array | Uint16Array>(a: T, rows: number, fill: number): T => {
+    const out = new (a.constructor as new (length: number) => T)(rows * (n + 1));
+    for (let r = 0; r < rows; r++) {
+      out.set(a.subarray(r * n, (r + 1) * n), r * (n + 1));
+      out[r * (n + 1) + n] = fill;
+    }
+    return out;
+  };
+  const close = quantise(price);
+  h.close = widen(h.close, RING_DAYS, close);
+  h.open = widen(h.open, RING_DAYS, 0);
+  h.high = widen(h.high, RING_DAYS, 0);
+  h.low = widen(h.low, RING_DAYS, 0);
+  h.volume = widen(h.volume, RING_DAYS, 0);
+  h.weekly = widen(h.weekly, h.weekDays.length, close);
+  h.count = n + 1;
+}
+
+/** A stock split (`ratio` new shares for one): the company's past prices are divided and its volumes multiplied by it. */
+export function splitHistory(h: HistoryState, company: number, ratio: number): void {
+  const down = Math.round(Math.log(ratio) * CLOSE_STEP);
+  const up = Math.round(Math.log(ratio) * VOLUME_STEP);
+  for (let slot = 0; slot < RING_DAYS; slot++) {
+    const k = slot * h.count + company;
+    h.close[k] -= down;
+    if (h.volume[k]) h.volume[k] = Math.min(65535, h.volume[k] + up);
+  }
+  for (let w = 0; w < h.weekDays.length; w++) h.weekly[w * h.count + company] -= down;
+}
+
 /** Ring slots holding data, oldest first. */
 function slots(h: HistoryState): number[] {
   const out: number[] = [];

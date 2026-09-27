@@ -65,6 +65,16 @@ export function useSob(): SobView | undefined {
   return useFetched(() => simulation().sob(), [revision, day]);
 }
 
+/** Phase 10's worker views, refetched when the account changes, each day, and when a page or a message arrives. */
+function useDesked<T>(fetch: () => Promise<T>): T | undefined {
+  const key = useGame((s) => (s.snapshot ? `${s.snapshot.revision}:${dayOf(s.snapshot.time)}:${s.snapshot.desk.im.latest}:${s.snapshot.desk.page}:${s.snapshot.mail.latest}` : ''));
+  return useFetched(fetch, [key]);
+}
+export const useStaff = () => useDesked(() => simulation().staff());
+export const useLifestyle = () => useDesked(() => simulation().lifestyle());
+export const useDesk = () => useDesked(() => simulation().desk());
+export const useIpos = () => useDesked(() => simulation().ipos());
+
 /** Barren's league tables and this year's standings so far, refetched daily. */
 export function useLeague() {
   const day = useDay();

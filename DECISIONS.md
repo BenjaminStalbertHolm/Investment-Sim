@@ -872,3 +872,141 @@ Judgement calls made where the spec leaves details open.
 - **Found, and fixed separately.** The accounting property test (random seeds) now and then failed on a bug from before
   this phase: a resting Sell Short order could fill after the firm had bought the stock, leaving a position of zero shares.
   It reproduced on the Phase 8 commit; the rule that fixes it is recorded under Phase 7's short selling.
+
+## Phase 10 — The desk, staff, the good life, IPOs and the rest of the web
+
+- **Libraries.** Two added. `hot-formula-parser` evaluates Exceed 98's formulas (arithmetic, references, ranges and the
+  rest of Excel's functions); it is not re-entrant, so each formula being evaluated gets its own parser, and a cell that
+  refers back to itself is `#REF!`. `tone` (Tone.js) plays WinRamp's music and feeds its spectrum visualiser; it is
+  imported the first time Play is pressed, so neither the desktop nor WinRamp's window loads it. The Calculator's financial
+  mode reuses `financial` (Phase 7). Minesweeper, Klondike, the flood fill and the calculator's keypad are small pure
+  modules with tests: no library does them in the game's terms (mines that are the world's bankruptcies, a deck with the
+  firm's logo). `d3-geo`, `topojson-client` and `world-atlas` wait for Phase 10B's atlas.
+- **Where things live.** The simulation's half is four modules on the engine's clock hooks: `sim/staff.ts` (people,
+  payroll, what each role does), `sim/lifestyle.ts` (luxuries, eBuy, conferences, the lotto, Hindsight), `sim/desk.ts`
+  (rules, alerts, pages, ISeekYou, letters to clients, Y2K) and `sim/ipo.ts` (IPOs and splits), each with its own saved
+  stream (`staff`, `lifestyle`, `ipo`, and `extras` for the odds and ends). The programs' own files — notes, documents,
+  spreadsheets, pictures, the wallpaper, Stapley, WinRamp, the games' records, the Defragmenter's targets, the
+  Calculator's mode — are the UI's half of a save (`state/programs.ts`, in `game.json`). The Rolodex keeps nothing: it is
+  worked out from the mail, the clients, the staff, ISeekYou and the dark web's records.
+- **Staff (spec §4A PeopleSoftie HR, §14.2 Monstrous.com).** Eight applicants are on the board at a time, drawn from their
+  own stream: a role (weighted towards analysts), a portrait, a skill (normal around 0.55), a loyalty and a salary that
+  rises with skill. Adverts come down after three weeks and up to three new ones go up each week. Hiring is capped by the
+  office. Wages are paid on the first trading day of each month from equity the positions don't need; what can't be paid
+  is owed, loyalty drops 0.3, and after two unpaid months the person walks out and their wages fall due at once —
+  unpayable wages are a new bankruptcy cause (`payroll`), as unpayable rent and upkeep are (`bills`). Letting someone go
+  costs a month's severance. Loyalty grows 0.02 a month and cools with heat; below 0.12 people quit; below 0.3, with heat at
+  50 or more, 30% a month blow the whistle (an examination opens, heat +10, evidence from the inside). Each month a rival
+  may try to poach someone, likelier the more skilled, less loyal and the more aggressive competitors are: a letter and an
+  ISeekYou message offer Match (the new salary, loyalty +0.25) or Let go; five trading days unanswered and they go.
+- **What each role does.** *Analysts* file a report every week: right as often as they are skilled (spec: accuracy = skill);
+  a right call on a new name is the most mispriced of twelve companies over $500M, and says which way its price should go
+  (towards its worth, where Phase 3's prices drift); half the reports are about holdings. *Traders* run the automated
+  rules; without one, rules wait (Task Mangler shows them "Not Responding"). *Compliance officers* cool heat by (1 + 2 ×
+  skill) × the difficulty's decay a week on top of the usual decay (spec §16B), and warn once a month per constraint when
+  a position passes 85% of a mandate's limit, a holding comes within 15% of a size floor, or a client's drawdown passes 75%
+  of theirs. *PR managers* cut the damage of exposés, enforcement actions and scandal redemptions by half their skill.
+  *IT admins* stop 50% + 45% × skill of the attacks on the firm's computers (4% a month, more with heat and aggressive
+  rivals); an attack that gets through takes the firm's web site down for three trading days ("Server Too Busy", Phase
+  9's page), costs 3 reputation and makes the news. *Executive assistants* file junk mail, unread, in a Filed folder.
+- **Offices (spec §14.2 Greg's List).** The Garage ($500 a month, two staff), a Strip-Mall Suite ($4,000, six), a Downtown
+  Floor ($25,000, fifteen) and the Penthouse Tower ($120,000, forty). A move pays the first month at once and needs room
+  for everyone employed. An office lends *prestige* (0, 3, 8, 15); so do luxuries, up to 25 in all. Prestige is added to
+  reputation where clients decide how big and how frequent mandate offers are (`standing`), which is how "affects
+  reputation" and "raises mandate offers" reach the simulation without moving the reputation the league tables and the
+  scandals work on.
+- **The Lifestyles Catalogue.** Ten things from a $4,800 phone to an $18M minor-league team (and Sealand's baronetcy while
+  the Geopolitics module is on). Each has a price, monthly upkeep, a dealer's resale (30–95% the day after) and a yearly
+  drift and volatility for the monthly revaluation: art drifts up and swings, cars, yachts and jets depreciate, property
+  and the team wander. Luxuries count in net worth at what a dealer would pay; buying one moves cash into them, and the
+  dealer's margin is an immediate loss. When a firm cannot meet a bill, forced sales take the positions first, then the
+  luxuries, then the collectibles at 80% of their price (spec §16: bankruptcy after selling everything).
+- **eBuy.** Three categories (Meanie Babies, trading cards, retro computers) whose price index wanders through hype phases:
+  quiet → building → mania → bust, with log drifts of 0, +0.9, +2.6 and −3.2 a year and manias likelier to end the higher
+  prices are. Three auctions list each close and run three to six trading days; AI bidders' limit is around the item's
+  worth, more while hype builds and less in a bust. The player bids by proxy — eBuy bids up to the maximum, an increment at
+  a time — and must pay when the auction ends (or is a non-paying bidder). Owned items count in net worth at the index and
+  can be put up for auction with a reserve; eBuy keeps 5%.
+- **Conferences.** Five, from the Davoz Economic Forum ($45,000, late January) to COMDEXX ($2,500, November), each with its
+  odds of a mandate offer, a new contact and a tip. The morning a ticket's conference opens, the firm networks: the
+  contact is an informant on ISeekYou whose tips work like the anonymous tips by mail (genuine 35–80% of the time; trading
+  on a genuine one is insider trading).
+- **The State Lotto.** 6 of 49, drawn at each week's last close while the firm holds tickets; $1 Quick Picks, up to 1,000 a
+  draw; 3, 4 and 5 matches pay $5, $75 and $2,500, six the $2M jackpot: a ticket returns 35 cents on the dollar on average,
+  about what real lotteries pay out. (The first prizes returned 93 cents: negative, but not as in life.)
+- **Hindsight Research.** Short reports are Phase 6's `shortReport` events. A subscription ($35,000 a month) mails each
+  one sixty minutes before it breaks. Trading on it is legal (spec: "legal, expensive"): the SOB's surveillance skips
+  trades before a report the firm was sold in advance.
+- **The trading desk.** Rules: a stop-loss per holding (checked every bar; long or short), dollar-cost averaging into a
+  stock or a fund weekly or monthly, and a monthly rebalance to the Defragmenter's targets; the Trader's rebalance and the
+  Defragmenter's button share one pure function (whole shares, sales first). Price alerts, margin calls, stop-losses and
+  urgent mail page the player with 1998 numeric codes (411, 911, 7337, 0800). ISeekYou stores messages as facts and words
+  them when read, as the mail does; replies are multiple choice. Contacts: the broker, Mom, staff, conference informants,
+  bribed journalists (Phase 9's deferral), rival firms. Reporting an informant's tip earns a point of reputation and loses
+  the contact.
+- **MajorWord's letter to clients.** Once a quarter, in one of four tones; it moves every client's mood by how the last
+  quarter really went: confidence +8 after beating the index and −8 after lagging it, humility +2/+5, blaming the Federal
+  Reservoir +4 only when the market fell (−6 otherwise), silence −2 after a bad quarter.
+- **Y2K (spec §14.2).** The Y2K Countdown counts to 1 January 2000 in the game's shown years (the start year is cosmetic, so
+  a game that starts in 1998 gets there after two years, one that starts in 1999 after one). The first trading morning of
+  2000 every stock drops 0.5–2.5%, 1.6 times that in software, hardware, chips, internet, banks, payments, telecoms and
+  airlines; nothing breaks, so the drop does not persist.
+- **IPOs (spec §11.6, §14.2 IPO Hotline).** Each week's last close files enough IPOs to bring the market back towards its
+  size at the start (four at most), and one more 40% of the time, so a couple a month come even when nothing has left.
+  A new company is a fresh genome (seeded from the world seed and the filing's number), mostly small caps, with a name,
+  ticker and CEO nobody else has. It lists eight to fifteen trading days later, with a ±10% range; its hidden demand
+  follows the market's regime. The morning it lists it prices up to 12% either side of the range's middle, joins the
+  market — every per-company array grows: the world, market state, fundamentals, histories, the model and event rates —
+  and its first day pops or flops. Applications (up to a tenth of a deal) are allotted by lottery: 25% + 60% × reputation
+  of being lucky, and a fill of 80% less 30% × demand; the shares are paid for only if allotted. The directory grows with
+  the market; the UI refetches it when the snapshot's company count changes.
+- **Splits.** When a company above $300 reports, it splits 30% of the time, by the ratio (2 to 100 for 1) that brings it
+  closest to $80. Shares, prices, histories, holdings, open orders and competitors' books are all adjusted, so nothing is
+  worth more or less; the split factor is saved in the world and applied when the model is rebuilt. A hook exempts
+  companies (Phase 10B's Birkshire Hatchaway).
+- **Credit ratings.** The agencies' upgrades and downgrades (Phase 6 events) move a company's rating a notch, two for a big
+  move, stored as notches in the market's state. The letter grade is worked out on the page from the company's standing at
+  the start — earnings quality, size and debt — so that the strongest few are AAA and a typical mid cap sits near the
+  investment-grade line; Moody Blues sees 40% of companies a notch differently; bankrupt companies are in default. A browser
+  check caught the first calibration rating nothing AAA and most of the market junk.
+- **HomeCities.** Eight amateur pages from the seed; their weekly hot picks come from a stream per week that nothing else
+  draws on, so reading them changes nothing. Each pick has an 8% chance of being a company with news planned for the next
+  two weeks, and says which way it goes — "occasionally prophetic" — and 80% of the rest say it's going up. One page links
+  to the Garlic Browser (spec §14A's other way in).
+- **The other sites.** One frame (`sites/frame.tsx`, one stylesheet with each site's colours as custom properties) serves
+  the ratings agencies, Hindsight, the IPO Hotline, Monstrous.com, Greg's List, the Lifestyles Catalogue, eBuy, the
+  conferences, the lotto, majorsoft.com and the intranet. majorsoft.com's Service Pack notes are this changelog, a pack per
+  phase; its wallpapers set the desktop's. The intranet (`intranet.<firm>.com`) lists the staff, writes memos from what
+  happened (hires, departures, wages owed, the move, the letter, the first luxury) and shows achievements and league
+  places on a trophy shelf. Yeehaw! links everything; four new Ask Reeves guides cover staff, the desk, IPOs and ratings,
+  and the good life.
+- **The programs.** Notepad stamps the game's time with F5. MajorPaint paints 32×32 pictures in the 16-colour palette; one
+  can become the wallpaper or the firm's logo emblem (saved with the player, so it shows wherever the logo does). Exceed
+  exports the portfolio, the ledger and the watchlist and saves CSV. WinRamp's ten tracks are composed by a seeded
+  generator (a square lead, a triangle bass, noise drums over a four-bar progression), the same every time. Stapley offers
+  tips by what is happening (a margin call, unpaid wages, heat, a bad day, unread mail) and remembers what it has said;
+  it can be dismissed or disabled. Margin Sweeper's mines are the world's bankrupt companies; Soli-Tear's cards carry the
+  firm's logo, and they bounce across the screen when a position closes at +100% or better. Games pick a board with the
+  platform's randomness, as the designers do: a board is chosen, not played by the simulation. Task Mangler (Ctrl+Alt+Del)
+  lists rules, open orders, alerts, IPO applications, eBuy bids, the subscription, tickets and Garlic orders, and End Task
+  cancels what can be cancelled.
+- **Saves.** Version 8. The v7 → v8 migration starts the new parts where the game stands: an applicants' board from the seed,
+  the garage, nothing owned, an empty desk, the IPO target at today's listed count and the four new streams; old saves'
+  UI gets the programs' defaults. The save test now hires staff and moves office, sets an alert and two rules, buys and
+  later sells a watch, bids on eBuy, plays the lotto, buys a conference ticket, subscribes to Hindsight, applies for IPOs,
+  answers ISeekYou, writes to clients and splits a company, on both sides of the save; IPOs list during it. Its firm now
+  starts with $10M (still Custom): with rent to pay, a different path through the Hard game's dark web shopping ended in a
+  fine the old capital could not cover. Phase 8's time-weighted-return test now invests new deposits (it had assumed cash
+  idle while the index moved), and the engine test that compares staggered runs compares the companies both runs have.
+- **Acceptance (spec §19: "Each app's state is saved; staff, office and luxury assets affect the simulation as
+  specified").** `tests/phase10.test.ts` checks each role's effect, the payroll and the office's room, rent, luxuries in net
+  worth and in mandate offers, forced sales, eBuy's cycles and proxy bids, conferences, the lotto, Hindsight's early
+  reports, pages, the letter, Y2K, IPOs growing every array, splits and the market's size over two years.
+  `tests/phase10-ui.test.tsx` renders every new site and app against a running engine (the worker replaced by the engine
+  in-process) with no gaps in the text, hires, moves, buys, applies for an IPO, bids and plays the lotto through the pages,
+  tests the programs' own logic, and round-trips the programs' files through a save.
+- **Measured** in this container: a bar for 10,000 companies 1.28 ms on average, 1.39 ms at p99 (budget 4 ms); a session
+  127 ms; a simulated year 37.2 s headless, after which the market has 10,135 companies; a year's save 22.13 MB (target
+  25). A browser check (Playwright, dev server) opened every new program and site through Run…, hired from Monstrous.com
+  and downloaded a wallpaper, with no console errors; it caught the ratings' calibration, site logos in link colours and an
+  empty auction table with nothing to say.

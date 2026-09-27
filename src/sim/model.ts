@@ -46,7 +46,8 @@ export interface Model {
   shortBase: Float32Array;
 }
 
-export function buildModel(seed: string, companies: readonly Company[], settings: GameSettings): Model {
+/** `splits`: each split company's shares for one of its genome's (stock splits multiply shares outstanding). */
+export function buildModel(seed: string, companies: readonly Company[], settings: GameSettings, splits: Readonly<Record<number, number>> = {}): Model {
   const count = companies.length;
   const sectorVol = Float64Array.from(INDUSTRIES, (industry) => {
     const [lo, hi] = industry.priors.volatility;
@@ -59,7 +60,7 @@ export function buildModel(seed: string, companies: readonly Company[], settings
     beta: Float64Array.from(companies, (c) => c.beta),
     idio: new Float64Array(count),
     drift: Float64Array.from(companies, (c) => (POLICY_RATE + c.beta * EQUITY_PREMIUM) * BAR_YEARS),
-    shares: Float64Array.from(companies, (c) => c.sharesOutstanding),
+    shares: Float64Array.from(companies, (c, i) => c.sharesOutstanding * (splits[i] ?? 1)),
     volatility: Float64Array.from(companies, (c) => c.volatility),
     quality: Float64Array.from(companies, (c) => c.quality),
     slot: new Uint8Array(count),
