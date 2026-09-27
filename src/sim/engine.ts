@@ -1031,6 +1031,7 @@ export class Engine implements Sim {
     if (opens(order.side)) shares = Math.min(shares, this.affordable(order, half + market.impact(i, shares)));
     if (order.side === 'short') shares = Math.min(shares, (borrowable = this.borrow(i, this.pendingShort(i, order.id)).available));
     if (shares >= 1) {
+      if (this.crossed(order)) return;
       const impact = market.impact(i, shares);
       this.fill(order, shares, mid * (1 + sign * (half + impact)));
       // Half of the impact stays in the price after the fill (the I term of spec §11.2).
@@ -1077,8 +1078,26 @@ export class Engine implements Sim {
       if (opens(order.side)) shares = Math.min(shares, this.affordable(order, Math.max(0, sign * (limit / market.price[i] - 1))));
       else shares = Math.min(shares, this.closable(order));
       if (order.side === 'short') shares = Math.min(shares, this.borrow(i, this.pendingShort(i, order.id)).available);
-      if (shares >= 1) this.fill(order, shares, limit);
+      if (shares >= 1 && !this.crossed(order)) this.fill(order, shares, limit);
     }
+  }
+
+  /**
+   * Buy and Sell Short open positions, and can't fill against the opposite one: the rule `check()` applies when an order
+   * is placed, applied again when a resting order (limit, stop, GTC) comes to fill after the position has turned. Such an
+   * order is cancelled with a note. Returns whether it was.
+   */
+  private crossed(order: Order): boolean {
+    const held = this.held(order.company);
+    const ticker = this.companies[order.company].ticker;
+    const note =
+      order.side === 'short' && held > 0
+        ? `You own ${ticker}: sell the shares before selling short.`
+        : order.side === 'buy' && held < 0
+          ? `You are short ${ticker}: use Buy to Cover to close the short first.`
+          : undefined;
+    if (note) this.finish(order, 'cancelled', note);
+    return note !== undefined;
   }
 
   /** Shares an order to close a position can still close: a sale up to the long, a cover up to the short. */

@@ -510,6 +510,11 @@ Judgement calls made where the spec leaves details open.
   far (its value doesn't follow, so it drifts back) and 30% of the shorts cover; bad news brings more in (short
   interest × (1 + 2 × the fall)). Short interest drifts back to its usual level at 5% a day. A short pays dividends to the
   lender and is closed at the offer in a takeover and at $0 in a bankruptcy. The IR pages and quote windows show it.
+  **Buy and Sell Short can't open against the opposite position**: the order ticket refuses a Sell Short while the firm
+  holds the stock and a Buy while it is short, and a resting order (limit, stop, GTC) that comes to fill after the
+  position has turned is cancelled with a note ("You own XYZ: sell the shares before selling short"). The second half was
+  added after Phase 9, when the accounting property test found a resting short filling against a long and leaving a
+  position of zero shares; the counterexample is now a regression test.
 - **Stop orders (§12.2).** Stop, stop-limit and trailing stop (the stop trails the best price since the order was placed
   by a percentage). They trigger when a bar's price crosses the stop, then work as market or limit orders; a gap through
   the stop fills at the gap's price. All four sides are on the ticket.
@@ -864,6 +869,6 @@ Judgement calls made where the spec leaves details open.
   Browser, browsed The Clove, Press for Sale and The Cellar, and bought a profile through the confirmation dialog, with
   no console errors. It caught checkboxes 98.css can't draw without a label and a confirmation dialog in the dark page's
   colours.
-- **Found, not fixed.** The accounting property test (random seeds) now and then fails on a bug from before this phase: a
-  resting Sell Short order can fill after the firm has bought the stock, leaving a position of zero shares. It reproduces
-  on the Phase 8 commit and is left for its own fix.
+- **Found, and fixed separately.** The accounting property test (random seeds) now and then failed on a bug from before
+  this phase: a resting Sell Short order could fill after the firm had bought the stock, leaving a position of zero shares.
+  It reproduced on the Phase 8 commit; the rule that fixes it is recorded under Phase 7's short selling.

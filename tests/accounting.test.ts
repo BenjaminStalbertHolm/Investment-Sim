@@ -111,6 +111,38 @@ function checkBooks(e: Engine): void {
   expect(charged).toBeCloseTo(orders.reduce((a, o) => a + o.commission, 0), 6);
 }
 
+/**
+ * A counterexample the property below found (fast-check seed 1639767271): a Sell Short limit order left resting while
+ * the firm then bought the stock used to fill against the long position, leaving a position of zero shares.
+ */
+const RESTING_SHORT: Action[] = [
+  { kind: 'advance', minutes: 85 },
+  { kind: 'short', company: 999, size: 0.001, type: 'limit', offset: -0.029900791803066873, tif: 'gtc' },
+  { kind: 'buy', company: 999, size: 0.001, type: 'market', offset: 0, tif: 'day' },
+  { kind: 'advance', minutes: 305 },
+  { kind: 'buy', company: 0, size: 0.001, type: 'market', offset: 0, tif: 'day' },
+  { kind: 'close', nth: 0, size: 1, type: 'stop', offset: 0, tif: 'day' },
+  { kind: 'advance', minutes: 1335 },
+  { kind: 'close', nth: 0, size: 0.01, type: 'market', offset: 0, tif: 'day' },
+  { kind: 'cancel', nth: 0 },
+  { kind: 'buy', company: 0, size: 0.001, type: 'market', offset: 0, tif: 'day' },
+  { kind: 'buy', company: 0, size: 0.001, type: 'market', offset: 0, tif: 'day' },
+  { kind: 'buy', company: 0, size: 0.001, type: 'market', offset: 0, tif: 'day' },
+  { kind: 'loan', amount: 10000 },
+  { kind: 'close', nth: 0, size: 1, type: 'market', offset: 0, tif: 'day' },
+];
+
+it('cancels a resting Sell Short that would fill against a long position', () => {
+  const e = Engine.create(world, { settings: DIFFICULTIES.hard, firmName: 'Test' });
+  for (const a of RESTING_SHORT) {
+    apply(e, a);
+    checkBooks(e);
+  }
+  const short = e.orders().find((o) => o.side === 'short')!;
+  expect(short).toMatchObject({ company: 999, status: 'cancelled', filled: 0 });
+  expect(short.note).toMatch(/sell the shares before selling short/);
+});
+
 it('keeps the books balanced through any sequence of orders', () => {
   fc.assert(
     fc.property(fc.array(action, { minLength: 10, maxLength: 40, size: 'max' }), (actions) => {
