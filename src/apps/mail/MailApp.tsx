@@ -58,6 +58,7 @@ export default function MailApp({ windowId }: AppProps) {
     return [...wanted];
   }, [messages, selected?.id]);
   const news = useFetched(() => simulation().news({ ids }), [ids.join()]);
+  const journalists = useFetched(() => simulation().journalists(), []);
   const ctx: LetterContext = useMemo(
     () => ({
       directory,
@@ -66,8 +67,9 @@ export default function MailApp({ windowId }: AppProps) {
       seed,
       clients: new Map((clients?.clients ?? []).map((c) => [c.id, c])),
       news: new Map((news ?? []).map((n) => [n.id, n])),
+      journalists,
     }),
-    [clients, news, firmName, player?.ceoName],
+    [clients, news, journalists, firmName, player?.ceoName],
   );
 
   const rows: Row[] = useMemo(() => (messages ?? []).map((m) => ({ ...m, ...letterHeader(m, ctx) })), [messages, ctx]);
@@ -276,6 +278,7 @@ function BlockView({ block }: { block: Block }) {
 const ANSWERS: Record<NonNullable<Mail['answer']>, string> = {
   accepted: 'You accepted.', declined: 'You declined.', reported: 'You reported this tip to the Securities Oversight Bureau.', expired: 'This offer has expired.',
   for: 'You voted FOR.', against: 'You voted AGAINST.', abstain: 'You abstained.', done: 'Your instructions have been passed to the board.',
+  paid: 'You paid.', refused: 'You refused to pay.',
 };
 
 /** Letters with buttons (spec §15, §15.5–15.6), and the buttons: an action and its label. */
@@ -286,6 +289,7 @@ const ACTIONS: Partial<Record<Mail['kind'], [MailAction, string][]>> = {
   control: [['replaceCeo', 'Replace the CEO'], ['raiseDividend', 'Raise the Dividend'], ['cutDividend', 'Cut the Dividend']],
   stakeBid: [['accept', 'Sell the Shares'], ['decline', 'Decline']],
   investmentOffer: [['accept', 'Accept the Investment'], ['decline', 'Decline']],
+  blackmail: [['pay', 'Pay'], ['refuse', 'Refuse']],
 };
 
 /** Letters from the broker and the bank open the MajorTrade tab they are about. */

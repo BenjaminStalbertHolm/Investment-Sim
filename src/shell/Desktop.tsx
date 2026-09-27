@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Rnd } from 'react-rnd';
-import { DESKTOP_ICONS, type DesktopIconDef } from '../apps/catalog';
+import { DESKTOP_ICONS, available, type DesktopIconDef } from '../apps/catalog';
 import { Icon } from '../art/icons';
-import { importSave } from '../state/game';
+import { formatDate } from '../sim/calendar';
+import { importSave, useGame } from '../state/game';
 import { useShell } from '../state/shell';
 import { useTrade } from '../state/trade';
 import { activeWindowId, useWindows } from '../state/windows';
@@ -16,6 +17,10 @@ export function Desktop() {
   const area = useWindows((s) => s.area);
   const [selected, setSelected] = useState<string>();
   const activeId = activeWindowId(windows);
+  const installed = useShell((s) => s.installed);
+  // The loan sharks' collectors took the furniture (spec §14A): no desktop icons for a week.
+  const repossessed = useGame((s) => s.snapshot?.darkweb.repossessed);
+  const icons = repossessed ? [] : DESKTOP_ICONS.filter((icon) => available(icon.opens, installed));
 
   useEffect(() => {
     const el = ref.current!;
@@ -39,7 +44,14 @@ export function Desktop() {
         if (file) void importSave(file);
       }}
     >
-      {DESKTOP_ICONS.map((icon, i) => (
+      {repossessed !== undefined && (
+        <div className="desktop-repossessed">
+          The furniture has been repossessed. It will be returned on {formatDate(repossessed)}.
+          <br />
+          (Start → Programs still works. The collectors did not know what it was.)
+        </div>
+      )}
+      {icons.map((icon, i) => (
         <DesktopIcon
           key={icon.id}
           icon={icon}

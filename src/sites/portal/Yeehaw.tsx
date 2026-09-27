@@ -12,7 +12,7 @@ import { HAZARDS } from '../../sim/data/commodities';
 import { useOutlooks } from '../hooks';
 import { useStories } from '../news/NewsSites';
 import {
-  BANK, BARRENS, EQUIFACTS, EXCHANGE, FED, NEWSWIRE, OPEK, QUOTEZONE, RAGINGBEAR, SOB, WEATHER, YEEHAW, companyUrl, firmUrl, helpUrl, playerUrl, quoteUrl,
+  BANK, BARRENS, EQUIFACTS, EXCHANGE, FED, NEWSWIRE, OPEK, QUOTEZONE, RAGINGBEAR, SOB, TUCATS, WEATHER, YEEHAW, companyUrl, firmUrl, helpUrl, playerUrl, quoteUrl, storyUrl,
   searchUrl, sites,
 } from '../urls';
 import { Link, usePage, useTitle } from '../web';
@@ -120,7 +120,7 @@ function Front() {
             ))}
             {news?.map((n) => (
               <li key={n.id}>
-                <Link href={`http://${NEWSWIRE}/story?id=${n.id}-newswire`}>{headlineOf(n, directory, firmName, seed)}</Link>
+                <Link href={storyUrl(n)}>{headlineOf(n, directory, firmName, seed)}</Link>
               </li>
             ))}
           </ul>
@@ -131,7 +131,7 @@ function Front() {
                 <Link href={`http://${o.host}/`}>{o.name}</Link>
               </span>
             ))}{' '}
-            · <Link href={`http://${RAGINGBEAR}/`}>Raging Bear boards</Link>
+            · <Link href={`http://${RAGINGBEAR}/`}>Raging Bear boards</Link> · <Link href={`http://${TUCATS}/`}>Tucats Downloads</Link>
           </p>
         </div>
         <div className="yh-box">

@@ -18,6 +18,8 @@ export type AppId =
   | 'taskmangler'
   | 'paint'
   | 'help'
+  | 'garlic'
+  | 'installer'
   | 'quote'
   | 'run'
   | 'shutdown';
@@ -35,6 +37,8 @@ export interface AppDef {
   dialog?: boolean;
   /** Listed under Start → Programs. */
   inPrograms?: boolean;
+  /** Only there once installed from Tucats Downloads (spec §4A, §14A). */
+  installable?: boolean;
 }
 
 const WIN = { width: 640, height: 440 };
@@ -76,6 +80,9 @@ const defs: AppDef[] = [
     blurb: 'Pixel paint for wallpapers and logo emblems.' },
   { id: 'help', title: 'Doors Help', icon: 'help', defaultSize: { width: 560, height: 420 }, phase: 11,
     blurb: 'The Majorsoft Doors 98 manual.' },
+  { id: 'garlic', title: 'Garlic Browser', icon: 'garlic', defaultSize: { width: 800, height: 580 }, inPrograms: true, installable: true,
+    blurb: 'The Garlic network: anonymous, slow, and not for the faint of heart.' },
+  { id: 'installer', title: 'Setup', icon: 'installer', defaultSize: { width: 500, height: 380 }, dialog: true },
   { id: 'run', title: 'Run', icon: 'run', defaultSize: { width: 360, height: 170 }, dialog: true },
   { id: 'shutdown', title: 'Shut Down Doors', icon: 'shutdown', defaultSize: { width: 340, height: 160 }, dialog: true },
 ];
@@ -104,4 +111,9 @@ export const DESKTOP_ICONS: DesktopIconDef[] = [
   ...(['notepad', 'calculator', 'recyclebin', 'messenger', 'word', 'sheet', 'hr', 'rolodex', 'defrag', 'taskmangler', 'paint'] as const).map(
     (id) => ({ id, label: APPS[id].title, icon: APPS[id].icon, opens: id }),
   ),
+  // Installed from Tucats Downloads (spec §4A: optional apps appear only once installed).
+  { id: 'garlic', label: 'Garlic Browser', icon: 'garlic', opens: 'garlic' },
 ];
+
+/** Whether a program is on this machine: always, or once installed from Tucats. */
+export const available = (id: AppId, installed: readonly string[]) => !APPS[id]?.installable || installed.includes(id);

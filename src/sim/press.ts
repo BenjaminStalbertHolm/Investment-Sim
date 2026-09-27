@@ -18,7 +18,7 @@ export interface Journalist {
   beat: string;
   /** −1 bearish … +1 bullish. */
   bias: number;
-  /** 0–1: how hard to bribe (Phase 9). */
+  /** 0–1: how hard to bribe (spec §14A: it sets a bribe's odds). */
   integrity: number;
   /** Portrait, as a CEO code (spec §14.1: generated with the portrait system). */
   face: string;
@@ -71,7 +71,7 @@ export interface CompanyFacts {
 }
 
 /** Kinds only outlets that name them run: the TV and newsletter picks, and news of the player's firm. */
-const OWN_KINDS = new Set<NewsKind>(['tvPick', 'fowlPick', 'firmQuarter', 'mandate', 'stake', 'league', 'enforcement']);
+const OWN_KINDS = new Set<NewsKind>(['tvPick', 'fowlPick', 'firmQuarter', 'mandate', 'stake', 'league', 'enforcement', 'puff', 'hitPiece', 'expose']);
 
 function matches(rule: CoverageRule, item: NewsItem, facts?: CompanyFacts): boolean {
   if (rule.kinds ? !rule.kinds.includes(item.kind) : OWN_KINDS.has(item.kind)) return false;
@@ -87,7 +87,8 @@ function matches(rule: CoverageRule, item: NewsItem, facts?: CompanyFacts): bool
   return true;
 }
 
-export const covers = (outlet: Outlet, item: NewsItem, facts?: CompanyFacts) => outlet.rules.some((r) => matches(r, item, facts));
+export const covers = (outlet: Outlet, item: NewsItem, facts?: CompanyFacts) =>
+  item.outlets ? item.outlets.includes(outlet.id) : outlet.rules.some((r) => matches(r, item, facts));
 
 /**
  * When an outlet runs a story that broke at `time` (spec §11.7): the Newswire at once, MoneyTV within the next bar, the
@@ -128,6 +129,9 @@ export function hash(...parts: (string | number)[]): number {
 
 /** Who writes an outlet's story: a writer whose beat covers the industry, else a generalist. */
 export function byline(item: NewsItem, outlet: Outlet, journalists: readonly Journalist[], facts?: CompanyFacts): Journalist | undefined {
+  // A bought article, or an exposé of the bribe, is the journalist's own.
+  const author = item.journalist !== undefined ? journalists[item.journalist] : undefined;
+  if (author?.outlet === outlet.id) return author;
   const own = journalists.filter((j) => j.outlet === outlet.id);
   const beat = facts ? own.filter((j) => j.beats.includes(facts.industry)) : [];
   const pool = beat.length ? beat : own.filter((j) => !j.beats.length).length ? own.filter((j) => !j.beats.length) : own;

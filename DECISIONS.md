@@ -740,3 +740,130 @@ Judgement calls made where the spec leaves details open.
   Settings (the label turned Custom), bought MJR in the Funds tab, and read Barren's league page, the SOB site, a
   competitor's filed holdings, the player's site, My Computer → About and the new Ask Reeves guides, with no console
   errors. The tests caught closed fund positions breaking the bankruptcy report's best and worst trades.
+
+## Phase 9 — Garlic Browser and the dark web
+
+- **Libraries.** None added. The Garlic Browser is Internet Exploiter's chrome with a `garlic` prop (`BrowserWindow`), not
+  a second browser. The markets are data (`sim/data/darkweb.ts`) run by one module (`sim/darkweb.ts`) on machinery the game
+  already has: Phase 6's price jumps, pump-and-dumps and reversals (`jump`, `plan`, `dump`), rumours on Raging Bear and the
+  news archive and article writer; Phase 8's heat, evidence, audits and fines; client redemptions; the mail's action
+  buttons; the `{placeholder}`/`[a|b]` template writer; 98.css dialogs. The `.garlic` addresses are fixed strings, made
+  once from SHA-256 (already a dependency), the way a real onion address belongs to its service rather than to a game.
+- **The way in (spec §14A).** An anonymous letter in the Tips folder on the twelfth trading day links to "Garlic Browser 0.9
+  beta" on Tucats Downloads (www.tucats.com, also linked from Yeehaw!). HomeCities pages, the spec's other way in, are
+  §14's flavour pages and come with Phase 10's. Download runs a four-step 98 installer whose warning page must be ticked
+  ("I understand the risks, and I am doing this anyway"); Tucats lists Phase 10's downloads as coming soon. What is
+  installed is the UI's (spec §18 `installedApps`): the shell store's `installed`, saved in `game.json`; a new game starts
+  with nothing installed, old saves too. An installed program gets a desktop icon and a Start → Programs entry.
+- **The Garlic Browser.** Dark purple and black, a garlic bulb for a throbber, "Peeling layer 2 of 3…" in the status bar
+  while a page loads over three hops (three times 300 ms plus half the dial-up delay; 150 ms a hop with dial-up off). It
+  keeps no history (its links never turn purple), its favourites are fixed bookmarks, and its home is The Clove, the
+  network's directory. It opens `.garlic` addresses and the ordinary web; Internet Exploiter can't display `.garlic` ones.
+- **The transparency rule.** `quote()` works out a listing's terms for a request — price (and the shell's fee), success
+  chance, heat added now and more on failure, and what failure costs (reputation, damages, a fine) — and
+  `sites/darkweb/terms.ts` says them in words. The market view carries every vendor's terms for a default target, so each
+  listing shows them before anything is asked; changing the target re-quotes. Every listing row shows price, success %,
+  what you get, what failure does and the heat; the confirmation repeats them with the vendor's rating, reviews and
+  account age. `darkBuy` re-quotes and buys only if the terms are exactly those shown ("The vendor has changed the
+  terms"). Payment is up front, from cash the positions don't need, and the game autosaves first (spec §18).
+- **Outcomes don't re-roll.** Success or failure is decided when an order is bought, from a new saved stream (`darkweb`);
+  the sizes of what follows (a move, a payout) come from the same stream. The result lands at its due time as a queued task: a bought
+  article in the paper's next edition, stolen documents the next morning, a pump-and-dump's payout four trading days on.
+  A test buys five orders, reloads a save from before them and buys them again: the same outcomes; and a save with the
+  orders in transit plays on exactly as the unsaved game. Wrong information and forged statements look like deliveries
+  on the orders page until the news shows otherwise.
+- **Vendors, stings and exit scams.** Two or three vendors per market (24), drawn from the seed on a stream of their own.
+  In the risky markets 70% are honest, 18% exit scams and 12% SOB stings; the Shell Company Registry and the loan sharks
+  are always honest ("always pays out"). The hints are the ones the spec names: scams have young accounts with bought
+  five-star ratings and few reviews, stings very young accounts; both undercut the market's prices (a test checks the
+  averages over forty worlds). A scam takes the money and vanishes; a sting logs the payment as evidence, adds 35 heat
+  and opens an examination; either way the vendor leaves, The Cellar warns everyone and a new vendor takes the stall.
+  Each month scammers vanish (20%), stings are unmasked (10%) and honest vendors retire (2%) of their own accord.
+- **Heat and the auditors.** Every dark web action adds a little heat when bought (spec §16B: dark web actions), its
+  listing's larger figure if it fails. Payments are "Consulting fees" in the ledger, which an audit weighs (0.15 each plus
+  a point per $2M); through a shell they are "Offshore transfers" (0.05), cost 10% more and add half the heat (spec §14A:
+  lower detection). A sting weighs 4, a planted rumour caught 2. The payments' weight was halved from a first 0.3 after
+  the save test's Hard game — nine purchases in four months — drew a public enforcement action.
+- **Press for Sale.** Four services (a profile of the firm, praise for a stock, a hit piece on a competitor or a company)
+  from any journalist. The price runs from $15,000 at the Daily Scoop to $500,000 at the New York Journal, log-scaled by
+  how far readers believe the outlet; the chance is 1.05 − 0.75 × integrity − 0.2 points per point of heat (spec §14A:
+  about 85% at a tabloid, 35% at the Journal). A journalist who took money once is 30% cheaper and 10 points likelier next
+  time. A bought article runs only in its paper, under that journalist's byline (news items can now name their outlets
+  and writer): a profile adds 3–12 reputation; praise or a hit piece moves the stock 2–12% by the outlet's credibility
+  (spec §11.7), not its value, and 80% fades after 3–8 days; a hit piece on a competitor sends 2–12% of its clients'
+  money elsewhere. Failure is an exposé in that paper, the Newswire and the Daily Scoop: reputation −10 to −30, heat +25 to
+  +45, and each non-founding client leaves with odds of 15–50%; a competitor always sues (three times the price), a
+  company half the time (twice). The PR Manager's softening waits for Phase 10's staff, as do bribed journalists as
+  ISeekYou contacts (they are recorded). **Blackmail**: each week a bribed journalist asks for twice their last bribe with
+  odds of 0.3% plus 0.04% per point of heat; Pay (consulting fees) or Refuse, and 60% of refusals become a confession in
+  the journalist's paper.
+- **The Leak Bazaar.** Earnings surprises for the sixty largest companies reporting in the next ten trading days ($5,000
+  to $250,000 by size, right as often as the vendor is: 50–90%), and the name of a takeover target ($150,000, ten points
+  less reliable). A leak works by fixing the surprise: the vendor's number (1 to 2.5 standard deviations either way) is
+  drawn when it is bought and becomes the company's at its report — the earnings stream still draws its own, so no other
+  company changes — and a wrong leak says the opposite. So buying a leak decides that company's quarter; the game stays
+  deterministic, since buying is an action. A right takeover leak names the next planned bid's target (refunded if none
+  is planned); a wrong one a plausible mid cap. Profitable trades in a leaked company in the three trading days before its
+  report or bid are insider trading to the SOB, as Phase 8's genuine tips are.
+- **The other markets.** *Bot Farm* ($2,000–$50,000, companies under $2B, 70%): four to eight hype or FUD posts on the
+  company's Raging Bear board over the next hours and a 3–10% move that fades in one to three days; caught, the
+  moderators post a notice naming the firm (heat +15). *Cloak & Dagger* ($50,000–$300,000 by the rival's assets, 55%): its
+  book today (not its 45-day-old filing) or its trades at the week's close; the weekly rebalance was split into a planner
+  both use, with identical results. Caught: damages of twice the price, heat +30. *Hackers-for-hire* ($10,000–$80,000,
+  65%): a rival's site shows "Server Too Busy" for three trading days, or a company's shows a defaced page for three and
+  the news costs it Phase 6's 1–6% (the SOB's surveillance looks at trades before it); traced: heat +40 and a letter from
+  the FBU. *Pump Syndicate* (a $10,000–$500,000 buy-in, 50%): each vendor pumps one penny stock a week (under $5 and
+  $300M); the pump runs through Phase 6's pump-and-dump, bigger (15–40%), whoever buys in, and four trading days later the
+  buyer gets 130–220% back, or 10–50% and heat +10. *Rumour Mill* ($30,000, 60%): takeover talk in the trade press lifts a
+  stock 5–15% for three to eight trading days; failure is a manipulation investigation (an examination opens now, heat
+  +20). *Forgery Desk* ($40,000, 70%, firms with clients): the next quarter's statements show every client 0.5–2.5 points
+  ahead of the index, so moods, patience and top-ups follow the forged figures (performance fees stay on the real ones);
+  a failure comes out 10–60 trading days later: an exposé, a $1M fine (times the SOB's strictness), reputation −25, heat
+  +30, and each non-founding client leaves with 75% odds (founders 25%). *Bazaar*: four fakes from $40 to $2,500, mostly
+  not what they say.
+- **Shell companies.** $100,000 and $20,000 a year (charged on the first trading day of the month after each anniversary),
+  one at a time. Stakes crossing 5% while
+  it exists are held through it: no SOB filing, no letters, no Newswire story, and the IR page lists the shell's name
+  instead of the firm's; competitors don't pile into or bid for them. Board seat and control letters still come — the
+  company's register knows who owns it. Each hidden stake adds a point of heat a week (spec §16B: hidden stakes). On the
+  first trading day of each month the SOB may find it: 5% a year with no heat, 90% at heat 100. Then every hidden stake is
+  filed at once, the firm is fined $250,000 (times strictness) plus 5% of their value, and the scandal costs 20
+  reputation, 30 heat and some clients. Winding a shell up files its stakes, late (5 heat each).
+- **Loan sharks.** $5M to $50M, one loan at a time, at 4% a week: interest accrues daily like a bank loan's (Phase 7) and is
+  paid at each week's last close from equity the positions don't need; the debt counts against net worth and shows in the
+  portfolio. A missed Friday sends the collectors: they take long positions, fund units and goods, largest first, at 30%
+  below market and without commission, to cover the missed interest plus a penalty of 10% of the loan; the desktop loses
+  its icons for five trading days ("The furniture has been repossessed"; Start → Programs still works); the loan runs on.
+  If equity is negative afterwards the firm is bankrupt (a new cause, `shark`). A first version called in the whole loan,
+  which made any loan that had been invested fatal; the spec's "seize positions … plus penalty" reads as the missed
+  payment. Paid off in full at any time on the sharks' page.
+- **The Cellar.** The engine posts facts — a real tip about a planned event about once every ten trading days, scam
+  warnings, stings unmasked, vendors retiring (the last 200 kept) — and the forum writes them up among chatter generated
+  for each of the last ten trading days (talk about young or little-reviewed vendors, paranoia, nonsense tips), the same
+  every time it is read, as Raging Bear does.
+- **Exposé articles.** Three news kinds: `puff`, `hitPiece` and `expose` (a bribe, a blackmailer's confession, forged
+  statements, a shell), written from templates by what they are about. Links to a story go to the paper that ran it
+  (`storyUrl`), since a bought article is not on the Newswire.
+- **Switched off** (Advanced Settings → Dark web): no letter, Tucats's download is "removed at the request of the
+  Securities Oversight Bureau", the Garlic network is unreachable and no purchase or blackmail happens. The difficulty's
+  dark web odds (±10 points) apply to every chance that isn't certain.
+- **Saves.** Version 7. The v6 → v7 migration opens the dark web where the game stands: vendors from the seed, the
+  invitation twelve trading days later, a fresh stream. The save test now registers a shell (which hid the stake Phase 8's
+  part of the test files, until the shell is wound up on day 70 and it is filed late), bribes a journalist, runs a bot
+  farm and a rumour paid through the shell, holds a loan shark's loan across the save, has a pump-and-dump and stolen
+  trading plans in transit when it saves, buys an earnings leak and forged statements; the save uses honest vendors, as
+  an SOB sting's enforcement action would empty the client list the Phase 6 check counts (that check now counts clients
+  who joined).
+- **Acceptance (spec §19: "Every listing shows price, success %, failure outcome and heat before purchase; outcomes survive
+  save/load without re-rolling").** `tests/darkweb.test.ts` checks every listing of every vendor for its terms, renders
+  every market page and finds each listing's price, chance, failure and heat on it, and replays purchases across saves as
+  above; it also covers press odds and prices, exposés, scams and stings, leaks coming true, shells, loan sharks,
+  blackmail, forgery, the other markets, the invitation and The Cellar, and every letter and article in full.
+- **Measured** in this container: a bar for 10,000 companies 1.22 ms on average, 2.25 ms at p99 (budget 4 ms); a session
+  112 ms. A browser check (Playwright, dev server) followed the anonymous letter to Tucats, installed the Garlic
+  Browser, browsed The Clove, Press for Sale and The Cellar, and bought a profile through the confirmation dialog, with
+  no console errors. It caught checkboxes 98.css can't draw without a label and a confirmation dialog in the dark page's
+  colours.
+- **Found, not fixed.** The accounting property test (random seeds) now and then fails on a bug from before this phase: a
+  resting Sell Short order can fill after the firm has bought the stock, leaving a position of zero shares. It reproduces
+  on the Phase 8 commit and is left for its own fix.

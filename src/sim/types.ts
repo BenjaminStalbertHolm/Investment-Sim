@@ -10,6 +10,8 @@ import type { Bar } from './history';
 import type { MacroState } from './macro';
 import type { Listing } from './market';
 import type { MacroKind } from './news';
+import type { CellarPost, DarkRequest, Outage, Outcome, SharkLoan, Shell, Terms } from './darkweb';
+import type { MarketId, ServiceId } from './data/darkweb';
 
 /** Chart timeframes (spec §13). */
 export type Timeframe = '1D' | '5D' | '1M' | '6M' | '1Y' | '5Y' | 'MAX';
@@ -81,6 +83,8 @@ export interface AccountView {
   /** Index fund units at their value (part of `longValue`), and an SOB fine not yet paid (Phase 8). */
   fundsValue: number;
   fine: number;
+  /** A loan shark's loan and the interest accrued on it (Phase 9). */
+  sharks: number;
   /** Requirements: initial (1 / max leverage on stocks) and maintenance (25% long, 30% short); and the equity above initial. */
   initial: number;
   maintenance: number;
@@ -146,6 +150,8 @@ export interface CompanyDetails {
   holders: Holder[];
   /** The player sits on the board (spec §15.5). */
   seat: boolean;
+  /** The offshore shell the player's stake is held through, unfiled (spec §14A). */
+  shell?: string;
 }
 
 /** A competitor firm's book (spec §14 firm websites, spec §16). */
@@ -429,6 +435,57 @@ export interface Snapshot {
   commodities: { spot: number[]; previous: number[] };
   /** Heat now and at its highest (spec §16B: the tray's thermometer), and trading suspended until (a trading day). */
   sob: { heat: number; peak: number; suspended?: number };
+  /** The dark web's marks on the world (spec §14A): furniture repossessed until a trading day, web sites down or defaced. */
+  darkweb: DarkWebStatus;
+}
+
+export interface DarkWebStatus {
+  repossessed?: number;
+  outages: Outage[];
+}
+
+/** A vendor as the market shows it (its nature is hidden). */
+export interface VendorView {
+  id: number;
+  handle: string;
+  market: MarketId;
+  rating: number;
+  reviews: number;
+  /** Days since the account was opened. */
+  age: number;
+  left?: number;
+}
+
+/** A purchase as the buyer sees it: what it will cost and do, and — once it is due — how it turned out. */
+export interface PurchaseView {
+  id: number;
+  time: GameTime;
+  request: DarkRequest;
+  terms: Terms;
+  handle: string;
+  due: GameTime;
+  done?: GameTime;
+  result?: Outcome | 'refund';
+  company?: number;
+  direction?: 1 | -1;
+}
+
+/** The Garlic Browser's markets (spec §14A): vendors, their listings with terms, the firm's orders, shell, loan and contacts. */
+export interface DarkWebView {
+  enabled: boolean;
+  heat: number;
+  vendors: VendorView[];
+  /** Every active vendor's listings, with the terms for a default request (every listing shows its terms, spec §14A). */
+  listings: { service: ServiceId; vendor: number; request: DarkRequest; terms?: Terms; error?: string }[];
+  purchases: PurchaseView[];
+  shell?: Shell & { discovery: number };
+  shells: Shell[];
+  shark?: SharkLoan & { owed: number; weekly: number };
+  bribed: { journalist: number; bribes: number }[];
+  /** Companies reporting in the next two weeks, largest first (the Leak Bazaar's stock), and whose stakes the shell hides. */
+  reporting: number[];
+  hidden: number[];
+  cellar: CellarPost[];
 }
 
 export type { Bar, ClosedPosition, LedgerEntry, Order };

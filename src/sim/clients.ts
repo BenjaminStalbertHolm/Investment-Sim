@@ -346,13 +346,17 @@ export function quarterEnd(sim: Sim, fees: Fees, patience: Level): void {
   sim.report({ kind: 'firmQuarter', company: -1, move: unit / state.quarter.unit - 1, expect: index / state.quarter.index - 1, amount: sim.nav() });
   state.quarter = { unit, index };
   let earned = 0;
+  // The Forgery Desk's statements (spec §14A) show every client beating the index, whatever happened; fees are still
+  // charged on what really happened.
+  const forged = sim.s.darkweb.forged !== undefined;
   for (const c of state.clients) {
     if (c.status !== 'active' || c.redeeming) continue;
-    const mine = unit / c.mark.unit - 1;
+    const real = unit / c.mark.unit - 1;
     const market = index / c.mark.index - 1;
+    const mine = forged ? Math.max(real, market + 0.005 + 0.02 * rng.float()) : real;
     const excess = mine - market;
-    if (excess > 0 && fees.performance > 0) {
-      const fee = fees.performance * excess * c.units * c.mark.unit;
+    if (real > market && fees.performance > 0) {
+      const fee = fees.performance * (real - market) * c.units * c.mark.unit;
       c.units -= fee / unit;
       c.fees += fee;
       state.feesEarned += fee;

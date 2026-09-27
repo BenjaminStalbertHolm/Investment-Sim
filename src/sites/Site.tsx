@@ -14,8 +14,11 @@ import { Barrens, DailyScoop, FinancialTimez, Jottings, MoneyTv, MotleyFowl, New
 import Yeehaw from './portal/Yeehaw';
 import QuoteZone from './quotezone/QuoteZone';
 import Sob from './finance/Sob';
-import { BANK, EQUIFACTS, EXCHANGE, FED, OPEK, QUOTEZONE, RAGINGBEAR, REEVES, SOB, WEATHER, YEEHAW, sites } from './urls';
-import { useTitle } from './web';
+import { DarkSite } from './darkweb/DarkWeb';
+import { Defaced, ServerTooBusy } from './darkweb/Outages';
+import Tucats from './tucats/Tucats';
+import { BANK, EQUIFACTS, EXCHANGE, FED, OPEK, QUOTEZONE, RAGINGBEAR, REEVES, SOB, TUCATS, WEATHER, YEEHAW, sites } from './urls';
+import { usePage, useTitle } from './web';
 
 type SiteComponent = ComponentType<{ url: URL }>;
 
@@ -40,6 +43,7 @@ const STATIC: Record<string, SiteComponent> = {
   [EQUIFACTS]: Equifacts,
   [REEVES]: AskReeves,
   [SOB]: Sob,
+  [TUCATS]: Tucats,
   ...Object.fromEntries(
     ALL_OUTLETS.map((o) => [o.host, OUTLET_SITES[o.id] ?? (({ url }: { url: URL }) => <TradePress url={url} outlet={o} />)]),
   ),
@@ -59,9 +63,17 @@ export function companyAt(url: URL, directory: ReturnType<typeof useGame.getStat
 export function Site({ url }: { url: URL }) {
   const directory = useGame((s) => s.directory);
   const firmName = useGame((s) => s.firmName);
+  const outages = useGame((s) => s.snapshot?.darkweb.outages);
+  const { garlic } = usePage();
   const page = url.pathname.replace(/^\//, '');
+  // Only the Garlic Browser reaches the Garlic network (spec §14A).
+  if (url.hostname.endsWith('.garlic')) return garlic ? <DarkSite url={url} /> : <CannotDisplay url={url} />;
   const Static = STATIC[url.hostname];
   const target = Static ? undefined : sites(directory, firmName).byHost.get(url.hostname);
+  // Web sites the dark web's hackers took down or defaced.
+  const outage = target && outages?.find((o) => (target.kind === 'company' ? o.company === target.id : target.kind === 'firm' && o.firm === target.id));
+  if (outage && target?.kind === 'company') return <Defaced company={target.id} outage={outage} />;
+  if (outage) return <ServerTooBusy host={url.hostname} outage={outage} />;
   return Static ? (
     <Static url={url} />
   ) : target?.kind === 'company' ? (

@@ -1,0 +1,210 @@
+/* The Garlic network (spec §14A): dark purple and black, ugly tables, monospace. */
+
+.garlic-site {
+  min-height: 100%;
+  background: #000;
+  color: #c9b3d8;
+  font: 12px 'Courier New', Courier, monospace;
+  padding: 8px 12px 24px;
+  box-sizing: border-box;
+}
+
+.garlic-site a {
+  color: #b48cff;
+}
+
+.garlic-site a.visited {
+  color: #8f6fbf;
+}
+
+.garlic-site h3 {
+  color: #e8dcf4;
+  margin: 16px 0 4px;
+  font-size: 13px;
+  text-transform: lowercase;
+}
+
+.garlic-banner {
+  color: #9dff9d;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+.garlic-warning {
+  border: 1px dashed #a05050;
+  color: #ffb0b0;
+  padding: 4px 6px;
+}
+
+.garlic-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 4px 0;
+}
+
+.garlic-table th,
+.garlic-table td {
+  border: 1px solid #4a2a5a;
+  padding: 2px 4px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.garlic-table th {
+  background: #2a1234;
+  color: #e8dcf4;
+}
+
+.garlic-listings td:nth-child(4),
+.garlic-listings td:nth-child(5) {
+  font-size: 11px;
+}
+
+.garlic-listings button,
+.garlic-service button {
+  font-family: inherit;
+}
+
+.garlic-service {
+  border-top: 1px solid #3d1f4b;
+  margin-top: 8px;
+}
+
+.garlic-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 4px 0;
+}
+
+.garlic-targets select,
+.garlic-targets input {
+  background: #120818;
+  color: #9dff9d;
+  border: 1px solid #4a2a5a;
+  font: 12px 'Courier New', Courier, monospace;
+  max-width: 420px;
+}
+
+.garlic-shell {
+  display: block;
+  margin: 6px 0;
+  color: #ffe08a;
+}
+
+.garlic-forum td:first-child {
+  width: 160px;
+  color: #9dff9d;
+}
+
+.garlic-footer {
+  margin-top: 16px;
+  color: #6d5a78;
+}
+
+/* The confirmation is a Doors dialog, not a page: black on grey. */
+.garlic-site .modal {
+  color: #000;
+  font: 11px Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.garlic-confirm {
+  max-width: 520px;
+}
+
+.garlic-confirm table th,
+.garlic-confirm table td {
+  background: transparent;
+  color: #000;
+  border: none;
+  text-align: left;
+  vertical-align: top;
+  padding: 2px 8px 2px 0;
+}
+
+.garlic-confirm table th {
+  white-space: nowrap;
+}
+
+/* A defaced company web site (spec §14A Hackers-for-hire). */
+.defaced {
+  min-height: 100%;
+  background: #000;
+  color: #0f0;
+  font: 14px 'Courier New', Courier, monospace;
+  text-align: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.defaced h1 {
+  color: #f00;
+  font-size: 28px;
+  animation: defaced-blink 1s steps(2) infinite;
+}
+
+.defaced .defaced-logo {
+  display: inline-block;
+  transform: rotate(180deg);
+  filter: invert(1);
+  margin: 12px;
+}
+
+@keyframes defaced-blink {
+  50% {
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .defaced h1 {
+    animation: none;
+  }
+}
+
+/* Tucats Downloads (spec §4A): a 90s shareware site. */
+.site-tucats {
+  min-height: 100%;
+  background: #fffbe6;
+  font: 13px Arial, Helvetica, sans-serif;
+  padding: 0 0 16px;
+}
+
+.tucats-header {
+  background: #004080;
+  color: #fff;
+  padding: 8px 12px;
+}
+
+.tucats-header b {
+  font: italic bold 24px 'Times New Roman', Times, serif;
+  color: #ffd040;
+}
+
+.tucats-body {
+  padding: 8px 12px;
+}
+
+.tucats-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.tucats-table td,
+.tucats-table th {
+  border: 1px solid #c0b080;
+  padding: 4px 6px;
+  vertical-align: top;
+}
+
+.tucats-table th {
+  background: #f0e0a0;
+}
+
+.tucats-cats {
+  color: #c06000;
+  white-space: nowrap;
+}

@@ -13,12 +13,15 @@ interface ShellStore {
   tickerTape: boolean;
   /** The Setup Wizard (spec §5) fills the screen: at first power-on, or from My Computer → New Game. */
   setup: boolean;
+  /** Programs installed from Tucats Downloads (spec §4A, §14A): the Garlic Browser so far. Saved with the game. */
+  installed: string[];
 
   setPower(power: Power): void;
   moveIcon(id: string, x: number, y: number): void;
   setSpeed(speed: Speed): void;
   toggleTickerTape(): void;
   setSetup(setup: boolean): void;
+  install(app: string): void;
 }
 
 export const useShell = create<ShellStore>()((set) => ({
@@ -27,10 +30,12 @@ export const useShell = create<ShellStore>()((set) => ({
   speed: 1,
   tickerTape: false,
   setup: false,
+  installed: [],
 
   setPower: (power) => set({ power }),
   moveIcon: (id, x, y) => set((s) => ({ iconPositions: { ...s.iconPositions, [id]: { x, y } } })),
   setSpeed: (speed) => set({ speed }),
   toggleTickerTape: () => set((s) => ({ tickerTape: !s.tickerTape })),
   setSetup: (setup) => set({ setup }),
+  install: (app) => set((s) => (s.installed.includes(app) ? s : { installed: [...s.installed, app] })),
 }));

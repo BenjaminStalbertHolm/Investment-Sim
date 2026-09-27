@@ -1,0 +1,37 @@
+/* The Garlic Browser's chrome (spec §14A): dark purple and black. */
+.browser.garlic,
+.browser.garlic .browser-toolbar,
+.browser.garlic .browser-address,
+.browser.garlic .menu-bar {
+  background: #2a1234;
+  color: #e8dcf4;
+}
+
+.browser.garlic .browser-toolbar button,
+.browser.garlic .browser-address button {
+  background: #3d1f4b;
+  color: #e8dcf4;
+}
+
+.browser.garlic .menu-bar-title {
+  color: #e8dcf4;
+}
+
+.browser.garlic .browser-toolbar button:disabled {
+  color: #7a6485;
+}
+
+.browser.garlic .browser-address input {
+  background: #0c0412;
+  color: #9dff9d;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.browser.garlic .status-bar-field {
+  background: #1a0b21;
+  color: #c9b3d8;
+}
+
+.browser.garlic .browser-page {
+  background: #000;
+}

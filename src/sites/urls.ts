@@ -1,4 +1,5 @@
-import { ALL_OUTLETS } from '../sim/data/outlets';
+import { ALL_OUTLETS, OUTLET } from '../sim/data/outlets';
+import type { NewsItem } from '../sim/news';
 import type { Directory } from '../sim/types';
 
 /** Web addresses of the 90s web (spec §14): every site lives at a fake domain; pages are rendered from data. */
@@ -20,6 +21,8 @@ export const EQUIFACTS = 'www.equifacts.com';
 export const REEVES = 'www.askreeves.com';
 /** Phase 8: the Securities Oversight Bureau. */
 export const SOB = 'www.sob.gov';
+/** Phase 9: Tucats Downloads, where the Garlic Browser (and later the optional apps) are downloaded (spec §4A, §14A). */
+export const TUCATS = 'www.tucats.com';
 
 /** "Alphabeta (Goggle)" → "alphabeta", "Ridgepine Timber Co." → "ridgepinetimber", "Clickzilla.com" → "clickzilla". */
 export function slugOf(name: string): string {
@@ -73,7 +76,7 @@ export function sites(directory: Directory, firmName: string): Sites {
 }
 
 const RESERVED = new Set([
-  YEEHAW, QUOTEZONE, RAGINGBEAR, EXCHANGE, WEATHER, OPEK, FED, BANK, EQUIFACTS, REEVES, SOB, 'www.majorsoft.com', ...ALL_OUTLETS.map((o) => o.host),
+  YEEHAW, QUOTEZONE, RAGINGBEAR, EXCHANGE, WEATHER, OPEK, FED, BANK, EQUIFACTS, REEVES, SOB, TUCATS, 'www.majorsoft.com', ...ALL_OUTLETS.map((o) => o.host),
 ]);
 
 /**
@@ -89,7 +92,7 @@ export function normalizeUrl(input: string): string {
   }
   try {
     const url = new URL(scheme ? text : `http://${text}`);
-    if (url.hostname.split('.').length === 2) url.hostname = `www.${url.hostname}`;
+    if (url.hostname.split('.').length === 2 && !url.hostname.endsWith('.garlic')) url.hostname = `www.${url.hostname}`;
     return url.href;
   } catch {
     return `http://${YEEHAW}/search?q=${encodeURIComponent(text)}`;
@@ -101,5 +104,11 @@ export const firmUrl = (s: Sites, id: number, page = '') => `http://${s.firm[id]
 export const playerUrl = (s: Sites, page = '') => `http://${s.player}/${page}`;
 export const quoteUrl = (ticker: string) => `http://${QUOTEZONE}/quote?s=${ticker}`;
 export const searchUrl = (query: string) => `http://${YEEHAW}/search?q=${encodeURIComponent(query)}`;
+/** A news item's story: on the Newswire, or in the one paper that ran a bought article (spec §14A). */
+export function storyUrl(item: Pick<NewsItem, 'id' | 'outlets'>): string {
+  const outlet = !item.outlets || item.outlets.includes('newswire') ? 'newswire' : item.outlets[0];
+  return `http://${OUTLET[outlet].host}/story?id=${item.id}-${outlet}`;
+}
+
 /** An Ask Reeves guide, or its front page. */
 export const helpUrl = (topic = '') => `http://${REEVES}/${topic ? `guide?t=${topic}` : ''}`;

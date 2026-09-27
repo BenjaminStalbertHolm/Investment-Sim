@@ -203,7 +203,64 @@ function frontRun(sim: Sim, strategy: Strategy): number[] {
   const aggression = sim.s.settings.aggression;
   const piles = aggression === 'high' ? ['momentum', 'quant', 'activist'] : aggression === 'normal' ? ['activist'] : [];
   if (!piles.includes(strategy)) return [];
-  return sim.s.governance.stakes.filter((s) => s.level >= 5 && !sim.market.state.status[s.company]).map((s) => s.company);
+  return sim.s.governance.stakes.filter((s) => s.level >= 5 && !s.hidden && !sim.market.state.status[s.company]).map((s) => s.company);
+}
+
+/**
+ * What a firm would trade at the week's close, company by company: part of the way from its book to what its strategy
+ * wants, within the room the company's other holders leave (`total` is every holder's shares).
+ */
+function orders(sim: Sim, f: number, mine: Map<number, number>, total: Float64Array, sig: Signals, aum: number): [number, number][] {
+  const firm = sim.s.world.firms[f];
+  const book = sim.s.competitors.books[f];
+  const { price } = sim.market;
+  const { shares } = sim.model;
+  const rules = STRATEGIES[firm.strategy];
+  const core = new Set(book.core);
+  let coreValue = 0;
+  for (const i of core) coreValue += (mine.get(i) ?? 0) * price[i];
+  const cash = firm.strategy === 'macro' ? MACRO_CASH[sim.market.state.regime] : rules.cash;
+  const invest = Math.max(0, aum * (1 - cash) - coreValue);
+  const want = targets(sim, f, firm.strategy, invest, sig);
+  const extra = frontRun(sim, firm.strategy).filter((i) => !want.has(i));
+  for (const i of extra) want.set(i, 1 / Math.max(rules.holdings, 8));
+  const minTrade = Math.max(100_000, aum * 0.0005);
+  const out: [number, number][] = [];
+  for (const i of new Set([...mine.keys(), ...want.keys()])) {
+    if (core.has(i) || sim.market.state.status[i]) continue;
+    const now = mine.get(i) ?? 0;
+    const room = Math.max(0, (OWNERSHIP_CAP - sim.s.world.insiderPct[i]) * shares[i] - total[i]);
+    const target = Math.min(((want.get(i) ?? 0) * invest) / price[i], rules.maxStake * shares[i], now + room);
+    let next = Math.round(now + rules.turnover * (target - now));
+    // Small positions left over are sold outright.
+    if (!want.has(i) && next * price[i] < minTrade) next = 0;
+    const delta = next - now;
+    if (!delta || (next && Math.abs(delta) * price[i] < minTrade)) continue;
+    out.push([i, delta]);
+  }
+  return out;
+}
+
+/** A firm's trades at the next week's close, as things stand, largest first: what its trading desk has planned (spec §14A espionage). */
+export function plannedTrades(sim: Sim, f: number): { company: number; shares: number; amount: number; side: 'buy' | 'sell' }[] {
+  const held = booksOf(sim.s.world.holdings, sim.s.world.firms.length);
+  const total = new Float64Array(sim.market.price.length);
+  for (const book of held) for (const [i, n] of book) total[i] += n;
+  for (const p of sim.s.account.positions) if (p.shares > 0) total[p.company] += p.shares;
+  const { price } = sim.market;
+  return orders(sim, f, held[f], total, signals(sim), aumOf(sim.s.competitors.books[f], held[f], price))
+    .map(([company, delta]) => ({ company, shares: Math.abs(delta), amount: Math.abs(delta) * price[company], side: delta > 0 ? ('buy' as const) : ('sell' as const) }))
+    .sort((a, b) => b.amount - a.amount || a.company - b.company);
+}
+
+/** Clients take a share of a firm's fund away (a hit piece, spec §14A): cash leaves, and units with it. */
+export function clientOutflow(sim: Sim, f: number, share: number): number {
+  const book = sim.s.competitors.books[f];
+  const aum = firmAum(sim, f);
+  const amount = aum * share;
+  book.cash -= amount;
+  book.units -= amount / (aum / book.units);
+  return amount;
 }
 
 /**
@@ -215,38 +272,20 @@ export function weeklyTrading(sim: Sim, day: number): void {
   const { firms } = sim.s.world;
   const state = sim.s.competitors;
   const { price, halfSpread, adv } = sim.market;
-  const { shares, volatility } = sim.model;
+  const { volatility } = sim.model;
   const held = booksOf(sim.s.world.holdings, firms.length);
   const total = new Float64Array(price.length);
   for (const book of held) for (const [i, n] of book) total[i] += n;
   for (const p of sim.s.account.positions) if (p.shares > 0) total[p.company] += p.shares;
   const flow = new Float64Array(price.length);
   const sig = signals(sim);
-  const regime = sim.market.state.regime;
   firms.forEach((firm, f) => {
     const book = state.books[f];
     const mine = held[f];
     const rules = STRATEGIES[firm.strategy];
     const aum = aumOf(book, mine, price);
-    const core = new Set(book.core);
-    let coreValue = 0;
-    for (const i of core) coreValue += (mine.get(i) ?? 0) * price[i];
-    const cash = firm.strategy === 'macro' ? MACRO_CASH[regime] : rules.cash;
-    const invest = Math.max(0, aum * (1 - cash) - coreValue);
-    const want = targets(sim, f, firm.strategy, invest, sig);
-    const extra = frontRun(sim, firm.strategy).filter((i) => !want.has(i));
-    for (const i of extra) want.set(i, 1 / Math.max(rules.holdings, 8));
-    const minTrade = Math.max(100_000, aum * 0.0005);
-    for (const i of new Set([...mine.keys(), ...want.keys()])) {
-      if (core.has(i) || sim.market.state.status[i]) continue;
-      const now = mine.get(i) ?? 0;
-      const room = Math.max(0, (OWNERSHIP_CAP - sim.s.world.insiderPct[i]) * shares[i] - total[i]);
-      const target = Math.min(((want.get(i) ?? 0) * invest) / price[i], rules.maxStake * shares[i], now + room);
-      let next = Math.round(now + rules.turnover * (target - now));
-      // Small positions left over are sold outright.
-      if (!want.has(i) && next * price[i] < minTrade) next = 0;
-      const delta = next - now;
-      if (!delta || (next && Math.abs(delta) * price[i] < minTrade)) continue;
+    for (const [i, delta] of orders(sim, f, mine, total, sig, aum)) {
+      const next = (mine.get(i) ?? 0) + delta;
       book.cash -= delta * price[i] + Math.abs(delta) * price[i] * halfSpread[i];
       flow[i] += delta;
       total[i] += delta;

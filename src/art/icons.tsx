@@ -234,6 +234,25 @@ const ICONS = {
       <path d="M19 19l9 9" stroke="#5a300e" strokeWidth="4" />
     </>
   ),
+  /** The Garlic Browser (spec §14A): a garlic bulb. */
+  garlic: (
+    <>
+      <path d="M16 2c-1 3-1 5 0 8" stroke="#5f8a2a" strokeWidth="2" fill="none" />
+      <path d="M16 9c-7 2-12 7-11 13 1 5 5 8 11 8s10-3 11-8c1-6-4-11-11-13z" fill="#f4efe1" stroke="#4a2a5a" />
+      <path d="M16 10c-3 4-4 10-3 19M16 10c3 4 4 10 3 19M11 12c-4 4-4 11-1 16M21 12c4 4 4 11 1 16" stroke="#b39ccc" fill="none" />
+      <path d="M11 30h10" stroke="#7a5c3a" strokeWidth="2" />
+    </>
+  ),
+  /** A setup program: a box with a floppy disk. */
+  installer: (
+    <>
+      <path d="M4.5 12.5l11.5-5 11.5 5v13l-11.5 5-11.5-5z" fill="#c8a060" stroke={K} />
+      <path d="M4.5 12.5l11.5 5 11.5-5M16 17.5v13" stroke={K} fill="none" />
+      <rect x="10.5" y="1.5" width="11" height="11" fill="#2040a0" stroke={K} />
+      <rect x="13" y="2" width="6" height="4" fill={W} />
+      <rect x="12.5" y="8.5" width="7" height="4" fill={G} />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof ICONS;

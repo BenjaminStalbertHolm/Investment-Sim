@@ -49,7 +49,10 @@ export type Task =
   | { do: 'outlook'; id: number }
   // Phase 8: an annual meeting counts its votes; an SOB audit reports.
   | { do: 'meeting'; meeting: number }
-  | { do: 'audit' };
+  | { do: 'audit' }
+  // Phase 9: a dark web purchase falls due; forged statements come to light.
+  | { do: 'darkweb'; purchase: number }
+  | { do: 'forgeryFound'; purchase: number };
 
 export type Timed = Task & { time: GameTime; seq: number };
 
@@ -185,7 +188,7 @@ function takePlan(sim: Sim, id: number): PlannedEvent | undefined {
  * A price jump spread over 1–6 bars, with value following `persist` of it (more for better-run companies). Short sellers
  * make good news jump further, but value follows only the news.
  */
-function jump(sim: Sim, i: number, logMove: number, persist: number, bars = sim.rng.events.int(1, 6)): void {
+export function jump(sim: Sim, i: number, logMove: number, persist: number, bars = sim.rng.events.int(1, 6)): void {
   const { jump, jumpBars, lnV } = sim.market.state;
   jump[i] += sim.squeeze(i, logMove);
   jumpBars[i] = Math.max(jumpBars[i], bars);

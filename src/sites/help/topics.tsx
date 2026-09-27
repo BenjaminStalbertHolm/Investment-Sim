@@ -7,7 +7,9 @@ import { MARGIN_SPREAD, maintenanceRates } from '../../sim/margin';
 import { FINE_DAYS, HEAT_DECAY } from '../../sim/regulator';
 import { MAX_LEVERAGE, type GameSettings } from '../../sim/settings';
 import { ALWAYS_AVAILABLE, GC_FEE, MAX_FEE, RECALL_DAYS } from '../../sim/shorts';
-import { BANK, EQUIFACTS, EXCHANGE, FED, OPEK, QUOTEZONE, RAGINGBEAR, WEATHER } from '../urls';
+import { BANK, EQUIFACTS, EXCHANGE, FED, OPEK, QUOTEZONE, RAGINGBEAR, TUCATS, WEATHER } from '../urls';
+import { PRICES, SEIZE_DISCOUNT, SHARK_RANGE, SHARK_WEEKLY, SHELL_FEE } from '../../sim/data/darkweb';
+import { usd } from '../darkweb/terms';
 import { Link } from '../web';
 import { Example, Go, See, Steps, Tip } from './parts';
 
@@ -1059,6 +1061,47 @@ export const TOPICS: Topic[] = [
         <Tip>Report tips you don’t trust to the SOB (the button in Outbox Express). It earns a little reputation and no heat.</Tip>
       </>
     ),
+  },
+  {
+    id: 'darkweb',
+    title: 'The Garlic Browser and the dark web',
+    section: 'firm',
+    questions: ['What is the Garlic Browser?', 'What is the dark web?', 'How do I bribe a journalist?', 'What is a shell company?', 'What is a loan shark?'],
+    keywords: 'garlic dark web darkweb tucats bribe journalist puff hit piece leak bot farm espionage hack deface ddos shell offshore pump dump rumour forgery shark vig cellar scam sting vendor',
+    body: ({ settings }) =>
+      !settings.darkWeb ? (
+        <p>I am relieved to say that the dark web is switched off in this game, sir. Its advanced settings saw to that.</p>
+      ) : (
+        <>
+          <p>
+            I could not possibly recommend it. But since you ask: sooner or later an anonymous letter will point you to the{' '}
+            <Link href={`http://${TUCATS}/garlic.html`}>Garlic Browser at Tucats Downloads</Link>. Installed, it opens addresses ending
+            in <code>.garlic</code>: eleven markets and a forum, The Cellar. Start at The Clove, its directory.
+          </p>
+          <p>
+            Every listing states <b>its price, its chance of working, what failure costs and the heat it adds</b>, and the order is
+            confirmed on exactly those terms. Whether it works is decided when you buy it, so reloading a save will not change it.
+            Your odds are {settings.darkWebOdds > 0 ? `${Math.round(settings.darkWebOdds * 100)} points better` : settings.darkWebOdds < 0 ? `${Math.round(-settings.darkWebOdds * 100)} points worse` : 'as listed'} at
+            this difficulty, and bribes grow harder as your heat rises.
+          </p>
+          <h3>What is for sale</h3>
+          <ul>
+            <li><b>Press for Sale</b>: articles about your firm, a stock or a rival, from {usd(PRICES.press[0])} at a tabloid to {usd(PRICES.press[1])} at the New York Journal. An honest journalist writes about the bribe instead.</li>
+            <li><b>The Leak Bazaar</b>: earnings surprises and takeover targets. Trading on them just before the news may be flagged as insider trading.</li>
+            <li><b>Bot Farm</b>, <b>Rumour Mill</b>, <b>Pump Syndicate</b>: prices moved by hype, fear and takeover talk. They fade.</li>
+            <li><b>Cloak &amp; Dagger</b> and <b>Hackers-for-hire</b>: a rival’s books, its web site taken down, a company’s home page defaced.</li>
+            <li><b>Forgery Desk</b>: statements that show your clients a quarter you didn’t have.</li>
+            <li><b>Shell Company Registry</b>: {usd(PRICES.shell)} and {usd(PRICES.shellYear)} a year for an offshore company. Stakes over 5% go unfiled, and payments through it cost {Math.round(SHELL_FEE * 100)}% but leave half the heat. The Bureau finds shells more often the hotter you are.</li>
+            <li><b>Loan Sharks</b>: {usd(SHARK_RANGE[0])} to {usd(SHARK_RANGE[1])}, at {Math.round(SHARK_WEEKLY * 100)}% a week, paid every Friday. Miss one and the collectors take what you owe, plus a penalty, in positions at {Math.round(SEIZE_DISCOUNT * 100)}% below market — and the furniture.</li>
+          </ul>
+          <p>
+            Payments from the firm’s cash appear in the ledger as “Consulting fees”, which auditors read. Some vendors vanish with the
+            money; some are the Securities Oversight Bureau. New accounts with perfect ratings and low prices deserve suspicion, and
+            The Cellar is where buyers warn each other.
+          </p>
+          <Tip>A journalist who took your money once is cheaper the next time — and may one day ask for more.</Tip>
+        </>
+      ),
   },
   {
     id: 'bankruptcy',

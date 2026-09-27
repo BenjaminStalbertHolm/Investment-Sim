@@ -14,14 +14,38 @@ import type { Level } from './settings';
 export type SobOutcome = 'cleared' | 'warning' | 'fine' | 'suspension' | 'freeze' | 'enforcement';
 export const OUTCOMES: readonly SobOutcome[] = ['cleared', 'warning', 'fine', 'suspension', 'freeze', 'enforcement'];
 
-/** A trade the SOB could hold against the firm: its time, the company, and what it gained. */
+/**
+ * What the SOB could hold against the firm: a trade (its time, the company, and what it gained), or since Phase 9 the
+ * dark web's trail — "Consulting fees" in the ledger, transfers through a shell, a vendor who was the Bureau all along,
+ * a planted rumour (spec §16B: an audit reviews the ledger).
+ */
 export interface Evidence {
   time: GameTime;
   company: number;
-  kind: 'insider' | 'preNews';
+  kind: 'insider' | 'preNews' | 'consulting' | 'offshore' | 'sting' | 'manipulation';
   gain: number;
+  /** Money paid, for payments in the ledger. */
+  amount?: number;
   audited?: boolean;
 }
+
+/** How much each piece of evidence weighs with an audit. */
+const weight = (e: Evidence) => {
+  switch (e.kind) {
+    case 'insider':
+      return 3 + e.gain / 1e6;
+    case 'preNews':
+      return 1;
+    case 'consulting':
+      return 0.15 + (e.amount ?? 0) / 2e6;
+    case 'offshore':
+      return 0.05;
+    case 'sting':
+      return 4;
+    case 'manipulation':
+      return 2;
+  }
+};
 
 /** The firm's record with the SOB (spec §14 enforcement actions). */
 export interface SobAction {
@@ -64,7 +88,7 @@ const FIXED_FINE: Partial<Record<SobOutcome, number>> = { fine: 50_000, suspensi
 export const REPUTATION_HIT: Record<SobOutcome, number> = { cleared: 0, warning: 2, fine: 5, suspension: 10, freeze: 15, enforcement: 30 };
 export const CREDIT_HIT: Record<SobOutcome, number> = { cleared: 0, warning: 10, fine: 40, suspension: 60, freeze: 80, enforcement: 150 };
 
-const addHeat = (sim: Sim, amount: number) => {
+export const addHeat = (sim: Sim, amount: number) => {
   const r = sim.s.regulator;
   r.heat = Math.min(100, r.heat + amount);
   r.peak = Math.max(r.peak, r.heat);
@@ -85,7 +109,10 @@ export function surveil(sim: Sim, company: number, move: number, plan: number): 
     const way = side === 'buy' || side === 'cover' ? 1 : side === 'sell' || side === 'short' ? -1 : 0;
     gain += Math.max(0, way * move) * e.shares * e.price;
   }
-  const tipped = sim.s.mail.tips.some((t) => t.plan === plan && t.truth === 'genuine' && sim.s.mail.insider.some((x) => x.tip === t.id));
+  const tipped =
+    sim.s.mail.tips.some((t) => t.plan === plan && t.truth === 'genuine' && sim.s.mail.insider.some((x) => x.tip === t.id)) ||
+    // Information bought on the dark web (spec §14A: large trades just before news raise an insider-trading flag).
+    sim.s.darkweb.leaks.some((l) => l.company === company && (l.plan === plan || l.report === dayOf(sim.time)));
   if (!gain || (!tipped && (Math.abs(move) < FLAG_MOVE || gain < FLAG_GAIN))) return;
   const kind = tipped ? 'insider' : 'preNews';
   sim.s.regulator.evidence.push({ time: sim.time, company, kind, gain });
@@ -112,7 +139,13 @@ export function monthlyAudit(sim: Sim, day: number): void {
   const r = sim.s.regulator;
   if (r.audit) return;
   const chance = Math.min(0.9, (r.heat / 100) ** 2 * STRICTNESS[sim.s.settings.scrutiny]);
-  if (!sim.rng.regulator.chance(chance)) return;
+  if (sim.rng.regulator.chance(chance)) openAudit(sim, day);
+}
+
+/** The SOB opens an examination now (a monthly audit, a sting, a manipulation investigation), unless one is under way. */
+export function openAudit(sim: Sim, day: number): void {
+  const r = sim.s.regulator;
+  if (r.audit) return;
   const due = addTradingDays(day, 10);
   r.audit = { opened: day, due };
   sim.send({ kind: 'audit', day: due });
@@ -131,9 +164,9 @@ export function auditReport(sim: Sim): { outcome: SobOutcome; fine: number } | u
   const day = dayOf(sim.time);
   const open = r.evidence.filter((e) => !e.audited);
   const gains = open.reduce((a, e) => a + e.gain, 0);
-  const weight = open.reduce((a, e) => a + (e.kind === 'insider' ? 3 + e.gain / 1e6 : 1), 0) + r.heat / 25;
+  const evidence = open.reduce((a, e) => a + weight(e), 0) + r.heat / 25;
   const strict = STRICTNESS[sim.s.settings.scrutiny];
-  const score = weight * strict + rng.normal(0, 0.75);
+  const score = evidence * strict + rng.normal(0, 0.75);
   const outcome = OUTCOMES[score < 1 ? 0 : score < 2 ? 1 : score < 3.5 ? 2 : score < 5 ? 3 : score < 6.5 ? 4 : 5];
   for (const e of open) e.audited = true;
   r.audit = undefined;
@@ -153,6 +186,18 @@ export function auditReport(sim: Sim): { outcome: SobOutcome; fine: number } | u
   r.record.push(action);
   sim.s.clients.reputation = Math.max(0, sim.s.clients.reputation - REPUTATION_HIT[outcome]);
   return { outcome, fine };
+}
+
+/**
+ * A fine outside an audit (the dark web's scandals, Phase 9): on the record, a loss the day it is imposed, and owed in
+ * FINE_DAYS trading days like any SOB fine.
+ */
+export function imposeFine(sim: Sim, amount: number): void {
+  const r = sim.s.regulator;
+  const day = dayOf(sim.time);
+  r.fine = { amount: (r.fine?.amount ?? 0) + amount, due: addTradingDays(day, FINE_DAYS) };
+  r.record.push({ day, outcome: 'fine', amount });
+  sim.s.account.charges += amount;
 }
 
 /** The SOB record's weight in the credit score (spec §16A, Equifacts). */

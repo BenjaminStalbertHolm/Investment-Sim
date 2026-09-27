@@ -54,7 +54,7 @@ export const useGame = create<GameStore>()(() => ({
 /** The UI's half of a save (spec §18 GameState): windows, desktop, tray and the Trade app's watchlists. */
 export interface GameState {
   windows: { windows: WindowState[]; lastBounds: Partial<Record<AppId, Bounds>>; zCounter: number; idCounter: number };
-  shell: { iconPositions: Record<string, { x: number; y: number }>; speed: Speed; tickerTape: boolean };
+  shell: { iconPositions: Record<string, { x: number; y: number }>; speed: Speed; tickerTape: boolean; installed?: string[] };
   trade: { watchlists: Watchlist[]; active: string; tab: TradeTab };
   browser: { favourites: Favourite[]; history: string[]; dialup: Dialup };
   /** Outbox Express's folder, sort and junk filter (Phase 6). */
@@ -63,13 +63,13 @@ export interface GameState {
 
 export function gameState(): GameState {
   const { windows, lastBounds, zCounter, idCounter } = useWindows.getState();
-  const { iconPositions, speed, tickerTape } = useShell.getState();
+  const { iconPositions, speed, tickerTape, installed } = useShell.getState();
   const { watchlists, active, tab } = useTrade.getState();
   const { favourites, history, dialup } = useBrowser.getState();
   const { folder, sort, junkFilter, selected } = useMailView.getState();
   return {
     windows: { windows, lastBounds, zCounter, idCounter },
-    shell: { iconPositions, speed, tickerTape },
+    shell: { iconPositions, speed, tickerTape, installed },
     trade: { watchlists, active, tab },
     browser: { favourites, history, dialup },
     mail: { folder, sort, junkFilter, selected },
@@ -121,6 +121,7 @@ export async function newGame(options: NewGameOptions): Promise<void> {
   const started = await simulation().newGame(options);
   setStartYear(started.settings.startYear);
   useWindows.getState().closeAll();
+  useShell.setState({ installed: [] });
   useTrade.setState(newTradeState());
   useBrowser.setState(newBrowserState());
   useMailView.setState(newMailView(), true);
@@ -134,7 +135,8 @@ export async function loadGame(id: string): Promise<void> {
     const loaded = await simulation().load(await readSave(id));
     const ui = loaded.game as GameState;
     useWindows.setState(ui.windows);
-    useShell.setState(ui.shell);
+    // Saves from before Phase 9 have installed nothing.
+    useShell.setState({ installed: [], ...ui.shell });
     useTrade.setState({ ...ui.trade, ticket: newTradeState().ticket });
     useBrowser.setState(ui.browser);
     useMailView.setState(ui.mail ?? newMailView(), true);
