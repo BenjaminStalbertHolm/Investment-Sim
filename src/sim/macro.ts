@@ -40,7 +40,7 @@ const ymd = (day: number) => {
   return { year: d.getUTCFullYear(), month: d.getUTCMonth(), date: d.getUTCDate() };
 };
 /** The nth given weekday of a month (nth −1: the last). */
-function nthWeekday(year: number, month: number, wd: number, nth: number): number {
+export function nthWeekday(year: number, month: number, wd: number, nth: number): number {
   if (nth > 0) {
     const first = day0(year, month);
     return first + ((wd - weekday(first) + 7) % 7) + 7 * (nth - 1);

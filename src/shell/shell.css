@@ -446,3 +446,60 @@ button.pressed {
   font-weight: bold;
   text-align: center;
 }
+
+/* The firm is bankrupt: the tray says so, and reopens the final report (spec §16). */
+.taskbar .tray .tray-bankrupt {
+  background: #c00000;
+  color: #fff;
+  font-weight: bold;
+}
+
+/* ---------- Blue Screen of Debt (spec §4, §16) ---------- */
+
+.bsod {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0000aa;
+  color: #fff;
+  font-family: 'Lucida Console', 'Courier New', monospace;
+  font-size: 16px;
+  line-height: 1.4;
+  cursor: none;
+}
+
+.bsod-text {
+  max-width: 640px;
+  padding: 0 16px;
+}
+
+.bsod-text p {
+  margin: 0 0 18px;
+}
+
+.bsod-title {
+  text-align: center;
+}
+
+.bsod-title span {
+  padding: 0 6px;
+  background: #aaa;
+  color: #0000aa;
+}
+
+.bsod-prompt {
+  text-align: center;
+}
+
+.bsod-cursor {
+  animation: bsod-blink 1s steps(1) infinite;
+}
+
+@keyframes bsod-blink {
+  50% {
+    opacity: 0;
+  }
+}

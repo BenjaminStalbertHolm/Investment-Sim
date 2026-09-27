@@ -220,6 +220,14 @@ const ICONS = {
       <circle cx="17" cy="19" r="2" fill="#f0d060" />
     </>
   ),
+  shame: (
+    <>
+      <rect x="2" y="27" width="28" height="4" fill="#3a8a3a" />
+      <path d="M8.5 28.5V12a7.5 7.5 0 0 1 15 0v16.5z" fill={G} stroke={K} />
+      <text x="16" y="17" fontSize="6" fontWeight="bold" fontFamily="Arial, sans-serif" textAnchor="middle" fill={D}>RIP</text>
+      <path d="M11 20.5h10M11 23.5h7" stroke={D} />
+    </>
+  ),
   find: (
     <>
       <circle cx="13" cy="13" r="8" fill="#c0e0ff" stroke={K} strokeWidth="2" />

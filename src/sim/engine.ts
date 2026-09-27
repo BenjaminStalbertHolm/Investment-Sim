@@ -3,22 +3,36 @@ import { decodeCompany, type Company } from '../world/company';
 import { generateWorld, type World, type WorldOptions } from '../world/generator';
 import type { Firm, Holding } from '../world/ownership';
 import { Rng, type RngState } from '../world/rng';
-import { bookCash, bookFill, type Account, type Order, type OrderRequest, type OrderStatus } from './account';
 import {
-  BAR_MINUTES, BARS_PER_DAY, gameYear, CLOSE, OPEN, START_DAY, at, dayOf, holiday, isTradingDay, minuteOf, nextOpen,
-  nextTradingDay, phaseAt, previousTradingDay, weekday, type GameTime, type Phase,
+  book, bookCash, bookFill, direction, isStop, opens, type Account, type Order, type OrderRequest, type OrderStatus, type Side,
+} from './account';
+import { bankruptcyReport, type BankruptcyReport, type Cause } from './bankruptcy';
+import {
+  BAR_MINUTES, BARS_PER_DAY, gameYear, CLOSE, OPEN, START_DAY, addTradingDays, at, dayOf, holiday, isTradingDay, minuteOf,
+  nextOpen, nextTradingDay, phaseAt, previousTradingDay, weekday, type GameTime, type Phase,
 } from './calendar';
 import {
   DEFAULT_FEES, accept, clientUnits, closeOfDay, decline, firstOffer, founding, mandateWarnings, morningClients,
   quarterEnd, settle, unitPrice, type ClientsState, type Fees,
 } from './clients';
-import type { Sim, Streams } from './context';
 import {
-  addTradingDays, applyFollowUp, closeDeal, dump, enqueue, eventRates, fire, leak, newEvents, pick, planAhead, planPicks,
-  type EventsState, type Timed,
+  Commodities, chain, initialCommodities, listed, opekMeetings, parseContract, pregameCommodity, type CommodityState,
+  type Contract, type PriceContext,
+} from './commodities';
+import type { Sim, Streams } from './context';
+import { CONTRACTS, CONTRACT_INDEX, EXPIRY_WARNING_DAYS, MAINTENANCE, MJ, OPEK_MINUTE, STORAGE_RATE } from './data/commodities';
+import {
+  applyFollowUp, closeDeal, dump, enqueue, eventRates, fire, leak, newEvents, pick, planAhead, planPicks, type EventsState,
+  type Timed,
 } from './events';
+import { bookFutures, chargeStorage, expire, goodsAtSpot, goodsValue, sellGoods, settleFutures, type Expiry } from './futures';
+import {
+  BANK_LIMIT, EARLY_FEE, GRACE_DAYS, HISTORY, LATE_FEE, MIN_LOAN, TERMS, TIERS, accrued, bankDebt, bankRate, creditScore,
+  isPaymentDay, newLoans, nextPayment, paymentDay, quoteLoan, type Loan, type LoansState, type Structure,
+} from './loans';
 import { initialMacro, release, releasesOn, type MacroState } from './macro';
-import { FOLDER_OF, digest, morningMail, newMailState, noteTrade, type Mail, type MailDraft, type MailState } from './mail';
+import { FOLDER_OF, digest, morningMail, newMailState, noteTrade, type Mail, type MailDraft, type MailLine, type MailState } from './mail';
+import { MAINTENANCE_LONG, MAINTENANCE_SHORT, MARGIN_SPREAD, buyingPower, requirements } from './margin';
 import type { NewsItem, NewsQuery, Rumour } from './news';
 import { hireJournalists, type Journalist } from './press';
 import {
@@ -33,10 +47,11 @@ import { BAR_YEARS, buildModel, type Model } from './model';
 import { pregameBars, pregameDays, pregameIndex, pregameMarket, sessionBars } from './pregame';
 import { defaultPlayer, type Player } from './player';
 import type { GameSettings } from './settings';
+import { RECALL_DAYS, borrowOf, pileIn, recallChance, revertShortInterest, squeeze, type Borrow } from './shorts';
 import {
-  INDEX, type AccountView, type CalendarEntry, type ClientsView, type CompanyDetails, type Directory, type EngineEvent,
-  type Estimate, type FirmView, type Holder, type LiveBars, type MarketTable, type PositionView, type Quote,
-  type QuarterResult, type Timeframe,
+  INDEX, chartCommodity, type AccountView, type CalendarEntry, type ClientsView, type CompanyDetails, type ContractQuote,
+  type Directory, type EngineEvent, type Estimate, type FirmView, type FuturesView, type Holder, type LiveBars, type LoansView,
+  type MarketTable, type OutlookView, type PositionView, type Quote, type QuarterResult, type Timeframe,
 } from './types';
 import { seasonOf } from './earnings';
 
@@ -70,14 +85,21 @@ export interface SimState {
   journalists: Journalist[];
   clients: ClientsState;
   mail: MailState;
+  /** Phase 7: commodities and the weather and OPEK outlooks, bank loans and credit, and the end (spec §16). */
+  commodities: CommodityState;
+  loans: LoansState;
+  bankruptcy?: BankruptcyReport;
 }
 
-const STREAMS: (keyof Streams)[] = ['tick', 'regime', 'earnings', 'events', 'macro', 'clients', 'mail'];
+const STREAMS: (keyof Streams)[] = ['tick', 'regime', 'earnings', 'events', 'macro', 'clients', 'mail', 'commodities', 'broker'];
 /** The stream each saved state is named after (spec §10.1). */
-const STREAM_NAMES: Record<keyof Streams, string> = {
+export const STREAM_NAMES: Record<keyof Streams, string> = {
   tick: 'market:tick', regime: 'market:regime', earnings: 'earnings', events: 'events', macro: 'macro', clients: 'clients', mail: 'mail',
+  commodities: 'commodities', broker: 'broker',
 };
 const MORNING = 7 * 60;
+/** Half the bid-ask spread of a front-month futures contract; further months are wider. */
+const FUTURES_SPREAD = 0.0002;
 
 export interface NewGameOptions extends WorldOptions {
   settings: GameSettings;
@@ -87,14 +109,20 @@ export interface NewGameOptions extends WorldOptions {
 }
 
 const SESSIONS_KEPT = 5;
+const dollars = (v: number) => `$${Math.round(v).toLocaleString('en-US')}`;
+const count = (n: number) => n.toLocaleString('en-US');
+
+/** What liquidation must achieve (spec §12.4, §16A): the maintenance requirement, an amount the account can pay out, or everything. */
+type Goal = 'margin' | { cash: number } | 'all';
 
 /**
  * The market simulation (spec §11): runs headless in tests and inside the Web Worker in the game. It owns market
- * truth; the UI only reads snapshots and sends orders.
+ * truth; the UI only reads snapshots and sends orders. It is also the firm's broker and bank (Phase 7).
  */
 export class Engine implements Sim {
   readonly market: Market;
   readonly rng: Streams;
+  readonly commodities: Commodities;
   /** Chance per trading day that each company has a corporate event (derived, never saved). */
   private readonly eventRate: Float64Array;
   /** Companies the player is looking at get real 5-minute bars (spec §11.3), as do holdings and the MAJOR 500. */
@@ -102,6 +130,7 @@ export class Engine implements Sim {
   private readonly intraday = new Map<number, Bar[]>();
   private events: EngineEvent[] = [];
   private pregame?: { days: number[]; market: Float64Array };
+  private readonly pregameCommodities = new Map<number, Bar[]>();
 
   private constructor(
     /** The whole saved state. Modules on the engine's clock (events, clients, mail) read and change it. */
@@ -113,6 +142,9 @@ export class Engine implements Sim {
     this.market.rate = s.macro.rate;
     this.rng = Object.fromEntries(STREAMS.map((k) => [k, Rng.fromState(s.rng[k])])) as unknown as Streams;
     this.eventRate = eventRates(companies, s.world.tiers, s.settings.events);
+    this.commodities = new Commodities(s.commodities, s.settings.volatility);
+    // Commodities move alongside the stock market, and move the industries that depend on them (spec §11.2).
+    this.market.onFactors = (market, years, regime) => this.commodities.step(this.rng.commodities, market, years, regime, this.s.macro.rate);
   }
 
   static newGame(options: NewGameOptions): Engine {
@@ -159,6 +191,9 @@ export class Engine implements Sim {
         nextOrder: 1,
         // The starting capital is the founding clients' seed money (spec §15.1).
         ledger: [{ time: clock, kind: 'deposit', amount: capital, balance: capital, note: settings.clients ? 'Founding clients' : undefined }],
+        futures: [],
+        goods: [],
+        charges: 0,
       },
       stats: [],
       macro: initialMacro(),
@@ -166,6 +201,8 @@ export class Engine implements Sim {
       journalists: hireJournalists(seed),
       clients: founding(Rng.stream(seed, 'clients:founders'), capital, 1000, player.ceoName, player.firmName, settings.clients),
       mail: newMailState(addTradingDays(START_DAY, 7)),
+      commodities: initialCommodities(seed),
+      loans: newLoans(),
     };
     state.clients.nextOffer = firstOffer(START_DAY);
     const engine = new Engine(structuredClone(state), companies, model);
@@ -222,12 +259,16 @@ export class Engine implements Sim {
   get trading(): boolean {
     return this.phase === 'open' && !this.market.state.halted;
   }
+  /** The firm went bankrupt (spec §16): the clock has stopped for good. */
+  get bankrupt(): boolean {
+    return !!this.s.bankruptcy;
+  }
 
   // ---------- Time (spec §11.1) ----------
 
-  /** Runs every morning, open, bar, close and scheduled task up to `target`. */
+  /** Runs every morning, open, bar, close and scheduled task up to `target`. A bankruptcy stops the clock. */
   advanceTo(target: GameTime): void {
-    for (;;) {
+    while (!this.s.bankruptcy) {
       const market = this.nextMarket();
       const queued = this.s.events.queue[0];
       // A task runs before a later market moment; at the same minute, the market (open, bar, close) goes first.
@@ -247,7 +288,7 @@ export class Engine implements Sim {
         if (minute === CLOSE) this.close();
       }
     }
-    if (target > this.s.clock) this.s.clock = target;
+    if (target > this.s.clock && !this.s.bankruptcy) this.s.clock = target;
   }
 
   advance(minutes: number): void {
@@ -299,10 +340,15 @@ export class Engine implements Sim {
       case 'release': {
         const r = release(task.kind, this.s.macro, this.market, this.rng.macro);
         this.report({ kind: r.kind, company: -1, level: r.level, prev: r.prev, expect: r.expect, move: r.surprise, follow: r.tone });
+        if (r.kind === 'fed') this.commodities.rateChange(r.level - r.prev);
         return;
       }
       case 'redeem':
         return settle(this, task.client);
+      case 'buyIn':
+        return this.buyIn(task.company);
+      case 'outlook':
+        return this.outlookDue(task.id);
     }
   }
 
@@ -323,13 +369,20 @@ export class Engine implements Sim {
     this.scheduleDay(day);
     morningMail(this, day, settings.insiderTips, settings.tipReliability);
     if (settings.clients) morningClients(this, day, this.fees);
+    this.outlooks(day);
+    this.expiryWarnings(day);
   }
 
-  /** Opening bell: regime, earnings and dividends released overnight, the gap, then everything queued for the open. */
+  /**
+   * Opening bell: short interest drifts, the regime moves on, earnings and dividends released overnight, the gap, then
+   * the broker and the bank (margin calls and loan payments due) and everything queued for the open.
+   */
   private open(): void {
     const day = dayOf(this.s.clock);
+    revertShortInterest(this.market.state.shortInterest, this.model.shortBase);
+    this.commodities.startDay(this.rng.commodities, this.s.macro.inflation);
     this.market.startDay(this.rng.regime);
-    const reports = reportEarnings(day, this.s.fundamentals, this.market, this.companies, this.rng.earnings);
+    const reports = reportEarnings(day, this.s.fundamentals, this.market, this.companies, this.rng.earnings, (i, m) => this.squeeze(i, m));
     this.payDividends(reports.map((r) => r.company));
     for (const { company, move } of reports) {
       // The archive keeps the reports that make news: large companies, and big surprises at the not-so-small.
@@ -342,12 +395,15 @@ export class Engine implements Sim {
     let oldest = day;
     for (let k = 1; k < SESSIONS_KEPT; k++) oldest = previousTradingDay(oldest);
     for (const [id, bars] of this.intraday) this.intraday.set(id, bars.filter((b) => b.time >= oldest * 86_400));
+    this.marginDue(day);
+    if (!this.s.bankruptcy) this.loansDue(day);
+    if (this.s.bankruptcy) return;
     for (const order of this.openOrders()) this.execute(order);
   }
 
   /**
    * A quarter of each payer's annual dividend goes out on its report day (spec §15.2): the price and value drop by it
-   * before the open, and the firm is paid for the shares it holds.
+   * before the open, and the firm is paid for the shares it holds — or pays it, on shares it is short.
    */
   private payDividends(companies: number[]): void {
     const { dividend } = this.s.fundamentals;
@@ -385,7 +441,7 @@ export class Engine implements Sim {
       }
     });
     if (this.market.state.halted) this.events.push({ kind: 'halt' });
-    this.fillResting();
+    this.workOrders();
   }
 
   private close(): void {
@@ -395,12 +451,25 @@ export class Engine implements Sim {
     const prices = { open: dayOpen, high: dayHigh, low: dayLow, close: market.price, volume: dayVolume };
     recordDay(this.s.history, day, prices, [index.open, index.high, index.low, market.indexLevel]);
     for (const order of this.openOrders()) if (order.tif === 'day') this.finish(order, 'expired');
+    // Futures (spec §12.3): the daily settlement, then contracts at their last trading day are delivered or settled.
+    const account = this.s.account;
+    const p = this.prices();
+    settleFutures(account, (key) => this.futuresPrice(key, p), this.s.clock);
+    for (const e of expire(account, day, (k) => this.commodities.spot(k, p), this.s.clock)) this.expired(e);
+    this.commodities.close(p);
+    // Overnight charges for the calendar days until the next session: borrow fees, margin interest, storage.
+    const nights = nextTradingDay(day) - day;
+    this.chargeBorrow(nights);
+    this.chargeInterest(nights);
+    chargeStorage(account, nights, (code) => this.commodities.spot(CONTRACT_INDEX[code], p), this.s.clock);
+    this.recalls(day);
     digest(this, day);
     const { settings } = this.s;
     closeOfDay(this, this.fees);
     const month = (d: number) => new Date(d * 86_400_000).getUTCMonth();
     const next = nextTradingDay(day);
     if (Math.floor(month(next) / 3) !== Math.floor(month(day) / 3)) quarterEnd(this, this.fees, settings.clientPatience);
+    this.checkMargin(day);
     this.s.stats.push([day, this.netWorth(), market.indexLevel]);
     this.events.push({ kind: 'close', day, weekEnd: endsWeek(day) });
   }
@@ -416,7 +485,7 @@ export class Engine implements Sim {
     const item = { ...draft, id: news.length, time: this.s.clock } as NewsItem;
     for (const key of Object.keys(item) as (keyof NewsItem)[]) if (item[key] === undefined) delete item[key];
     news.push(item);
-    const holdings = [item.company, item.other].filter((c): c is number => c !== undefined && c >= 0 && this.held(c) > 0);
+    const holdings = [item.company, item.other].filter((c): c is number => c !== undefined && c >= 0 && this.held(c) !== 0);
     if (this.s.mail.alerts && holdings.length && item.kind !== 'takeoverDone') this.send({ kind: 'alert', news: item.id, company: holdings[0] });
     return item;
   }
@@ -432,7 +501,8 @@ export class Engine implements Sim {
 
   /**
    * A company leaves the market (spec §11.6). Open orders are cancelled; the firm's shares are paid out at `price` (a
-   * takeover) or written off (a bankruptcy); competitors' stakes go with it; the MAJOR 500 gets a new member.
+   * takeover) or written off (a bankruptcy) — a short is closed there too; competitors' stakes go with it; the MAJOR 500
+   * gets a new member.
    */
   delist(company: number, reason: Listing, price: number): void {
     const final = reason === LISTING.bankrupt ? 0 : price;
@@ -447,15 +517,16 @@ export class Engine implements Sim {
     this.events.push({ kind: 'delisted', company });
   }
 
+  /** Net asset value of the book (spec §15.1): what the firm is worth. */
   nav(): number {
     return this.netWorth();
   }
 
-  /** The broker sells the largest positions first until the cash covers `amount` (redemptions, spec §15.1). */
+  /** The broker sells the largest long positions first until the cash covers `amount` (redemptions, spec §15.1). */
   raiseCash(amount: number): void {
     if (!this.trading) return;
     const { price } = this.market;
-    const positions = [...this.s.account.positions].sort((a, b) => b.shares * price[b.company] - a.shares * price[a.company] || a.company - b.company);
+    const positions = this.s.account.positions.filter((p) => p.shares > 0).sort((a, b) => b.shares * price[b.company] - a.shares * price[a.company] || a.company - b.company);
     for (const p of positions) {
       const short = amount - this.s.account.cash;
       if (short <= 0) break;
@@ -490,6 +561,7 @@ export class Engine implements Sim {
 
   /** The action buttons (spec §15): accept or decline a mandate, report a tip to the SOB. */
   mailAction(id: number, action: 'accept' | 'decline' | 'report'): string | undefined {
+    if (this.s.bankruptcy) return 'The firm is bankrupt.';
     const mail = this.s.mail.messages.find((m) => m.id === id);
     if (!mail || mail.answer) return 'You have already answered this message.';
     if (mail.kind === 'offer' && action !== 'report') {
@@ -571,11 +643,29 @@ export class Engine implements Sim {
     };
   }
 
-  /** What the next weeks hold (spec §12.8): earnings for `companies`, releases and Federal Reservoir meetings. */
+  /**
+   * What the next weeks hold (spec §12.8): earnings for `companies`, releases and Federal Reservoir meetings, OPEK
+   * meetings, the last trading days of the futures held and loan payments.
+   */
   calendar(from: number, to: number, companies: readonly number[]): CalendarEntry[] {
     const out: CalendarEntry[] = [];
+    const opek = new Set([...opekMeetings(new Date(from * 86_400_000).getUTCFullYear()), ...opekMeetings(new Date(to * 86_400_000).getUTCFullYear())]);
+    const expiries = this.s.account.futures.map((p) => parseContract(p.contract)!);
+    const loans = this.s.loans.loans.filter((l) => l.status === 'active');
+    const rate = loans.length ? this.bankRate() : 0;
+    for (const l of loans) {
+      // Later payments are shown at today's balance and rate.
+      for (let n = l.paid + 1; n <= l.months && paymentDay(l, n) <= to; n++) {
+        const day = paymentDay(l, n);
+        if (day < from) continue;
+        const p = nextPayment({ ...l, paid: n - 1 }, rate);
+        out.push({ day, minute: OPEN, kind: 'loan', loan: l.id, amount: p.interest + p.principal });
+      }
+    }
     for (let day = isTradingDay(from) ? from : nextTradingDay(from); day <= to; day = nextTradingDay(day)) {
       for (const r of releasesOn(day)) out.push({ day, minute: r.minute, kind: r.kind });
+      if (opek.has(day)) out.push({ day, minute: OPEK_MINUTE, kind: 'opek' });
+      for (const c of expiries) if (c.expiry === day) out.push({ day, minute: CLOSE, kind: 'expiry', contract: c.key });
       const { index } = seasonOf(day);
       if (index < 0) continue;
       for (const c of companies) {
@@ -584,7 +674,7 @@ export class Engine implements Sim {
         }
       }
     }
-    return out;
+    return out.sort((a, b) => a.day - b.day || a.minute - b.minute);
   }
 
   // ---------- Orders (spec §12.2) ----------
@@ -609,6 +699,9 @@ export class Engine implements Sim {
       commission: 0,
       updated: this.s.clock,
     };
+    // A trailing stop starts its trail behind the price now.
+    if (order.type === 'trailingStop') order.stop = this.market.price[order.company] * (1 + direction(order.side) * order.trail!);
+    for (const key of Object.keys(order) as (keyof Order)[]) if (order[key] === undefined) delete order[key];
     account.orders.push(order);
     if (this.trading) this.execute(order);
     return { order: structuredClone(order) };
@@ -620,22 +713,25 @@ export class Engine implements Sim {
     return !!order;
   }
 
-  /** What an order would cost now: price with spread and impact, commission, buying power (spec §12.2). */
+  /** What an order would cost now: price with spread and impact, commission, buying power and margin (spec §12.2). */
   estimate(r: OrderRequest): Estimate {
     const { market } = this;
     const i = r.company;
     const mid = market.price[i];
     const half = market.halfSpread[i];
-    const sign = r.side === 'buy' ? 1 : -1;
+    const sign = direction(r.side);
     const impact = market.impact(i, r.shares);
     const atMarket = mid * (1 + sign * (half + impact));
-    const price = r.type === 'limit' ? (sign > 0 ? Math.min(r.limit!, atMarket) : Math.max(r.limit!, atMarket)) : atMarket;
+    let price = atMarket;
+    if (r.type === 'limit') price = sign > 0 ? Math.min(r.limit!, atMarket) : Math.max(r.limit!, atMarket);
+    else if (r.type === 'stopLimit') price = r.limit!;
+    else if (r.type === 'stop') price = r.stop! * (1 + sign * (half + impact));
+    else if (r.type === 'trailingStop') price = mid * (1 + sign * (r.trail ?? 0)) * (1 + sign * (half + impact));
     const value = r.shares * price;
     const commission = this.commission(value, true);
-    const buyingPower = this.buyingPower(r.replaces);
-    // A buy holds back its worst case: the limit price, or the market price with impact.
-    const reserve = sign > 0 ? r.shares * (r.type === 'limit' ? r.limit! : atMarket) + commission : 0;
+    const power = this.buyingPower(r.replaces);
     const after = this.held(i) + sign * r.shares;
+    const exposure = Math.abs(after) * mid;
     return {
       bid: mid * (1 - half),
       ask: mid * (1 + half),
@@ -645,100 +741,166 @@ export class Engine implements Sim {
       total: sign > 0 ? value + commission : value - commission,
       impact,
       volumeShare: r.shares / market.adv[i],
-      buyingPower,
-      buyingPowerAfter: buyingPower - reserve,
-      warnings: sign > 0 ? mandateWarnings(this, i, after) : [],
+      buyingPower: power,
+      buyingPowerAfter: power - (opens(r.side) ? this.reserve(r) : 0),
+      warnings: opens(r.side) ? mandateWarnings(this, i, after) : [],
+      margin: { initial: exposure / this.s.settings.maxLeverage, maintenance: exposure * (after >= 0 ? MAINTENANCE_LONG : MAINTENANCE_SHORT) },
+      borrow: r.side === 'short' ? this.borrow(i) : undefined,
     };
   }
 
   private check(r: OrderRequest): string | undefined {
+    if (this.s.bankruptcy) return 'The firm is bankrupt.';
     if (!Number.isInteger(r.company) || r.company < 0 || r.company >= this.companies.length) return 'Unknown symbol.';
     if (this.market.state.status[r.company]) return 'This company is no longer listed.';
     if (!Number.isInteger(r.shares) || r.shares < 1) return 'Enter a whole number of shares.';
     if (r.shares > this.model.shares[r.company]) return 'That is more shares than the company has issued.';
-    if (r.type === 'limit' && !(Number.isFinite(r.limit) && r.limit! > 0)) return 'Enter a limit price.';
+    const positive = (v?: number) => Number.isFinite(v) && v! > 0;
+    if ((r.type === 'limit' || r.type === 'stopLimit') && !positive(r.limit)) return 'Enter a limit price.';
+    if ((r.type === 'stop' || r.type === 'stopLimit') && !positive(r.stop)) return 'Enter a stop price.';
+    if (r.type === 'trailingStop' && !(positive(r.trail) && r.trail! <= 0.5)) return 'Enter a trail between 0% and 50%.';
     if (r.replaces !== undefined && !this.openOrders().some((o) => o.id === r.replaces)) {
       return 'The order you are changing has already been filled or cancelled.';
     }
-    if (r.side === 'sell') {
-      const pending = this.openOrders().reduce(
-        (n, o) => (o.side === 'sell' && o.company === r.company && o.id !== r.replaces ? n + o.shares - o.filled : n),
-        0,
-      );
-      const available = this.held(r.company) - pending;
-      if (r.shares > available) {
-        return available > 0 ? `You can sell at most ${available.toLocaleString('en-US')} shares.` : 'You have no shares to sell.';
+    const held = this.held(r.company);
+    const pending = (side: Side) =>
+      this.openOrders().reduce((n, o) => (o.side === side && o.company === r.company && o.id !== r.replaces ? n + o.shares - o.filled : n), 0);
+    const ticker = this.companies[r.company].ticker;
+    switch (r.side) {
+      case 'sell': {
+        const available = Math.max(0, held) - pending('sell');
+        if (r.shares > available) return available > 0 ? `You can sell at most ${count(available)} shares.` : 'You have no shares to sell.';
+        return undefined;
       }
-      const e = this.estimate(r);
-      if (this.s.account.cash + e.value < e.commission) return 'The sale would not cover the commission.';
-    } else {
-      const e = this.estimate(r);
-      if (e.buyingPowerAfter < 0) return 'Insufficient buying power.';
+      case 'cover': {
+        const available = Math.max(0, -held) - pending('cover');
+        if (r.shares > available) return available > 0 ? `You can cover at most ${count(available)} shares.` : `You have no short position in ${ticker} to cover.`;
+        return undefined;
+      }
+      case 'buy':
+        if (held < 0) return `You are short ${count(-held)} ${ticker}: use Buy to Cover to close the short first.`;
+        break;
+      case 'short': {
+        if (!this.s.settings.shortSelling) return 'Short selling is switched off in this game.';
+        if (held > 0) return `You own ${count(held)} ${ticker}: sell them before selling short.`;
+        // The locate (spec §12.4): the broker must find shares to borrow.
+        const available = this.borrow(r.company, pending('short')).available;
+        if (r.shares > available) {
+          return available > 0 ? `Your broker can locate only ${count(available)} shares of ${ticker} to borrow.` : `Your broker cannot locate any shares of ${ticker} to borrow.`;
+        }
+        break;
+      }
+      default:
+        return 'Unknown action.';
     }
+    if (this.s.account.call) return 'Your account has a margin call: until it is met, only orders that reduce positions are accepted.';
+    if (this.estimate(r).buyingPowerAfter < 0) return 'Insufficient buying power.';
     return undefined;
   }
 
-  /** Fills what can be filled right now: a market order, or the marketable part of a limit order. */
+  /**
+   * Fills what can be filled right now: a market order, or the marketable part of a limit order. A stop order waits until
+   * the market reaches its stop, then works as a market order (a limit order, for stop-limits).
+   */
   private execute(order: Order): void {
     const { market } = this;
     const i = order.company;
-    const buy = order.side === 'buy';
-    const sign = buy ? 1 : -1;
+    if (isStop(order.type) && !order.triggered) {
+      if (!this.stopReached(order)) return;
+      order.triggered = true;
+    }
+    const sign = direction(order.side);
     const mid = market.price[i];
     const half = market.halfSpread[i];
     let shares = order.shares - order.filled;
-    if (!buy) shares = Math.min(shares, this.held(i));
-    if (order.type === 'limit') {
+    if (!opens(order.side)) shares = Math.min(shares, this.closable(order));
+    const limit = order.type === 'limit' || order.type === 'stopLimit' ? order.limit! : undefined;
+    if (limit !== undefined) {
       // The impact a limit leaves room for caps the size: impact(q) = k·√(q / ADV) and k = impact at one ADV.
-      const room = sign * (order.limit! / mid - 1) - half;
+      const room = sign * (limit / mid - 1) - half;
       if (room < 0) return;
       const k = market.impact(i, market.adv[i]);
       if (k > 0) shares = Math.min(shares, Math.floor(market.adv[i] * (room / k) ** 2));
     }
-    if (buy) shares = Math.min(shares, this.affordable(order, mid * (1 + half + market.impact(i, shares))));
+    let borrowable = Infinity;
+    if (opens(order.side)) shares = Math.min(shares, this.affordable(order, half + market.impact(i, shares)));
+    if (order.side === 'short') shares = Math.min(shares, (borrowable = this.borrow(i, this.pendingShort(i, order.id)).available));
     if (shares >= 1) {
       const impact = market.impact(i, shares);
+      this.fill(order, shares, mid * (1 + sign * (half + impact)));
       // Half of the impact stays in the price after the fill (the I term of spec §11.2).
-      if (this.fill(order, shares, mid * (1 + sign * (half + impact)))) market.push(i, (sign * impact) / 2);
+      market.push(i, (sign * impact) / 2);
     }
-    if (order.type === 'market' && order.status === 'open') {
-      const note = buy ? 'Not enough cash for the whole order.' : 'Not enough shares for the whole order.';
+    if (limit === undefined && order.status === 'open') {
+      const note = !opens(order.side)
+        ? 'Not enough shares for the whole order.'
+        : borrowable <= order.shares - order.filled
+          ? 'No more shares could be borrowed.'
+          : 'Not enough buying power for the whole order.';
       this.finish(order, order.filled ? 'cancelled' : 'rejected', note);
     }
   }
 
-  /** Resting limit orders fill at their limit once the market reaches it, up to a share of each bar's volume. */
-  private fillResting(): void {
+  /** Whether a stop order's stop has been reached; a trailing stop first follows the market. */
+  private stopReached(order: Order): boolean {
+    const price = this.market.price[order.company];
+    const up = direction(order.side) > 0;
+    if (order.type === 'trailingStop') {
+      order.stop = up ? Math.min(order.stop!, price * (1 + order.trail!)) : Math.max(order.stop!, price * (1 - order.trail!));
+    }
+    return up ? price >= order.stop! : price <= order.stop!;
+  }
+
+  /**
+   * Each bar: stop orders watch their stops, and resting limit orders fill at their limit once the market reaches it, up
+   * to a share of each bar's volume.
+   */
+  private workOrders(): void {
     const { market } = this;
     for (const order of this.openOrders()) {
-      if (order.type !== 'limit') continue;
+      if (isStop(order.type) && !order.triggered) {
+        this.execute(order);
+        continue;
+      }
+      if (order.type !== 'limit' && order.type !== 'stopLimit') continue;
       const i = order.company;
-      const buy = order.side === 'buy';
-      const quote = market.price[i] * (buy ? 1 + market.halfSpread[i] : 1 - market.halfSpread[i]);
-      if (buy ? quote > order.limit! : quote < order.limit!) continue;
+      const sign = direction(order.side);
+      const limit = order.limit!;
+      const quote = market.price[i] * (1 + sign * market.halfSpread[i]);
+      if (sign > 0 ? quote > limit : quote < limit) continue;
       let shares = Math.min(order.shares - order.filled, Math.floor(PARTICIPATION * market.barVolume[i]));
-      shares = Math.min(shares, buy ? this.affordable(order, order.limit!) : this.held(i));
-      if (shares >= 1) this.fill(order, shares, order.limit!);
+      if (opens(order.side)) shares = Math.min(shares, this.affordable(order, Math.max(0, sign * (limit / market.price[i] - 1))));
+      else shares = Math.min(shares, this.closable(order));
+      if (order.side === 'short') shares = Math.min(shares, this.borrow(i, this.pendingShort(i, order.id)).available);
+      if (shares >= 1) this.fill(order, shares, limit);
     }
   }
 
-  /** Whole shares the cash pays for at `price`, commission included. */
-  private affordable(order: Order, price: number): number {
-    const { fixed, rate } = this.s.settings.commission;
-    const cash = this.s.account.cash - (order.filled ? 0 : fixed);
-    return Math.max(0, Math.floor((cash * (1 - 1e-12)) / (price * (1 + rate))));
+  /** Shares an order to close a position can still close: a sale up to the long, a cover up to the short. */
+  private closable(order: Order): number {
+    const held = this.held(order.company);
+    return Math.max(0, order.side === 'sell' ? held : -held);
   }
 
-  private fill(order: Order, shares: number, price: number): boolean {
+  /**
+   * Buying power a share of an opening order uses: its value at `basis`, plus leverage times what the spread, impact and
+   * commission take from equity (`cost`, a fraction of the price).
+   */
+  private perShare(basis: number, cost: number): number {
+    return basis * (1 + this.s.settings.maxLeverage * (cost + this.s.settings.commission.rate * (1 + cost)));
+  }
+
+  /** Whole shares of an opening order the buying power pays for, each losing `cost` of its price to the fill. */
+  private affordable(order: Order, cost: number): number {
+    const power = this.buyingPower(order.id) - (order.filled ? 0 : this.s.settings.maxLeverage * this.s.settings.commission.fixed);
+    return Math.max(0, Math.floor((power * (1 - 1e-12)) / this.perShare(this.market.price[order.company], cost)));
+  }
+
+  private fill(order: Order, shares: number, price: number): void {
     const commission = this.commission(shares * price, !order.filled);
-    if (order.side === 'sell' && this.s.account.cash + shares * price < commission) {
-      this.finish(order, 'cancelled', 'The sale would not cover the commission.');
-      return false;
-    }
     bookFill(this.s.account, order, shares, price, commission, this.s.clock);
     noteTrade(this, order.company, order.side, shares, price);
     this.events.push({ kind: 'fill', order: order.id, company: order.company, side: order.side, shares, price });
-    return true;
   }
 
   private finish(order: Order, status: OrderStatus, note?: string): void {
@@ -752,30 +914,548 @@ export class Engine implements Sim {
     return (first ? fixed : 0) + rate * value;
   }
 
+  /** Shares of a company the firm holds; negative when it is short. */
   held(company: number): number {
     return this.s.account.positions.find((p) => p.company === company)?.shares ?? 0;
   }
 
-  /** Cash less what open buy orders hold back (the account has no margin until Phase 7). */
-  private buyingPower(except?: number): number {
-    const { market } = this;
-    let reserved = 0;
-    for (const o of this.openOrders()) {
-      if (o.side !== 'buy' || o.id === except) continue;
-      const shares = o.shares - o.filled;
-      const i = o.company;
-      const price = o.type === 'limit' ? o.limit! : market.price[i] * (1 + market.halfSpread[i] + market.impact(i, shares));
-      reserved += shares * price + this.commission(shares * price, !o.filled);
+  /** An order the broker places itself, at market, whatever the account's buying power (spec §12.4). */
+  private force(company: number, side: Side, shares: number, reason: Order['forced']): Order {
+    const account = this.s.account;
+    const order: Order = {
+      company, side, type: 'market', shares, tif: 'day', id: account.nextOrder++, placed: this.s.clock, status: 'open', filled: 0,
+      price: 0, commission: 0, updated: this.s.clock, forced: reason,
+    };
+    account.orders.push(order);
+    this.execute(order);
+    return order;
+  }
+
+  // ---------- Margin (spec §12.4) ----------
+
+  /** Equity (cash, longs, shorts and futures P&L since the last settlement), what the positions require, and the excess. */
+  private marginFigures() {
+    const { price } = this.market;
+    const account = this.s.account;
+    let long = 0;
+    let short = 0;
+    for (const p of account.positions) {
+      const value = p.shares * price[p.company];
+      if (value >= 0) long += value;
+      else short -= value;
     }
-    return this.s.account.cash - reserved;
+    let open = 0;
+    let futures = 0;
+    if (account.futures.length) {
+      const pc = this.prices();
+      for (const f of account.futures) {
+        const c = parseContract(f.contract)!;
+        const spec = CONTRACTS[c.k];
+        const now = this.commodities.futures(c.k, c.expiry, pc);
+        open += (now - f.mark) * f.contracts * spec.multiplier;
+        futures += Math.abs(f.contracts) * now * spec.multiplier * spec.margin;
+      }
+    }
+    const equity = account.cash + long - short + open;
+    const { initial, maintenance } = requirements(long, short, futures, this.s.settings.maxLeverage);
+    return { equity, long, short, open, futures, initial, maintenance, excess: equity - initial };
+  }
+
+  /**
+   * The buying power an order uses when it fills, held back while it waits: Buy and Sell Short orders (closing orders free
+   * it instead). A buy limit fills at its limit or better; a stop at its stop or worse; a short limit at its limit or better.
+   */
+  private reserve(o: OrderRequest & { filled?: number }): number {
+    const { market } = this;
+    const i = o.company;
+    const shares = o.shares - (o.filled ?? 0);
+    const mid = market.price[i];
+    let basis = mid;
+    let cost = market.halfSpread[i] + market.impact(i, shares);
+    if (o.side === 'short') basis = Math.max(mid, o.limit ?? 0);
+    else if (o.type === 'limit' || o.type === 'stopLimit') {
+      basis = Math.min(mid, o.limit!);
+      cost = Math.max(0, o.limit! / mid - 1);
+    } else if (o.type === 'stop' || o.type === 'trailingStop') basis = Math.max(mid, o.stop ?? mid * (1 + (o.trail ?? 0)));
+    return shares * this.perShare(basis, cost) + (o.filled ? 0 : this.s.settings.maxLeverage * this.s.settings.commission.fixed);
+  }
+
+  /** Stock buying power (spec §12.4): the excess over initial margin at max leverage, less what open orders hold back. */
+  private buyingPower(except?: number): number {
+    const m = this.marginFigures();
+    let reserved = 0;
+    for (const o of this.openOrders()) if (opens(o.side) && o.id !== except) reserved += this.reserve(o);
+    return buyingPower(m.equity, m.initial, this.s.settings.maxLeverage) - reserved;
+  }
+
+  /**
+   * At each close (spec §12.4): equity below the maintenance requirement brings a margin call, due after the difficulty's
+   * grace (at once, if equity has gone negative); a call is met when equity is back above it.
+   */
+  private checkMargin(day: number): void {
+    const account = this.s.account;
+    const m = this.marginFigures();
+    const exposed = account.positions.length > 0 || account.futures.length > 0;
+    const deficit = m.maintenance - m.equity;
+    if (deficit > 1e-6 && (exposed || !this.s.settings.noBankruptcy)) {
+      if (account.call) account.call.amount = deficit;
+      else {
+        const due = m.equity <= 0 ? nextTradingDay(day) : addTradingDays(day, this.s.settings.marginGrace);
+        account.call = { issued: this.s.clock, due, amount: deficit };
+        this.send({ kind: 'marginCall', amount: deficit, day: due });
+      }
+    } else if (account.call) {
+      account.call = undefined;
+      this.send({ kind: 'marginMet' });
+    }
+  }
+
+  /** A margin call due at this open and still unmet: forced liquidation, worst positions first (spec §12.4). */
+  private marginDue(day: number): void {
+    const account = this.s.account;
+    if (!account.call || day < account.call.due) return;
+    const before = this.marginFigures();
+    if (before.equity >= before.maintenance && before.equity >= 0) {
+      account.call = undefined;
+      this.send({ kind: 'marginMet' });
+      return;
+    }
+    const lines = this.liquidate('margin', 'margin');
+    account.call = undefined;
+    this.send({ kind: 'liquidation', reason: 'margin', lines, amount: before.maintenance - before.equity });
+    const after = this.marginFigures();
+    if (after.equity < 0) this.goBankrupt('margin', before.maintenance - before.equity, -after.equity);
+  }
+
+  /**
+   * Forced liquidation (spec §12.4, §16A): the broker cancels the firm's open orders, then closes positions worst first —
+   * those losing most — each only as far as needed, until `goal` is met; goods in the lobby go last.
+   */
+  private liquidate(goal: Goal, reason: 'margin' | 'loan'): MailLine[] {
+    for (const o of this.openOrders()) this.finish(o, 'cancelled', 'Cancelled by the broker for a forced liquidation.');
+    const leverage = this.s.settings.maxLeverage;
+    const shortfall = () => {
+      if (goal === 'all') return Infinity;
+      const m = this.marginFigures();
+      return goal === 'margin' ? m.maintenance - m.equity : goal.cash - m.excess;
+    };
+    const { price } = this.market;
+    const pc = this.prices();
+    const worst = [
+      ...this.s.account.positions.map((p) => ({ stock: p.company, pnl: p.shares * price[p.company] - p.cost })),
+      ...this.s.account.futures.map((f) => {
+        const c = parseContract(f.contract)!;
+        return { contract: f.contract, pnl: (this.commodities.futures(c.k, c.expiry, pc) - f.entry) * f.contracts * CONTRACTS[c.k].multiplier };
+      }),
+    ].sort((a, b) => a.pnl - b.pnl);
+    const lines: MailLine[] = [];
+    for (const item of worst) {
+      const need = shortfall();
+      if (need <= 0) break;
+      if ('stock' in item && item.stock !== undefined) {
+        const i = item.stock;
+        const held = this.held(i);
+        if (!held) continue;
+        // Each dollar sold frees its maintenance (or initial) requirement, less what the sale costs.
+        const frees = goal === 'margin' ? (held > 0 ? MAINTENANCE_LONG : MAINTENANCE_SHORT) : 1 / leverage;
+        const shares = Math.min(Math.abs(held), Math.ceil((need * 1.2) / Math.max(0.05, frees - 0.02) / price[i]));
+        const order = this.force(i, held > 0 ? 'sell' : 'cover', shares, reason);
+        if (order.filled) lines.push({ company: i, shares: order.filled, amount: order.filled * order.price, side: order.side, order: order.id });
+      } else if ('contract' in item && item.contract) {
+        const f = this.s.account.futures.find((x) => x.contract === item.contract);
+        if (!f) continue;
+        const c = parseContract(f.contract)!;
+        const spec = CONTRACTS[c.k];
+        const each = this.commodities.futures(c.k, c.expiry, pc) * spec.multiplier;
+        const frees = spec.margin * (goal === 'margin' ? MAINTENANCE : 1);
+        const n = Math.min(Math.abs(f.contracts), Math.ceil((need * 1.2) / Math.max(1e-3, frees - 0.001) / each));
+        const traded = this.tradeFuture(f.contract, -Math.sign(f.contracts) * n, true);
+        if ('price' in traded) lines.push({ company: -1, contract: f.contract, shares: n, amount: n * traded.price * spec.multiplier, side: f.contracts > 0 ? 'sell' : 'buy' });
+      }
+    }
+    for (const g of [...this.s.account.goods]) {
+      if (shortfall() <= 0) break;
+      const amount = sellGoods(this.s.account, g.code, this.commodities.spot(CONTRACT_INDEX[g.code], pc), this.s.clock);
+      if (amount !== undefined) lines.push({ company: -1, contract: g.code, shares: g.quantity, amount });
+    }
+    return lines;
+  }
+
+  // ---------- Short selling (spec §12.4) ----------
+
+  /** What the stock loan desk says about borrowing a company's shares: what it can locate, and at what fee. */
+  borrow(company: number, pending = this.pendingShort(company)): Borrow {
+    const i = company;
+    const floatShares = this.s.world.floatPct[i] * this.model.shares[i];
+    const cap = this.market.price[i] * this.model.shares[i];
+    return borrowOf(cap, floatShares, this.market.state.shortInterest[i], Math.max(0, -this.held(i)), pending);
+  }
+
+  /** Shares open Sell Short orders in a company would still borrow, other than order `except`'s. */
+  private pendingShort(company: number, except?: number): number {
+    return this.openOrders().reduce((n, o) => (o.side === 'short' && o.company === company && o.id !== except ? n + o.shares - o.filled : n), 0);
+  }
+
+  squeeze(company: number, move: number): number {
+    const shortInterest = this.market.state.shortInterest;
+    if (move < 0) {
+      shortInterest[company] = pileIn(shortInterest[company], move);
+      return move;
+    }
+    const factor = squeeze(this.borrow(company).shortInterest);
+    // The shorts who covered into the squeeze are gone.
+    if (factor > 1) shortInterest[company] *= 0.7;
+    return move * factor;
+  }
+
+  /** Each close: the day's borrow fees on every short (spec §12.4), for the calendar days until the next session. */
+  private chargeBorrow(nights: number): void {
+    const account = this.s.account;
+    let total = 0;
+    let shorts = 0;
+    for (const p of account.positions) {
+      if (p.shares >= 0) continue;
+      const fee = (this.borrow(p.company).fee * -p.shares * this.market.price[p.company] * nights) / 360;
+      p.fees = (p.fees ?? 0) + fee;
+      p.realized -= fee;
+      total += fee;
+      shorts++;
+    }
+    if (total) book(account, this.s.clock, 'borrowFee', -total, { note: `${shorts} short position${shorts > 1 ? 's' : ''}` });
+  }
+
+  /** The broker's rate on a debit balance: the policy rate plus its spread. */
+  private marginRate(): number {
+    return this.s.macro.rate + MARGIN_SPREAD * this.s.settings.loanRates;
+  }
+
+  /** Each close: interest on money borrowed from the broker (a negative cash balance). */
+  private chargeInterest(nights: number): void {
+    const account = this.s.account;
+    if (account.cash >= 0) return;
+    const interest = (-account.cash * this.marginRate() * nights) / 360;
+    account.charges += interest;
+    book(account, this.s.clock, 'interest', -interest, { note: 'Margin interest' });
+  }
+
+  /** Each close: lenders may recall shares the firm has borrowed, likelier when borrow is tight (spec §12.4). */
+  private recalls(day: number): void {
+    for (const p of this.s.account.positions) {
+      if (p.shares >= 0 || p.recall !== undefined) continue;
+      const cap = this.market.price[p.company] * this.model.shares[p.company];
+      if (!this.rng.broker.chance(recallChance(this.borrow(p.company), cap))) continue;
+      p.recall = addTradingDays(day, RECALL_DAYS);
+      enqueue(this.s.events, at(p.recall, OPEN), { do: 'buyIn', company: p.company });
+      this.send({ kind: 'recall', company: p.company, amount: -p.shares, day: p.recall });
+    }
+  }
+
+  /** A recall falls due: whatever is still short is bought in at the open. */
+  private buyIn(company: number): void {
+    const p = this.s.account.positions.find((x) => x.company === company);
+    if (!p || p.shares >= 0 || p.recall === undefined || !this.trading || this.s.bankruptcy) return;
+    for (const o of this.openOrders()) if (o.company === company && o.side === 'cover') this.finish(o, 'cancelled', 'Replaced by the broker’s buy-in.');
+    const order = this.force(company, 'cover', -p.shares, 'buyIn');
+    this.send({ kind: 'buyIn', company, lines: [{ company, shares: order.filled, amount: order.filled * order.price, side: 'cover', order: order.id }] });
+  }
+
+  // ---------- Futures and commodities (spec §12.3) ----------
+
+  /** What futures prices need: today, the economy and the MAJOR 500. */
+  prices(): PriceContext {
+    return { day: dayOf(this.s.clock), rate: this.s.macro.rate, inflation: this.s.macro.inflation, index: this.market.indexLevel };
+  }
+
+  /** A contract's fair price now. */
+  futuresPrice(key: string, pc = this.prices()): number {
+    const c = parseContract(key)!;
+    return this.commodities.futures(c.k, c.expiry, pc);
+  }
+
+  private futuresSpread(c: Contract): number {
+    const position = chain(c.k, dayOf(this.s.clock)).findIndex((x) => x.key === c.key);
+    return FUTURES_SPREAD * (1 + 0.5 * Math.max(0, position)) * this.s.settings.spread;
+  }
+
+  /**
+   * Buys (positive) or sells (negative) futures contracts at market, filled at once while the market is open. Opening a
+   * position needs its initial margin free; a forced trade (liquidation) skips the checks.
+   */
+  tradeFuture(key: string, contracts: number, forced = false): { price: number } | { error: string } {
+    if (this.s.bankruptcy) return { error: 'The firm is bankrupt.' };
+    if (!this.s.settings.futures) return { error: 'Futures trading is switched off in this game.' };
+    const c = parseContract(key);
+    if (!c || !listed(c, dayOf(this.s.clock))) return { error: 'That contract is not listed.' };
+    if (!Number.isInteger(contracts) || contracts === 0) return { error: 'Enter a whole number of contracts.' };
+    if (!this.trading) return { error: 'The pit is closed: futures trade from 09:30 to 16:00.' };
+    const spec = CONTRACTS[c.k];
+    const fair = this.futuresPrice(key);
+    if (!forced) {
+      const held = this.s.account.futures.find((p) => p.contract === key)?.contracts ?? 0;
+      const opening = Math.sign(held) === -Math.sign(contracts) ? Math.max(0, Math.abs(contracts) - Math.abs(held)) : Math.abs(contracts);
+      if (opening) {
+        if (this.s.account.call) return { error: 'Your account has a margin call: until it is met, only trades that reduce positions are accepted.' };
+        const each = fair * spec.multiplier * spec.margin;
+        if (opening * each > this.buyingPower() / this.s.settings.maxLeverage) {
+          return { error: `Not enough margin: each contract needs ${dollars(each)} of initial margin.` };
+        }
+      }
+    }
+    const price = fair * (1 + Math.sign(contracts) * this.futuresSpread(c));
+    const commission = this.commission(Math.abs(contracts) * price * spec.multiplier, true);
+    bookFutures(this.s.account, key, contracts, price, commission, this.s.clock);
+    this.events.push({ kind: 'futures', contract: key, contracts, price });
+    return { price };
+  }
+
+  /** The Roll button (spec §12.3): closes a position and opens the same in the next contract month. */
+  rollFuture(key: string): { price: number } | { error: string } {
+    const p = this.s.account.futures.find((x) => x.contract === key);
+    if (!p) return { error: 'You hold no such contract.' };
+    const c = parseContract(key)!;
+    const next = chain(c.k, dayOf(this.s.clock)).find((x) => x.month > c.month);
+    if (!next) return { error: 'There is no later contract to roll into.' };
+    const n = p.contracts;
+    const closed = this.tradeFuture(key, -n);
+    return 'error' in closed ? closed : this.tradeFuture(next.key, n);
+  }
+
+  /** Sells goods from the lobby to a local merchant, at a discount to spot (spec §12.3). */
+  sellGoods(code: string): { amount: number } | { error: string } {
+    if (this.s.bankruptcy) return { error: 'The firm is bankrupt.' };
+    const k = CONTRACT_INDEX[code];
+    if (k === undefined) return { error: 'There is nothing like that in the lobby.' };
+    const amount = sellGoods(this.s.account, code, this.commodities.spot(k, this.prices()), this.s.clock);
+    return amount === undefined ? { error: 'There is nothing like that in the lobby.' } : { amount };
+  }
+
+  /** Letters about contracts held to expiry: goods delivered, a failure to deliver, a cash settlement. */
+  private expired(e: Expiry): void {
+    const kind = e.outcome === 'delivered' ? 'delivery' : e.outcome === 'fined' ? 'ftd' : 'cashSettled';
+    this.send({ kind, contract: e.contract, contracts: e.contracts, amount: e.amount, quantity: e.quantity });
+  }
+
+  /** Each morning: the futures held that expire within a few trading days get a warning (spec §15.2). */
+  private expiryWarnings(day: number): void {
+    for (const p of this.s.account.futures) {
+      const c = parseContract(p.contract)!;
+      if (p.warned || addTradingDays(day, EXPIRY_WARNING_DAYS) < c.expiry) continue;
+      p.warned = true;
+      const delivery = CONTRACTS[c.k].delivery;
+      this.send({ kind: 'expiry', contract: p.contract, contracts: p.contracts, day: c.expiry, quantity: delivery ? Math.abs(p.contracts) * delivery.quantity : undefined });
+    }
+  }
+
+  /** Each morning: the National Weather Bureau's warnings and OPEK delegates' hints (spec §14), and the news of them. */
+  private outlooks(day: number): void {
+    const rng = this.rng.commodities;
+    const issued = this.commodities.planWeather(rng, day, this.s.clock);
+    const opek = this.commodities.planOpek(rng, day, this.s.clock);
+    if (opek) issued.push(opek);
+    for (const o of issued) {
+      enqueue(this.s.events, o.due, { do: 'outlook', id: o.id });
+      const [k, move] = o.moves[0];
+      // `level` is the day the weather is due, or the meeting.
+      this.report({ kind: o.source === 'weather' ? 'weather' : 'opekHint', company: -1, commodity: CONTRACTS[k].code, move: Math.expm1(move), text: o.kind, level: dayOf(o.due) });
+    }
+  }
+
+  /** The weather hits or not; OPEK announces. */
+  private outlookDue(id: number): void {
+    const o = this.commodities.resolve(this.rng.commodities, id);
+    if (!o) return;
+    const main = o.moves[0][0];
+    const moved = Math.expm1(o.actual.find(([k]) => k === main)?.[1] ?? 0);
+    const code = CONTRACTS[main].code;
+    // `prev` is the day the warning or the hint came out.
+    const warned = dayOf(o.issued);
+    if (o.source === 'opek') this.report({ kind: 'opek', company: -1, commodity: code, move: moved, expect: Math.expm1(o.moves[0][1]), text: o.result, prev: warned });
+    else if (o.result === 'hit') this.report({ kind: 'weatherHit', company: -1, commodity: code, move: moved, text: o.kind, prev: warned });
+    else this.report({ kind: 'weatherBust', company: -1, commodity: code, move: Math.expm1(-o.moves[0][1] * o.priced), text: o.kind, prev: warned });
+  }
+
+  // ---------- Loans and credit (spec §16A) ----------
+
+  /** The credit score and its parts (spec §16A, Equifacts). */
+  private credit() {
+    const stats = this.s.stats;
+    const worth = this.netWorth();
+    const past = stats.length > 126 ? stats[stats.length - 127][1] : this.s.account.ledger[0]?.amount ?? worth;
+    const debt = bankDebt(this.s.loans) + Math.max(0, -this.s.account.cash);
+    return creditScore(this.s.loans.history, debt, worth, past > 0 ? worth / past - 1 : 0);
+  }
+
+  /** The bank's rate on all its loans to the firm, with `extra` more debt. */
+  private bankRate(extra = 0): number {
+    return bankRate(bankDebt(this.s.loans) + extra, this.credit().score, this.s.macro.rate, this.s.settings.loanRates);
+  }
+
+  /** Whether the bank can debit `amount`: the account keeps its initial margin afterwards. */
+  private payable(amount: number): boolean {
+    return amount <= Math.max(0, this.marginFigures().excess) + 1e-9;
+  }
+
+  /** Each open: payments due on the first trading day of the month, and missed payments made good or defaulted. */
+  private loansDue(day: number): void {
+    const state = this.s.loans;
+    if (!state.loans.some((l) => l.status === 'active')) return;
+    const rate = this.bankRate();
+    const payday = isPaymentDay(day);
+    for (const loan of state.loans) {
+      if (loan.status !== 'active' || this.s.bankruptcy) continue;
+      if (loan.late) {
+        if (this.payable(loan.late.interest + loan.late.fee + loan.late.principal)) this.payLate(loan, day);
+        else if (day > loan.late.deadline) this.defaultLoan(loan, day);
+      } else if (payday && paymentDay(loan, loan.paid + 1) === day) this.payLoan(loan, rate, day);
+    }
+  }
+
+  private payLoan(loan: Loan, rate: number, day: number): void {
+    const state = this.s.loans;
+    const account = this.s.account;
+    const { interest, principal } = nextPayment(loan, rate);
+    if (!this.payable(interest + principal)) {
+      // Missed (spec §16A): a late fee and a mark on the credit report, and five trading days to pay; a second miss defaults.
+      loan.missed++;
+      const fee = LATE_FEE * (interest + principal);
+      account.charges += interest + fee;
+      loan.late = { interest, fee, principal, deadline: addTradingDays(day, GRACE_DAYS) };
+      state.history += HISTORY.late;
+      state.record.push({ day, kind: 'late', loan: loan.id, amount: interest + principal });
+      if (loan.missed >= 2) return this.defaultLoan(loan, day);
+      this.send({ kind: 'loanLate', loan: loan.id, amount: interest + principal + fee, day: loan.late.deadline });
+      return;
+    }
+    book(account, this.s.clock, 'loanInterest', -interest, { note: `Loan ${loan.id}` });
+    account.charges += interest;
+    if (principal) book(account, this.s.clock, 'repayment', -principal, { note: `Loan ${loan.id}` });
+    loan.balance -= principal;
+    loan.paid++;
+    loan.interestPaid += interest;
+    if (state.history < HISTORY.maxOnTime) state.history = Math.min(HISTORY.maxOnTime, state.history + HISTORY.onTime);
+    if (loan.paid >= loan.months || loan.balance < 0.005) this.loanRepaid(loan, day);
+  }
+
+  /** A missed payment made good within the grace period. Its interest and fee were charged when it was missed. */
+  private payLate(loan: Loan, day: number): void {
+    const late = loan.late!;
+    const account = this.s.account;
+    book(account, this.s.clock, 'loanInterest', -(late.interest + late.fee), { note: `Loan ${loan.id}, paid late` });
+    if (late.principal) book(account, this.s.clock, 'repayment', -late.principal, { note: `Loan ${loan.id}` });
+    loan.balance -= late.principal;
+    loan.interestPaid += late.interest;
+    loan.paid++;
+    loan.late = undefined;
+    this.s.loans.record.push({ day, kind: 'paidLate', loan: loan.id, amount: late.interest + late.fee + late.principal });
+    if (loan.paid >= loan.months || loan.balance < 0.005) this.loanRepaid(loan, day);
+  }
+
+  private loanRepaid(loan: Loan, day: number): void {
+    loan.status = 'repaid';
+    loan.balance = 0;
+    loan.closed = day;
+    this.s.loans.history += HISTORY.repaid;
+    this.s.loans.record.push({ day, kind: 'repaid', loan: loan.id, amount: loan.principal });
+    this.send({ kind: 'loanRepaid', loan: loan.id, amount: loan.principal });
+  }
+
+  /** A default (spec §16A): the bank sells what it must to recover the whole loan; a shortfall is bankruptcy. */
+  private defaultLoan(loan: Loan, day: number): void {
+    const account = this.s.account;
+    const owedInterest = loan.late ? loan.late.interest + loan.late.fee : 0;
+    const owed = loan.balance + owedInterest;
+    const lines = this.liquidate({ cash: owed }, 'loan');
+    const paid = this.s.settings.noBankruptcy ? owed : Math.min(owed, Math.max(0, this.marginFigures().excess));
+    const interestPaid = Math.min(paid, owedInterest);
+    if (interestPaid) book(account, this.s.clock, 'loanInterest', -interestPaid, { note: `Loan ${loan.id}, recovered` });
+    if (paid > interestPaid) book(account, this.s.clock, 'repayment', -(paid - interestPaid), { note: `Loan ${loan.id}, recovered` });
+    // What the bank did not recover of the interest owed stays a loss; the principal it did not recover is still owed.
+    loan.balance -= paid - interestPaid;
+    loan.late = undefined;
+    loan.status = 'defaulted';
+    loan.closed = day;
+    this.s.loans.history += HISTORY.default;
+    this.s.loans.record.push({ day, kind: 'default', loan: loan.id, amount: owed });
+    this.send({ kind: 'loanDefault', loan: loan.id, amount: owed, lines });
+    if (paid < owed - 0.005) this.goBankrupt('loan', owed, owed - paid);
+    else loan.balance = 0;
+  }
+
+  /** What a new loan would cost today (spec §16A: shown before signing). */
+  loanQuote(amount: number, structure: Structure, months: number) {
+    const rate = this.bankRate(amount);
+    const debt = bankDebt(this.s.loans) + amount;
+    const tier = TIERS.find((t) => debt <= t.max) ?? TIERS[TIERS.length - 1];
+    return { rate, tier: tier.name, ...quoteLoan(amount, structure, months, rate), firstPayment: paymentDay({ opened: dayOf(this.s.clock) } as Loan, 1) };
+  }
+
+  /** Signs a loan with First Continental Bank (spec §16A): the money arrives at once. */
+  takeLoan(amount: number, structure: Structure, months: number): { loan: Loan } | { error: string } {
+    if (this.s.bankruptcy) return { error: 'The firm is bankrupt.' };
+    const debt = bankDebt(this.s.loans);
+    if (!Number.isFinite(amount) || amount < MIN_LOAN) return { error: `The bank lends at least ${dollars(MIN_LOAN)}.` };
+    if (debt + amount > BANK_LIMIT + 0.005) return { error: `The bank lends at most ${dollars(BANK_LIMIT)} in all: you can borrow up to ${dollars(BANK_LIMIT - debt)} more.` };
+    if (!TERMS.includes(months)) return { error: 'Choose a term of one to five years.' };
+    if (structure !== 'amortising' && structure !== 'interestOnly') return { error: 'Choose how to repay the loan.' };
+    const state = this.s.loans;
+    const day = dayOf(this.s.clock);
+    const loan: Loan = { id: state.nextId++, principal: amount, balance: amount, structure, months, opened: day, paid: 0, missed: 0, interestPaid: 0, status: 'active' };
+    state.loans.push(loan);
+    book(this.s.account, this.s.clock, 'loan', amount, { note: `Loan ${loan.id}` });
+    state.record.push({ day, kind: 'opened', loan: loan.id, amount });
+    this.send({ kind: 'loan', loan: loan.id, amount, rate: this.bankRate(), day: paymentDay(loan, 1) });
+    return { loan: structuredClone(loan) };
+  }
+
+  /** Repays some or all of a loan early, with a 1% fee (spec §16A). */
+  repayLoan(id: number, amount: number): { loan: Loan } | { error: string } {
+    if (this.s.bankruptcy) return { error: 'The firm is bankrupt.' };
+    const loan = this.s.loans.loans.find((l) => l.id === id && l.status === 'active');
+    if (!loan) return { error: 'There is no such loan.' };
+    if (loan.late) return { error: 'Make the missed payment good first: the bank will take it at the next open if the money is there.' };
+    if (!(amount > 0)) return { error: 'Enter an amount to repay.' };
+    const principal = Math.min(amount, loan.balance);
+    const fee = EARLY_FEE * principal;
+    if (!this.payable(principal + fee)) return { error: `You need ${dollars(principal + fee)} free to repay that, fee included.` };
+    const account = this.s.account;
+    book(account, this.s.clock, 'repayment', -principal, { note: `Loan ${loan.id}, early` });
+    book(account, this.s.clock, 'loanFee', -fee, { note: `Loan ${loan.id}: early repayment fee` });
+    account.charges += fee;
+    loan.balance -= principal;
+    if (loan.balance < 0.005) this.loanRepaid(loan, dayOf(this.s.clock));
+    return { loan: structuredClone(loan) };
+  }
+
+  // ---------- Bankruptcy (spec §16) ----------
+
+  /** An obligation the firm cannot meet after selling everything: the end, unless the game is a sandbox. */
+  private goBankrupt(cause: Cause, owed: number, shortfall: number): void {
+    if (this.s.settings.noBankruptcy || this.s.bankruptcy) return;
+    this.liquidate('all', cause);
+    const tickers = this.companies.map((c) => c.ticker);
+    this.s.bankruptcy = bankruptcyReport({
+      day: dayOf(this.s.clock), cause, owed, shortfall, netWorth: this.netWorth(), player: this.s.player, seed: this.seed,
+      stats: this.s.stats, closed: this.s.account.closed, tickers, clients: this.s.clients.clients,
+    });
+    this.send({ kind: 'bankrupt', reason: cause, amount: shortfall });
+    this.events.push({ kind: 'bankrupt' });
+  }
+
+  /** The final report (spec §16), once the firm is bankrupt. */
+  bankruptcy(): BankruptcyReport | undefined {
+    return structuredClone(this.s.bankruptcy);
   }
 
   // ---------- Views ----------
 
+  /** What the firm is worth (spec §16): equity plus goods at resale value, less bank debt and what it owes on it. */
   netWorth(): number {
-    let worth = this.s.account.cash;
-    for (const p of this.s.account.positions) worth += p.shares * this.market.price[p.company];
-    return worth;
+    return this.marginFigures().equity + this.goodsValue() - bankDebt(this.s.loans) - accrued(this.s.loans);
+  }
+
+  private goodsValue(): number {
+    const pc = this.prices();
+    return this.s.account.goods.reduce((a, g) => a + goodsValue(g, this.commodities.spot(CONTRACT_INDEX[g.code], pc)), 0);
   }
 
   quote(i: number): Quote {
@@ -814,23 +1494,119 @@ export class Engine implements Sim {
       dayChange: p.shares * (price[p.company] - state.prevClose[p.company]),
       unrealized: p.shares * price[p.company] - p.cost,
       realized: p.realized,
+      ...(p.shares < 0 ? { borrowFee: this.borrow(p.company).fee, fees: p.fees ?? 0, recall: p.recall } : {}),
     }));
   }
 
   account(): AccountView {
     const positions = this.positions();
-    const { cash, deposits, closed } = this.s.account;
+    const { cash, deposits, closed, futures, goods, charges, call } = this.s.account;
     const sum = (f: (p: PositionView) => number) => positions.reduce((a, p) => a + f(p), 0);
-    const value = sum((p) => p.value);
+    const m = this.marginFigures();
+    const goodsValue = this.goodsValue();
+    const goodsCost = goods.reduce((a, g) => a + g.cost + g.storage, 0);
+    const loans = bankDebt(this.s.loans) + accrued(this.s.loans);
     return {
       cash,
-      value,
-      netWorth: cash + value,
+      value: m.long - m.short,
+      netWorth: m.equity + goodsValue - loans,
       deposits,
       dayChange: sum((p) => p.dayChange),
-      unrealized: sum((p) => p.unrealized),
-      realized: sum((p) => p.realized) + closed.reduce((a, c) => a + c.realized, 0),
+      unrealized: sum((p) => p.unrealized) + m.open + goodsValue - goodsCost,
+      realized: sum((p) => p.realized) + futures.reduce((a, f) => a + f.realized, 0) + closed.reduce((a, c) => a + c.realized, 0) - charges,
       buyingPower: this.buyingPower(),
+      equity: m.equity,
+      longValue: m.long,
+      shortValue: m.short,
+      futuresPnl: m.open,
+      futuresMargin: m.futures,
+      goodsValue,
+      loans,
+      initial: m.initial,
+      maintenance: m.maintenance,
+      excess: m.excess,
+      call: call && { ...call },
+      bankrupt: !!this.s.bankruptcy,
+    };
+  }
+
+  /** MajorTrade → Futures & Commodities and the exchange's board (spec §12.3). */
+  futures(): FuturesView {
+    const pc = this.prices();
+    const { settle } = this.s.commodities;
+    const chains = CONTRACTS.map((spec, k) =>
+      chain(k, pc.day).map((c): ContractQuote => {
+        const price = this.commodities.futures(k, c.expiry, pc);
+        const half = this.futuresSpread(c);
+        return { ...c, price, bid: price * (1 - half), ask: price * (1 + half), settle: settle.prices[c.key], margin: price * spec.multiplier * spec.margin };
+      }),
+    );
+    return {
+      enabled: this.s.settings.futures,
+      trading: this.trading,
+      day: pc.day,
+      ...this.commodityQuotes(),
+      chains,
+      positions: this.s.account.futures.map((f) => {
+        const c = parseContract(f.contract)!;
+        const spec = CONTRACTS[c.k];
+        const price = this.commodities.futures(c.k, c.expiry, pc);
+        return {
+          contract: f.contract, k: c.k, expiry: c.expiry, contracts: f.contracts, entry: f.entry, mark: f.mark, price,
+          open: (price - f.mark) * f.contracts * spec.multiplier, pnl: (price - f.entry) * f.contracts * spec.multiplier,
+          realized: f.realized, margin: Math.abs(f.contracts) * price * spec.multiplier * spec.margin,
+        };
+      }),
+      goods: this.s.account.goods.map((g) => {
+        const spot = this.commodities.spot(CONTRACT_INDEX[g.code], pc);
+        return { ...g, value: goodsValue(g, spot), perDay: STORAGE_RATE * goodsAtSpot(g, spot) };
+      }),
+      yield10: this.s.commodities.yield10,
+      rate: this.s.macro.rate,
+    };
+  }
+
+  /** Each futures contract's underlying: its price now and at the last close, for the tray and the Futures tab. */
+  commodityQuotes(): { spot: number[]; previous: number[] } {
+    const pc = this.prices();
+    return {
+      spot: CONTRACTS.map((_, k) => this.commodities.spot(k, pc)),
+      previous: CONTRACTS.map((_, k) => (k === MJ ? this.market.state.index.prevClose : this.commodities.previous(k))),
+    };
+  }
+
+  /** The weather warnings and OPEK meetings so far (spec §14), newest first: what happened only once it has. */
+  outlookViews(limit = 60): OutlookView[] {
+    return this.s.commodities.outlooks
+      .slice(-limit)
+      .reverse()
+      .map((o) => ({
+        id: o.id, source: o.source, kind: o.kind, issued: o.issued, due: o.due, moves: structuredClone(o.moves), done: !!o.done,
+        ...(o.done ? { result: o.result, actual: structuredClone(o.actual) } : {}),
+      }));
+  }
+
+  /** MajorTrade → Financing, First Continental Bank and Equifacts (spec §12.9, §16A). */
+  loans(): LoansView {
+    const state = this.s.loans;
+    const rate = this.bankRate();
+    const credit = this.credit();
+    const debt = bankDebt(state);
+    return {
+      loans: state.loans.map((l) => ({
+        ...structuredClone(l),
+        next: l.status === 'active' && !l.late ? { day: paymentDay(l, l.paid + 1), ...nextPayment(l, rate) } : undefined,
+      })),
+      debt,
+      accrued: accrued(state),
+      rate,
+      tiers: TIERS.map((t) => ({ ...t, rate: bankRate(t.max, credit.score, this.s.macro.rate, this.s.settings.loanRates) })),
+      headroom: Math.max(0, BANK_LIMIT - debt),
+      score: credit.score,
+      factors: { history: credit.history, leverage: credit.leverage, trend: credit.trend },
+      record: structuredClone(state.record),
+      policy: this.s.macro.rate,
+      marginRate: this.marginRate(),
     };
   }
 
@@ -865,6 +1641,7 @@ export class Engine implements Sim {
     const eps = f.income[i] / shares;
     const today = dayOf(this.s.clock);
     const year = this.daily(i).slice(-252);
+    const borrow = this.borrow(i);
     return {
       id: i,
       genome: c.genome,
@@ -893,6 +1670,8 @@ export class Engine implements Sim {
       lastEarnings: f.reported[i],
       insiderPct: this.s.world.insiderPct[i],
       floatPct: this.s.world.floatPct[i],
+      shortInterest: borrow.shortInterest,
+      borrowFee: borrow.fee,
       quarters: this.quarters(i),
       holders: this.holders(i),
     };
@@ -987,17 +1766,25 @@ export class Engine implements Sim {
   }
 
   private tracked(): number[] {
-    const ids = new Set([INDEX, ...this.watched]);
+    const ids = new Set([INDEX, ...[...this.watched].filter((id) => id >= 0)]);
     for (const p of this.s.account.positions) ids.add(p.company);
     return [...ids];
   }
 
-  /** The latest 5-minute bar and today's bar so far, for live chart updates. */
+  /** The latest 5-minute bar and today's bar so far, for live chart updates. Commodities have daily closes only. */
   live(id: number): LiveBars {
+    if (id < INDEX) {
+      const k = chartCommodity(id);
+      const pc = this.prices();
+      const close = this.commodities.spot(k, pc);
+      const open = this.commodities.previous(k);
+      return this.phase === 'open' ? { day: { time: (pc.day * 1440 + CLOSE) * 60, open, high: Math.max(open, close), low: Math.min(open, close), close, volume: 0 } } : {};
+    }
     return { bar: this.intraday.get(id)?.at(-1), day: this.runningBar(id) };
   }
 
   bars(id: number, timeframe: Timeframe): Bar[] {
+    if (id < INDEX) return this.commodityBars(chartCommodity(id), timeframe);
     switch (timeframe) {
       case '1D':
         return this.sessions(id, 1);
@@ -1014,6 +1801,28 @@ export class Engine implements Sim {
       case 'MAX':
         return this.weekly(id);
     }
+  }
+
+  /**
+   * A contract's underlying, day by day (spec §13): generated years before the start, the recorded closes, and now. The
+   * index future's is the MAJOR 500's. Commodities keep daily closes only, so the intraday timeframes show a month.
+   */
+  private commodityBars(k: number, timeframe: Timeframe): Bar[] {
+    if (k === MJ) return this.bars(INDEX, timeframe);
+    const { days, closes } = this.s.commodities;
+    let pre = this.pregameCommodities.get(k);
+    if (!pre) this.pregameCommodities.set(k, (pre = pregameCommodity(this.seed, k, this.pregameData().days)));
+    const n = CONTRACTS.length;
+    const game = days.map((day, row): Bar => {
+      const close = closes[row * n + k];
+      return { time: (day * 1440 + CLOSE) * 60, open: close, high: close, low: close, close, volume: 0 };
+    });
+    const pc = this.prices();
+    const now = this.commodities.spot(k, pc);
+    const today = this.phase === 'open' && days.at(-1) !== pc.day ? [{ time: (pc.day * 1440 + CLOSE) * 60, open: now, high: now, low: now, close: now, volume: 0 }] : [];
+    const all = [...pre, ...game, ...today];
+    const length = { '1D': 22, '5D': 22, '1M': 22, '6M': 126, '1Y': 252, '5Y': 1260, MAX: all.length }[timeframe];
+    return all.slice(-length);
   }
 
   private pregameData() {

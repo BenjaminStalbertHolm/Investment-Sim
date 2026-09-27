@@ -35,7 +35,22 @@ export type MailKind =
   | 'tip'
   | 'spam'
   | 'mom'
-  | 'party';
+  | 'party'
+  // Phase 7: the broker on margin, borrowing and futures; the bank on loans; the court at the end.
+  | 'marginCall'
+  | 'marginMet'
+  | 'liquidation'
+  | 'recall'
+  | 'buyIn'
+  | 'expiry'
+  | 'delivery'
+  | 'ftd'
+  | 'cashSettled'
+  | 'loan'
+  | 'loanLate'
+  | 'loanDefault'
+  | 'loanRepaid'
+  | 'bankrupt';
 
 export type Folder = 'inbox' | 'clients' | 'broker' | 'news' | 'tips' | 'junk' | 'sent';
 
@@ -46,18 +61,22 @@ export const FOLDER_OF: Record<MailKind, Folder> = {
   topUp: 'clients', redemption: 'clients', warning: 'clients', terminated: 'clients', completed: 'clients',
   statement: 'sent', reply: 'sent',
   settled: 'broker', digest: 'broker', dividend: 'broker', delisted: 'broker',
+  marginCall: 'broker', marginMet: 'broker', liquidation: 'broker', recall: 'broker', buyIn: 'broker', expiry: 'broker',
+  delivery: 'broker', ftd: 'broker', cashSettled: 'broker',
+  loan: 'inbox', loanLate: 'inbox', loanDefault: 'inbox', loanRepaid: 'inbox', bankrupt: 'inbox',
   briefing: 'news', alert: 'news',
   tip: 'tips',
   spam: 'junk',
 };
 
-/** A line of a broker letter: a fill, a dividend, a sale to raise cash. */
+/** A line of a broker letter: a fill, a dividend, a sale to raise cash; for futures, `contract` and contracts. */
 export interface MailLine {
   company: number;
   shares: number;
   amount: number;
   side?: Side;
   order?: number;
+  contract?: string;
 }
 
 export interface Mail {
@@ -78,7 +97,7 @@ export interface Mail {
   day?: number;
   /** Which template, for letters that come in several versions. */
   variant?: number;
-  reason?: 'breach' | 'benchmark' | 'performance' | 'acquired' | 'bankrupt';
+  reason?: 'breach' | 'benchmark' | 'performance' | 'acquired' | 'bankrupt' | 'margin' | 'loan';
   /** A constraint index (warnings). */
   constraint?: number;
   /** The quarter: the client's return and the MAJOR 500's. */
@@ -91,6 +110,13 @@ export interface Mail {
   /** Tips: what is supposed to happen, which way. */
   claim?: EventKind | 'pump';
   direction?: 1 | -1;
+  /** Futures letters: the contract, and how many (or the goods delivered: `quantity` units). */
+  contract?: string;
+  contracts?: number;
+  quantity?: number;
+  /** Bank letters: the loan, and its rate a year. */
+  loan?: number;
+  rate?: number;
 }
 
 export type MailDraft = Omit<Mail, 'id' | 'time' | 'read' | 'flagged' | 'deleted'> & { time?: GameTime; read?: boolean };
@@ -136,6 +162,7 @@ export const newMailState = (firstTip: number): MailState => ({ messages: [], ti
 
 /** Rough weight of a story: bigger companies and bigger moves first, the economy always near the top. */
 export function importance(item: NewsItem, cap: number): number {
+  if (item.commodity) return 2e4 + 2e5 * Math.abs(item.move ?? 0);
   if (item.company < 0) return item.kind === 'fed' ? 3e5 : 1e5;
   return Math.abs(item.move ?? 0.05) * Math.sqrt(cap);
 }
@@ -179,7 +206,7 @@ function briefing(sim: Sim, day: number): void {
     const { status } = sim.market.state;
     for (let i = 0; i < slot.length; i++) if (slot[i] === index && !status[i]) reporting.push(i);
   }
-  const held = reporting.filter((i) => sim.held(i) > 0);
+  const held = reporting.filter((i) => sim.held(i) !== 0);
   const biggest = reporting.sort((a, b) => sim.companies[b].marketCap - sim.companies[a].marketCap).slice(0, 5);
   const companies = [...new Set([...held, ...biggest])];
   sim.send({ kind: 'briefing', day, items, companies, releases: releasesOn(day).map((r) => r.kind) });
@@ -237,17 +264,19 @@ export function noteTrade(sim: Sim, company: number, side: Side, shares: number,
   }
 }
 
-/** The day's trade confirmations in one letter (spec §15.2), from the ledger. */
+/** The day's trade confirmations in one letter (spec §15.2), from the ledger: stocks by order, then futures trades. */
 export function digest(sim: Sim, day: number): void {
   const lines = new Map<number, Required<Pick<MailLine, 'company' | 'shares' | 'amount' | 'side' | 'order'>>>();
+  const futures: MailLine[] = [];
   const ledger = sim.s.account.ledger;
   for (let k = ledger.length - 1; k >= 0 && dayOf(ledger[k].time) === day; k--) {
     const e = ledger[k];
-    if (e.kind !== 'buy' && e.kind !== 'sell') continue;
+    if (e.kind === 'futures') futures.unshift({ company: -1, contract: e.contract, shares: e.shares!, amount: e.price!, side: e.note === 'sell' ? 'sell' : 'buy' });
+    if (e.kind !== 'buy' && e.kind !== 'sell' && e.kind !== 'short' && e.kind !== 'cover') continue;
     const line = lines.get(e.order!) ?? { company: e.company!, shares: 0, amount: 0, side: e.kind, order: e.order! };
     line.shares += e.shares!;
     line.amount += Math.abs(e.amount);
     lines.set(e.order!, line);
   }
-  if (lines.size) sim.send({ kind: 'digest', day, lines: [...lines.values()].sort((a, b) => a.order - b.order) });
+  if (lines.size || futures.length) sim.send({ kind: 'digest', day, lines: [...[...lines.values()].sort((a, b) => a.order - b.order), ...futures] });
 }

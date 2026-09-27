@@ -1,4 +1,5 @@
 import { strFromU8, strToU8, unzipSync, zipSync, type Zippable } from 'fflate';
+import type { BankruptcyReport } from '../sim/bankruptcy';
 
 /**
  * The .d98 save file (spec §18): a zip archive of JSON documents, compressed by fflate. Typed arrays inside the
@@ -17,6 +18,8 @@ export interface Manifest {
   netWorth: number;
   /** Real time of saving, ms since the epoch. */
   savedAt: number;
+  /** The firm went bankrupt (spec §16): the save is read-only, and this is its final report for the Hall of Shame. */
+  bankrupt?: BankruptcyReport;
 }
 
 export type SaveDocuments = { manifest: Manifest } & Record<string, unknown>;

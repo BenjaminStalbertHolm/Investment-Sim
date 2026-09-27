@@ -76,6 +76,7 @@ const OWN_KINDS = new Set<NewsKind>(['tvPick', 'fowlPick', 'firmQuarter', 'manda
 function matches(rule: CoverageRule, item: NewsItem, facts?: CompanyFacts): boolean {
   if (rule.kinds ? !rule.kinds.includes(item.kind) : OWN_KINDS.has(item.kind)) return false;
   if (rule.minMove !== undefined && Math.abs(item.move ?? 0) < rule.minMove) return false;
+  if (rule.commodities && !(item.commodity && rule.commodities.includes(item.commodity))) return false;
   const about = rule.minCap !== undefined || rule.maxCap !== undefined || rule.industries || rule.foreign;
   if (!about) return true;
   if (!facts) return false;

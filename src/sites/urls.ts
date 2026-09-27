@@ -9,6 +9,13 @@ export const NEWSWIRE = 'newswire.majorsoft.com';
 export const JOTTINGS = 'www.wsjottings.com';
 export const BARRENS = 'www.barrens.com';
 export const RAGINGBEAR = 'www.ragingbear.com';
+// Phase 7: the futures exchange, the weather, OPEK, the central bank, the firm's bank and its credit bureau.
+export const EXCHANGE = 'www.murkantile.com';
+export const WEATHER = 'www.nwb.gov';
+export const OPEK = 'www.opek.org';
+export const FED = 'www.federalreservoir.gov';
+export const BANK = 'www.firstcontinental.com';
+export const EQUIFACTS = 'www.equifacts.com';
 
 /** "Alphabeta (Goggle)" → "alphabeta", "Ridgepine Timber Co." → "ridgepinetimber", "Clickzilla.com" → "clickzilla". */
 export function slugOf(name: string): string {
@@ -61,7 +68,9 @@ export function sites(directory: Directory, firmName: string): Sites {
   return result;
 }
 
-const RESERVED = new Set([YEEHAW, QUOTEZONE, RAGINGBEAR, 'www.majorsoft.com', ...ALL_OUTLETS.map((o) => o.host)]);
+const RESERVED = new Set([
+  YEEHAW, QUOTEZONE, RAGINGBEAR, EXCHANGE, WEATHER, OPEK, FED, BANK, EQUIFACTS, 'www.majorsoft.com', ...ALL_OUTLETS.map((o) => o.host),
+]);
 
 /**
  * What the address bar makes of typed text: a URL gets "http://" (and a trailing slash), a bare domain gets "www."

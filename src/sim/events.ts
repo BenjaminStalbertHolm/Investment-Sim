@@ -1,7 +1,7 @@
 import { companyCeo, encodeCeo, randomCeo } from '../world/ceo';
 import type { Company } from '../world/company';
 import type { Rng } from '../world/rng';
-import { CLOSE, OPEN, at, dayOf, nextTradingDay, previousTradingDay, type GameTime } from './calendar';
+import { CLOSE, OPEN, addTradingDays, at, dayOf, nextTradingDay, previousTradingDay, type GameTime } from './calendar';
 import {
   EVENT_TYPE, EVENT_TYPES, HORIZON_DAYS, LEAK_SHARE, TAKEOVER_COMPLETES, TAKEOVER_DAYS, TAKEOVER_JUMP, type EventKind,
   type EventType,
@@ -40,7 +40,10 @@ export type Task =
   | { do: 'dump'; company: number; move: number }
   | { do: 'release'; kind: MacroKind }
   | { do: 'pick'; kind: 'tvPick' | 'fowlPick'; company: number; move: number }
-  | { do: 'redeem'; client: number };
+  | { do: 'redeem'; client: number }
+  // Phase 7: a recalled short falls due; the weather hits or OPEK announces.
+  | { do: 'buyIn'; company: number }
+  | { do: 'outlook'; id: number };
 
 export type Timed = Task & { time: GameTime; seq: number };
 
@@ -76,10 +79,7 @@ export function enqueue(state: EventsState, time: GameTime, task: Task): void {
   q.splice(lo, 0, timed);
 }
 
-export function addTradingDays(day: number, n: number): number {
-  for (let k = 0; k < n; k++) day = nextTradingDay(day);
-  return day;
-}
+export { addTradingDays };
 
 /** Each event type's weight for a company: its rate, industry, quality and size. */
 function typeWeights(c: Company, tier: number): number[] {
@@ -175,10 +175,13 @@ function takePlan(sim: Sim, id: number): PlannedEvent | undefined {
   return k < 0 ? undefined : plans.splice(k, 1)[0];
 }
 
-/** A price jump spread over 1–6 bars, with value following `persist` of it (more for better-run companies). */
+/**
+ * A price jump spread over 1–6 bars, with value following `persist` of it (more for better-run companies). Short sellers
+ * make good news jump further, but value follows only the news.
+ */
 function jump(sim: Sim, i: number, logMove: number, persist: number, bars = sim.rng.events.int(1, 6)): void {
   const { jump, jumpBars, lnV } = sim.market.state;
-  jump[i] += logMove;
+  jump[i] += sim.squeeze(i, logMove);
   jumpBars[i] = Math.max(jumpBars[i], bars);
   lnV[i] += logMove * persist * (1 + 0.4 * (sim.model.quality[i] - 0.5));
 }

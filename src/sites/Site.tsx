@@ -2,12 +2,17 @@ import type { ComponentType } from 'react';
 import { useGame } from '../state/game';
 import Company from './company/CompanySite';
 import { FirmWebsite as Firm, PlayerWebsite as Player } from './firm/FirmSite';
+import { Equifacts, FirstContinental } from './finance/Bank';
+import Exchange from './finance/Exchange';
+import Opek from './finance/Opek';
+import Reservoir from './finance/Reservoir';
+import WeatherBureau from './finance/WeatherBureau';
 import { ALL_OUTLETS } from '../sim/data/outlets';
 import RagingBear from './forum/RagingBear';
 import { Barrens, DailyScoop, FinancialTimez, Jottings, MoneyTv, MotleyFowl, Newswire, NyJournal, TradePress, Wyred } from './news/NewsSites';
 import Yeehaw from './portal/Yeehaw';
 import QuoteZone from './quotezone/QuoteZone';
-import { QUOTEZONE, RAGINGBEAR, YEEHAW, sites } from './urls';
+import { BANK, EQUIFACTS, EXCHANGE, FED, OPEK, QUOTEZONE, RAGINGBEAR, WEATHER, YEEHAW, sites } from './urls';
 import { useTitle } from './web';
 
 type SiteComponent = ComponentType<{ url: URL }>;
@@ -17,11 +22,20 @@ const OUTLET_SITES: Record<string, SiteComponent> = {
   dailyscoop: DailyScoop, wyred: Wyred, motleyfowl: MotleyFowl,
 };
 
-/** The news outlets (spec §14.1): the national ones, and one trade paper per industry. */
+/**
+ * Sites at fixed addresses: the portal, the markets and the institutions behind them (spec §14, §14.2), and the news
+ * outlets (spec §14.1): the national ones, and one trade paper per industry.
+ */
 const STATIC: Record<string, SiteComponent> = {
   [YEEHAW]: Yeehaw,
   [QUOTEZONE]: QuoteZone,
   [RAGINGBEAR]: RagingBear,
+  [EXCHANGE]: Exchange,
+  [WEATHER]: WeatherBureau,
+  [OPEK]: Opek,
+  [FED]: Reservoir,
+  [BANK]: FirstContinental,
+  [EQUIFACTS]: Equifacts,
   ...Object.fromEntries(
     ALL_OUTLETS.map((o) => [o.host, OUTLET_SITES[o.id] ?? (({ url }: { url: URL }) => <TradePress url={url} outlet={o} />)]),
   ),

@@ -3,6 +3,7 @@
 // {c} company mention  {name} {short} {ticker} {industry} {sub} {city} {country} {ceo} {product} {pct} {day}
 // {analyst} {firm} {other} {amount} {offer} {premium} {stake} {dividend} {oldDividend} {newCeo} {oldCeo}
 // {level} {prev} {expect} {client} {firmName} {ret} {indexRet} {aum} {revenue} {result} {rumourDay}
+// Commodity stories: {commodity} {Commodity} {hazard} {Hazard} {region} {warning} {dueDay} {warnedDay} {decision}
 import { templates } from '../text';
 import type { NewsKind } from '../../sim/news';
 
@@ -44,6 +45,35 @@ export const HEADLINES: Record<NewsKind, Sided> = {
   fed: { up: p('Federal Reservoir Cuts Rates to {level}|Reservoir Lowers Rates|Rate Cut Cheers Wall Street'), down: p('Federal Reservoir Raises Rates to {level}|Reservoir Tightens|Rate Rise Rattles Wall Street') },
   firmQuarter: { up: p('{firmName} Beats the Market|{firmName} Posts Strong Quarter|Good Quarter at {firmName}'), down: p('{firmName} Lags the Market|Tough Quarter for {firmName}|{firmName} Trails the Index') },
   mandate: { up: p('{client} Hands {amount} to {firmName}|{firmName} Wins {amount} Mandate|New Money for {firmName}') },
+  weather: {
+    up: p('{warning} Issued for {region}|Forecasters Warn of {Hazard} in {region}|{Commodity} Firms on {Hazard} Forecast'),
+    down: p('{warning} for {region}|Forecasters See {Hazard} in {region}|{Commodity} Eases on Weather Outlook'),
+  },
+  weatherHit: {
+    up: p('{Hazard} Hits {region}; {Commodity} Jumps {pct}|{Commodity} Soars as {Hazard} Strikes {region}|{Hazard} in {region} Lifts {Commodity}'),
+    down: p('{Hazard} in {region} Sends {Commodity} Down {pct}|{Commodity} Falls as {Hazard} Arrives|{Commodity} Slides on {Hazard}'),
+  },
+  weatherBust: {
+    up: p('Forecast Busts in {region}; {Commodity} Rebounds|{Commodity} Recovers as Weather Turns|{region} Outlook Changes, {Commodity} Bounces'),
+    down: p('{Hazard} Fails to Materialise; {Commodity} Slips|{region} Spared, {Commodity} Eases|Forecasters Wrong on {region} {Hazard}'),
+  },
+  // OPEK's stories are worded by decision (OPEK_HEADLINES); these are what a stray one falls back on.
+  opekHint: { up: p('OPEK Talk Lifts Oil'), down: p('OPEK Talk Weighs on Oil') },
+  opek: { up: p('OPEK Decision Lifts Oil'), down: p('OPEK Decision Sinks Oil') },
+};
+
+/** OPEK's hints and decisions (spec §12.3), by decision. */
+export const OPEK_HEADLINES: Record<'opekHint' | 'opek', Record<string, readonly string[]>> = {
+  opekHint: {
+    cut: p('OPEK Delegates Signal Output Cut|Oil Rises on OPEK Cut Talk|Cut Expected at OPEK Meeting'),
+    hold: p('OPEK Seen Standing Pat|No Change Expected From OPEK|OPEK Delegates Play It Cool'),
+    raise: p('OPEK Delegates Hint at Higher Output|Oil Slips on OPEK Supply Talk|OPEK Set to Open the Taps'),
+  },
+  opek: {
+    cut: p('OPEK Cuts Output; Crude Jumps|OPEK Agrees to Pump Less|Oil Surges as OPEK Cuts'),
+    hold: p('OPEK Holds Output Steady|No Change From OPEK|OPEK Stands Pat'),
+    raise: p('OPEK Opens the Taps; Crude Slides|OPEK Agrees to Pump More|Oil Falls as OPEK Raises Output'),
+  },
 };
 
 /** Headline for a Federal Reservoir meeting that left rates alone. */
@@ -84,6 +114,26 @@ export const LEADS: Record<NewsKind, Sided> = {
   fed: { up: p('The Federal Reservoir lowered its policy rate to {level} from {prev} on {day}.'), down: p('The Federal Reservoir raised its policy rate to {level} from {prev} on {day}.') },
   firmQuarter: { up: p('{firmName} returned {ret} last quarter, beating the MAJOR 500’s {indexRet}. The firm now manages {aum}.'), down: p('{firmName} returned {ret} last quarter, trailing the MAJOR 500’s {indexRet}. The firm now manages {aum}.') },
   mandate: { up: p('{client} has chosen {firmName} to manage {amount}, the firm said on {day}.|{firmName} said on {day} it had won a {amount} mandate from {client}.') },
+  weather: {
+    up: p('The National Weather Bureau on {day} issued a {warning} for {region}, where it expects {hazard} by {dueDay}. {Commodity} futures [firmed|edged higher|rose] on the forecast.|Forecasters warned on {day} of {hazard} in {region} by {dueDay}. {Commodity} prices [ticked up|firmed] as traders took note.'),
+    down: p('The National Weather Bureau on {day} issued a {warning} for {region}, where it expects {hazard} by {dueDay}. {Commodity} futures [eased|slipped|drifted lower] on the forecast.|Forecasters said on {day} that {region} can expect {hazard} by {dueDay}. {Commodity} prices [eased|softened].'),
+  },
+  weatherHit: {
+    up: p('{Hazard} struck {region} on {day}, as the National Weather Bureau had warned. {Commodity} futures [jumped|surged|climbed] about {pct}.|The {hazard} forecasters had warned of arrived in {region} on {day}, and {commodity} prices [jumped|rose sharply] about {pct}.'),
+    down: p('{Hazard} arrived in {region} on {day}, as the National Weather Bureau had forecast. {Commodity} futures [fell|slid] about {pct}.|The {hazard} forecasters had promised {region} arrived on {day}. {Commodity} prices [fell|dropped] about {pct}.'),
+  },
+  weatherBust: {
+    up: p('The {hazard} forecast for {region} failed to arrive, and {commodity} prices [recovered|bounced back] on {day}.|Forecasters got {region} wrong: there was no {hazard}, and {commodity} prices [recovered|rebounded] on {day}.'),
+    down: p('The {hazard} the National Weather Bureau had forecast for {region} never came, and {commodity} prices [gave back their gains|slipped|eased] on {day}.|{region} was spared on {day}: there was no {hazard} after all, and {commodity} futures [slipped|eased back].'),
+  },
+  opekHint: {
+    up: p('Delegates arriving for OPEK’s meeting on {dueDay} signalled {decision}, [sources said|according to people familiar with the talks|several ministers told reporters].'),
+    down: p('Delegates arriving for OPEK’s meeting on {dueDay} signalled {decision}, [sources said|according to people familiar with the talks|several ministers told reporters].'),
+  },
+  opek: {
+    up: p('OPEK agreed on {day} to {decision}. Crude oil [jumped|rose|climbed] about {pct}.|Oil ministers meeting on {day} agreed to {decision}, and crude oil rose about {pct}.'),
+    down: p('OPEK agreed on {day} to {decision}. Crude oil [fell|slid|dropped] about {pct}.|Oil ministers meeting on {day} agreed to {decision}, and crude oil fell about {pct}.'),
+  },
 };
 
 /** Second paragraphs: context, by kind. */
@@ -106,6 +156,11 @@ export const DETAILS: Partial<Record<NewsKind, readonly string[]>> = {
   earnings: p('Chief executive {ceo} said the company was “[well positioned|cautiously optimistic|pleased with our progress]”.|The company kept its forecast for the full year unchanged.'),
   fed: p('In a statement the Reservoir said it was watching inflation “[closely|carefully|with interest]”.'),
   mandate: p('It is the latest sign that {firmName} is winning over [institutional|cautious|long-term] investors.'),
+  weather: p('The Bureau’s forecasts are [usually right|right more often than not|rarely wrong], traders noted. The warning’s full effect has yet to be felt.|Traders said {commodity} could move further if the forecast holds.'),
+  weatherHit: p('The Bureau had first warned of it on {warnedDay}.|Traders who bought on the Bureau’s warning on {warnedDay} were [said to be delighted|quietly pleased].'),
+  weatherBust: p('The Bureau had warned of it on {warnedDay}. Its forecasts are not always right.|Those who traded on the warning of {warnedDay} were left [nursing losses|looking for someone to blame].'),
+  opekHint: p('The meeting’s decision is due at 2 p.m. on {dueDay}. OPEK’s delegates are right more often than not.'),
+  opek: p('Delegates had hinted at their plans on {warnedDay}. Ministers left the meeting [without comment|in separate limousines|smiling for the cameras].|The decision was announced at 2 p.m., after [hours of talks|a long lunch|a short meeting].'),
 };
 
 /** Quotes from analysts; {analyst} is a name and a firm. */

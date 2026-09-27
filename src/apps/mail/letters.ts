@@ -1,6 +1,8 @@
 import { formatDate, weekday } from '../../sim/calendar';
 import type { Client, Constraint } from '../../sim/clients';
-import type { Mail } from '../../sim/mail';
+import { contractLabel, parseContract } from '../../sim/commodities';
+import { CONTRACTS, CONTRACT_INDEX, FTD_FINE, PHYSICAL_DISCOUNT, STORAGE_RATE } from '../../sim/data/commodities';
+import type { Mail, MailLine } from '../../sim/mail';
 import type { MacroKind, NewsItem } from '../../sim/news';
 import type { Directory } from '../../sim/types';
 import { Rng } from '../../world/rng';
@@ -44,6 +46,30 @@ const RELEASES: Record<MacroKind, string> = {
   fed: '14:15 Federal Reservoir rate decision',
 };
 const BROKER = 'MajorTrade Pro Brokerage Services <confirms@majortrade.com>';
+const MARGIN_DESK = 'MajorTrade Pro Margin Department <margin@majortrade.com>';
+const BANK = 'First Continental Bank <loans@firstcontinental.com>';
+const COURT = 'Clerk of the Bankruptcy Court, Southern District <clerk@bankruptcy-court.gov>';
+
+const SIDES = { buy: 'Bought', sell: 'Sold', short: 'Sold short', cover: 'Bought to cover' };
+
+/** A line of a broker letter as a table row: symbol, what was done, quantity, price and value. Futures and goods too. */
+function row(l: MailLine, tickers: readonly string[]): string[] {
+  if (l.company >= 0) return [tickers[l.company], SIDES[l.side ?? 'sell'], count(Math.abs(l.shares)), price(l.amount / Math.abs(l.shares)), money(l.amount)];
+  const futures = l.contract ? parseContract(l.contract) : undefined;
+  if (futures) {
+    const size = CONTRACTS[futures.k].multiplier;
+    return [contractLabel(l.contract!), SIDES[l.side ?? 'sell'], `${count(l.shares)} contract${l.shares === 1 ? '' : 's'}`, price(l.amount / (l.shares * size)), money(l.amount)];
+  }
+  const goods = l.contract ? CONTRACTS[CONTRACT_INDEX[l.contract]] : undefined;
+  return [goods ? `${goods.name} (goods)` : '—', 'Sold', goods?.delivery ? `${count(l.shares)} ${goods.delivery.unit}` : count(l.shares), '', money(l.amount)];
+}
+
+/** A contract's goods, as the lobby receives them: "10,000 bushels of corn". */
+function goodsOf(contract: string | undefined, quantity = 0): string {
+  const c = contract ? parseContract(contract) : undefined;
+  const d = c && CONTRACTS[c.k].delivery;
+  return d ? `${count(quantity)} ${d.unit} of ${d.what}` : 'the goods';
+}
 
 /** A constraint as a client states it (spec §15.1). */
 export function describeConstraint(k: Constraint): string {
@@ -195,27 +221,123 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
       return letter(BROKER, `Trade confirmations for ${words.date}`, () => [
         { p: 'The following orders were filled today:' },
         { table: {
-          head: ['Order', 'Side', 'Shares', 'Symbol', 'Average price', 'Value'],
-          rows: (mail.lines ?? []).map((l) => [String(l.order), l.side === 'buy' ? 'Bought' : 'Sold', count(l.shares), directory.tickers[l.company], price(l.amount / l.shares), money(l.amount)]),
+          head: ['Order', 'Action', 'Quantity', 'Symbol', 'Average price', 'Value'],
+          rows: (mail.lines ?? []).map((l) => {
+            if (l.company >= 0) return [String(l.order), SIDES[l.side ?? 'buy'], count(l.shares), directory.tickers[l.company], price(l.amount / l.shares), money(l.amount)];
+            // Futures trades: the price is per unit of the contract, the value is the contracts' face value.
+            const c = parseContract(l.contract!)!;
+            return ['Futures', l.side === 'sell' ? 'Sold' : 'Bought', `${count(l.shares)} contract${l.shares === 1 ? '' : 's'}`, contractLabel(l.contract!), price(l.amount), money(l.amount * l.shares * CONTRACTS[c.k].multiplier)];
+          }),
         } },
-        { p: 'Commissions are shown in your ledger. Thank you for trading with MajorTrade Pro.' },
+        { p: 'Commissions and futures variation margin are shown in your ledger. Thank you for trading with MajorTrade Pro.' },
       ]);
     case 'dividend':
-      return letter(BROKER, `Dividends received: ${money(mail.amount!)}`, () => [
-        { p: 'The following dividends were credited to your account today:' },
+      return letter(BROKER, mail.amount! >= 0 ? `Dividends received: ${money(mail.amount!)}` : `Dividends paid on short positions: ${money(-mail.amount!)}`, () => [
+        { p: 'The following dividends were credited to your account today. On shares you are short, you pay the dividend to their lender.' },
         { table: {
           head: ['Symbol', 'Shares', 'Per share', 'Amount'],
-          rows: (mail.lines ?? []).map((l) => [directory.tickers[l.company], count(l.shares), price(l.amount / l.shares), money(l.amount)]),
+          rows: (mail.lines ?? []).map((l) => [directory.tickers[l.company], l.shares < 0 ? `${count(-l.shares)} short` : count(l.shares), price(l.amount / l.shares), money(l.amount)]),
         } },
       ]);
     case 'delisted': {
-      const line = mail.lines?.[0];
+      const shares = mail.lines?.[0]?.shares ?? 0;
+      if (shares < 0) {
+        return letter(BROKER, `${ticker}: your short position has been closed`, () =>
+          mail.reason === 'acquired'
+            ? [{ p: `The takeover of ${mention(c!)} has completed. Your short position of ${count(-shares)} shares was closed at the offer price and ${money(-mail.amount!)} has been debited from your account.` }]
+            : [{ p: `${mention(c!)} has been delisted after filing for bankruptcy. The ${count(-shares)} shares you were short are worthless: your short position has been closed at nothing, and the proceeds of the sale are yours to keep.` }, { p: 'Congratulations, we suppose.' }],
+        );
+      }
       return letter(BROKER, mail.reason === 'acquired' ? `${ticker}: your shares were bought out` : `${ticker}: shares cancelled in bankruptcy`, () =>
         mail.reason === 'acquired'
-          ? [{ p: `The takeover of ${mention(c!)} has completed. Your ${count(line?.shares ?? 0)} shares were bought out and ${money(mail.amount!)} has been credited to your account.` }]
-          : [{ p: `${mention(c!)} has been delisted after filing for bankruptcy. Your ${count(line?.shares ?? 0)} shares have been cancelled and written off.` }, { p: 'We are sorry for your loss. The position has been moved to your Recycle Bin.' }],
+          ? [{ p: `The takeover of ${mention(c!)} has completed. Your ${count(shares)} shares were bought out and ${money(mail.amount!)} has been credited to your account.` }]
+          : [{ p: `${mention(c!)} has been delisted after filing for bankruptcy. Your ${count(shares)} shares have been cancelled and written off.` }, { p: 'We are sorry for your loss. The position has been moved to your Recycle Bin.' }],
       );
     }
+    case 'marginCall':
+      return letter(MARGIN_DESK, `MARGIN CALL: ${money(mail.amount!)} due by ${words.date}`, () => [
+        { p: `The equity in your account has fallen ${money(mail.amount!)} below its maintenance requirement: 25% of your long positions, 30% of your short positions, and the maintenance margin on your futures.` },
+        { p: `Please restore it before the opening bell on ${words.date}: sell or cover positions, or bring in cash (First Continental Bank lends to firms like yours).` },
+        { p: 'If the call has not been met by then, we will sell positions at the open, the worst first, until it is. Until it is met we can only accept orders that reduce your positions.' },
+      ]);
+    case 'marginMet':
+      return letter(MARGIN_DESK, 'Margin call met', () => [{ p: 'The equity in your account is back above its maintenance requirement, and the margin call has been cancelled. Do be careful.' }]);
+    case 'liquidation':
+      return letter(MARGIN_DESK, 'Forced liquidation of your positions', () => [
+        { p: `Your margin call of ${money(mail.amount!)} was not met. At the opening bell we cancelled your open orders and sold the following positions, the worst first, until your account met its maintenance requirement:` },
+        { table: { head: ['Symbol', 'Action', 'Quantity', 'Price', 'Value'], rows: (mail.lines ?? []).map((l) => row(l, directory.tickers)) } },
+        { p: 'Commissions were charged as usual. The positions are in your Recycle Bin, if they lost money, which they did.' },
+      ]);
+    case 'recall':
+      return letter(BROKER, `Borrow recall: ${ticker}`, () => [
+        { p: `The lender of the ${count(mail.amount!)} shares of ${mention(c!)} you sold short has asked for them back, and we cannot find others to borrow.` },
+        { p: `Please buy to cover your short position by the opening bell on ${words.date}. If it is still open then, we will buy the shares in for you at the market price.` },
+      ]);
+    case 'buyIn': {
+      const line = mail.lines?.[0];
+      return letter(BROKER, `Buy-in: ${ticker}`, () => [
+        { p: `Your short position in ${mention(c!)} was still open when its recall fell due, so at the opening bell we bought in ${count(line?.shares ?? 0)} shares at ${line && line.shares ? price(line.amount / line.shares) : 'market'} and returned them to their lender.` },
+      ]);
+    }
+    case 'expiry': {
+      const label = contractLabel(mail.contract!);
+      const spec = CONTRACTS[parseContract(mail.contract!)!.k];
+      const n = Math.abs(mail.contracts ?? 0);
+      const held = `${count(n)} ${label} contract${n === 1 ? '' : 's'}`;
+      return letter(BROKER, `Futures expiry: ${label} on ${words.date}`, () => [
+        { p: `Your ${held} stop trading at the close on ${words.date}.` },
+        !spec.delivery
+          ? { p: 'They settle in cash at the final settlement price. You need do nothing, unless you would rather roll them into the next month.' }
+          : (mail.contracts ?? 0) > 0
+            ? { p: `Close or roll them before then, or ${goodsOf(mail.contract, mail.quantity)} will be delivered to your office lobby. You will pay for it at the final settlement price, and storage until you sell it.` }
+            : { p: `Close or roll them before then. A short position still open at the close must deliver ${goodsOf(mail.contract, mail.quantity)}, which we doubt you have: the exchange fines a failure to deliver ${Math.round(FTD_FINE * 100)}% of the contract’s value.` },
+      ]);
+    }
+    case 'delivery':
+      return letter(BROKER, `Delivery notice: ${contractLabel(mail.contract!)}`, () => [
+        { p: `Your ${contractLabel(mail.contract!)} contracts were still open at their expiry. ${goodsOf(mail.contract, mail.quantity)} have been delivered to your office lobby.` },
+        { p: `The invoice of ${money(mail.amount!)} at the final settlement price has been debited from your account. Storage is ${(STORAGE_RATE * 100).toFixed(1)}% of the goods’ value a day until they are sold.` },
+        { p: `A local merchant will take them off your hands at ${Math.round(PHYSICAL_DISCOUNT * 100)}% below the spot price: MajorTrade → Futures → Sell Goods. The receptionist would be grateful.` },
+      ]);
+    case 'ftd':
+      return letter('Chicago Murkantile Exchange, Clearing House <clearing@murkantile.com>', `Failure to deliver: ${contractLabel(mail.contract!)}`, () => [
+        { p: `Your short position of ${count(Math.abs(mail.contracts ?? 0))} ${contractLabel(mail.contract!)} contracts was open at expiry, and you did not deliver the goods.` },
+        { p: `The Exchange has fined you ${money(mail.amount!)}, ${Math.round(FTD_FINE * 100)}% of the contracts’ value. It has been debited from your account. Please do not let it happen again.` },
+      ]);
+    case 'cashSettled':
+      return letter(BROKER, `Settled in cash: ${contractLabel(mail.contract!)}`, () => [
+        { p: `Your ${count(Math.abs(mail.contracts ?? 0))} ${contractLabel(mail.contract!)} contracts expired and were settled in cash at the final settlement price. The last day’s variation margin is in your ledger.` },
+      ]);
+    case 'loan':
+      return letter(BANK, `Your loan of ${money(mail.amount!)} is approved`, () => [
+        { p: `Dear ${ceoName},` },
+        { p: `We are pleased to confirm loan number ${mail.loan} of ${money(mail.amount!)} to ${firmName}. The money has been paid into your brokerage account today.` },
+        { p: `Your rate is ${(mail.rate! * 100).toFixed(2)}% a year for now. It floats with the Federal Reservoir’s rate and your credit score, and rises if your total borrowing with us moves into a higher tier. Interest is debited on the first trading day of each month; the first payment is due on ${words.date}.` },
+        { p: 'A missed payment gets five trading days’ grace and a late fee. A second is a default: we will sell your positions to recover the loan.' },
+        { p: 'Thank you for banking with First Continental. Since 1887.' },
+      ]);
+    case 'loanLate':
+      return letter(BANK, `Missed payment on loan ${mail.loan}`, () => [
+        { p: `Your payment on loan number ${mail.loan} was due today, and your account could not cover it. A late fee has been added: you now owe ${money(mail.amount!)}.` },
+        { p: `We will take it as soon as the money is there. If it has not been paid by ${words.date}, the loan is in default and we will sell your positions to recover all of it.` },
+        { p: 'This has been reported to Equifacts.' },
+      ]);
+    case 'loanDefault':
+      return letter(BANK, `Notice of default: loan ${mail.loan}`, () => [
+        { p: `Loan number ${mail.loan} is in default. We have called in all ${money(mail.amount!)} of it, and your broker has sold positions on our instructions to recover it.` },
+        ...((mail.lines ?? []).length ? [{ table: { head: ['Symbol', 'Action', 'Quantity', 'Price', 'Value'], rows: (mail.lines ?? []).map((l) => row(l, directory.tickers)) } }] : []),
+        { p: 'This has been reported to Equifacts. We will not be lending to you again for some time.' },
+      ]);
+    case 'loanRepaid':
+      return letter(BANK, `Loan ${mail.loan} repaid in full`, () => [
+        { p: `Loan number ${mail.loan} of ${money(mail.amount!)} has been repaid in full. Thank you. Your good record has been reported to Equifacts.` },
+      ]);
+    case 'bankrupt':
+      return letter(COURT, `In re ${firmName}: order for relief`, () => [
+        { p: `TAKE NOTICE that ${firmName} could not meet ${mail.reason === 'loan' ? 'its obligations to First Continental Bank' : 'a margin call from its broker'} even after the sale of everything it owned, falling ${money(mail.amount!)} short.` },
+        { p: 'The firm is hereby declared bankrupt. Its clients have been notified. Its office furniture is being counted.' },
+        { p: `The Court thanks ${ceoName} for their service to the capital markets, such as it was.` },
+      ]);
     case 'briefing':
       return letter('The Wall Street Jottings <briefing@wsjottings.com>', `Morning Briefing — ${words.date}`, () => {
         const blocks: Block[] = [{ p: `Good morning. Here is what’s on the agenda for ${words.date}.` }];

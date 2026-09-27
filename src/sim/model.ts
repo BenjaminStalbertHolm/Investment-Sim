@@ -2,7 +2,9 @@ import type { Company } from '../world/company';
 import { INDUSTRIES } from '../world/industries';
 import { Rng } from '../world/rng';
 import { BARS_PER_DAY } from './calendar';
+import { COMMODITY_VARIANCE } from './commodities';
 import type { GameSettings } from './settings';
+import { baseShortInterest } from './shorts';
 
 /** The overnight gap carries the variance of this many bars, about a sixth of a day's. */
 export const GAP_BARS = 15;
@@ -40,6 +42,8 @@ export interface Model {
   slot: Uint8Array;
   /** MAJOR 500 constituents: the 500 largest companies at the start. */
   members: Int32Array;
+  /** Each company's usual short interest, as a share of its float (spec §12.4); today's drifts back towards it. */
+  shortBase: Float32Array;
 }
 
 export function buildModel(seed: string, companies: readonly Company[], settings: GameSettings): Model {
@@ -66,10 +70,13 @@ export function buildModel(seed: string, companies: readonly Company[], settings
         .slice(0, INDEX_SIZE)
         .map(([, i]) => i),
     ),
+    shortBase: baseShortInterest(seed, companies),
   };
   companies.forEach((c, i) => {
     const s = sectorVol[model.sector[i]];
-    const own = Math.sqrt(Math.max(c.volatility ** 2 - (c.beta * MARKET_VOL) ** 2 - s ** 2, (0.4 * c.volatility) ** 2));
+    // Commodity prices move some industries too (spec §11.2): that part is taken out of the company's own noise.
+    const commodities = COMMODITY_VARIANCE[model.sector[i]];
+    const own = Math.sqrt(Math.max(c.volatility ** 2 - (c.beta * MARKET_VOL) ** 2 - s ** 2 - commodities, (0.4 * c.volatility) ** 2));
     model.idio[i] = own * settings.volatility * Math.sqrt(BAR_YEARS);
   });
   const rng = Rng.stream(seed, 'earnings:slots');

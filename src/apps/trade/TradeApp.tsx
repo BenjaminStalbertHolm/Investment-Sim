@@ -7,6 +7,8 @@ import { AppMenuBar } from '../AppMenuBar';
 import { money, price, signedMoney, signedPct, tone } from '../format';
 import type { AppProps } from '../types';
 import { Calendar } from './Calendar';
+import { Financing } from './Financing';
+import { Futures } from './Futures';
 import { Ledger } from './Ledger';
 import { OrderTicket } from './OrderTicket';
 import { Orders } from './Orders';
@@ -17,9 +19,11 @@ const TABS: { id: TradeTab; label: string }[] = [
   { id: 'quotes', label: 'Quotes' },
   { id: 'ticket', label: 'Order Ticket' },
   { id: 'portfolio', label: 'Portfolio' },
+  { id: 'futures', label: 'Futures' },
   { id: 'orders', label: 'Orders' },
   { id: 'ledger', label: 'Ledger' },
   { id: 'calendar', label: 'Calendar' },
+  { id: 'financing', label: 'Financing' },
 ];
 
 /** MajorTrade Pro 98 (spec §12): simple on the surface, capable underneath. */
@@ -63,9 +67,11 @@ export default function TradeApp({ windowId }: AppProps) {
         {tab === 'quotes' && <Quotes />}
         {tab === 'ticket' && <OrderTicket />}
         {tab === 'portfolio' && <Portfolio />}
+        {tab === 'futures' && <Futures />}
         {tab === 'orders' && <Orders />}
         {tab === 'ledger' && <Ledger />}
         {tab === 'calendar' && <Calendar />}
+        {tab === 'financing' && <Financing />}
       </div>
       <StatusBar />
       {about && (
@@ -100,7 +106,9 @@ function StatusBar() {
   const index = useGame((s) => s.snapshot?.index);
   return (
     <div className="status-bar">
+      {account?.call && <p className="status-bar-field down">MARGIN CALL {money(account.call.amount)}</p>}
       <p className="status-bar-field">Cash {account ? money(account.cash) : '—'}</p>
+      <p className="status-bar-field">Buying power {account ? money(Math.max(0, account.buyingPower)) : '—'}</p>
       <p className="status-bar-field">Net worth {account ? money(account.netWorth) : '—'}</p>
       <p className={`status-bar-field ${tone(account?.dayChange ?? 0)}`}>Today {account ? signedMoney(account.dayChange) : '—'}</p>
       <p className={`status-bar-field ${tone(index?.change ?? 0)}`}>

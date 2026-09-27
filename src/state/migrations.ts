@@ -1,21 +1,24 @@
 import { dayOf } from '../sim/calendar';
 import { founding } from '../sim/clients';
+import { initialCommodities } from '../sim/commodities';
 import { pastQuarters, type Fundamentals } from '../sim/earnings';
-import type { SimState } from '../sim/engine';
+import { STREAM_NAMES, type SimState } from '../sim/engine';
 import { addTradingDays, newEvents } from '../sim/events';
+import { newLoans } from '../sim/loans';
 import { initialMacro } from '../sim/macro';
 import { newMailState } from '../sim/mail';
 import { INDEX_SIZE } from '../sim/model';
 import { defaultPlayer } from '../sim/player';
 import { hireJournalists } from '../sim/press';
 import { completeSettings, type GameSettings } from '../sim/settings';
+import { baseShortInterest } from '../sim/shorts';
 import { decodeCompany } from '../world/company';
 import { Rng } from '../world/rng';
 import { newBrowserState } from './browser';
 import { SAVE_FORMAT, type Manifest, type SaveDocuments } from './saveFile';
 
 /** Version of the save format. Bump it, and add a migration, whenever what is saved changes shape (spec §18). */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 type Migration = (documents: SaveDocuments) => SaveDocuments;
 
@@ -69,6 +72,18 @@ export const MIGRATIONS: Record<number, Migration> = {
       mail,
     };
     return { ...docs, sim: upgraded };
+  },
+  // Phase 7: short interest, a margin account with futures and goods, commodities (at their January 1998 levels), bank
+  // loans, and random streams for commodities and the broker.
+  4: (docs) => {
+    const sim = docs.sim as SimState;
+    const { seed, genomes } = sim.world;
+    sim.market.shortInterest = baseShortInterest(seed, genomes.map(decodeCompany));
+    sim.account = { ...sim.account, futures: [], goods: [], charges: 0 };
+    sim.commodities = initialCommodities(seed);
+    sim.loans = newLoans();
+    for (const k of ['commodities', 'broker'] as const) sim.rng[k] = Rng.stream(seed, STREAM_NAMES[k]).state();
+    return { ...docs, sim };
   },
 };
 

@@ -89,6 +89,12 @@ export function previousTradingDay(day: number): number {
   return d;
 }
 
+/** The trading day `n` trading days after `day`. */
+export function addTradingDays(day: number, n: number): number {
+  for (let k = 0; k < n; k++) day = nextTradingDay(day);
+  return day;
+}
+
 /** Pre-market 08:00–09:30 (orders queue for the open), open 09:30–16:00, otherwise closed. */
 export function phaseAt(t: GameTime): Phase {
   const day = dayOf(t);

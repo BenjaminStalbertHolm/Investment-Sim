@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { dayOf } from '../sim/calendar';
 import { simulation } from '../sim/client';
-import type { CompanyDetails, FirmView, MarketTable } from '../sim/types';
+import type { CompanyDetails, FirmView, FuturesView, LoansView, MarketTable, OutlookView } from '../sim/types';
 import { decodeCompany, type Company } from '../world/company';
 import { useGame } from '../state/game';
 
@@ -36,6 +36,26 @@ export function useFirm(firm: number): FirmView | undefined {
 export function useTable(): MarketTable | undefined {
   const tick = useGame((s) => (s.snapshot ? `${Math.floor(s.snapshot.time / 15)}:${s.snapshot.phase}` : ''));
   return useFetched(() => simulation().table(), [tick]);
+}
+
+/** The futures board (spec §14 Chicago Murkantile Exchange), refreshed every 15 game minutes like the stock tables. */
+export function useFutures(): FuturesView | undefined {
+  const tick = useGame((s) => (s.snapshot ? `${Math.floor(s.snapshot.time / 15)}:${s.snapshot.phase}` : ''));
+  return useFetched(() => simulation().futures(), [tick]);
+}
+
+/** Weather warnings and OPEK meetings, newest first, refetched as their news breaks. */
+export function useOutlooks(): OutlookView[] | undefined {
+  const news = useGame((s) => s.snapshot?.news ?? 0);
+  const day = useDay();
+  return useFetched(() => simulation().outlooks(), [news, day]);
+}
+
+/** The firm's loans and credit report (First Continental Bank, Equifacts), refetched when the account changes. */
+export function useLoans(): LoansView | undefined {
+  const revision = useGame((s) => s.snapshot?.revision);
+  const day = useDay();
+  return useFetched(() => simulation().loans(), [revision, day]);
 }
 
 const decoded = new Map<string, Company>();

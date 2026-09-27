@@ -62,13 +62,16 @@ describe('order ticket and broker (spec §12.2)', () => {
     expect(error(e, { company: 5000 })).toBe('Unknown symbol.');
     expect(error(e, { company: LIQUID, type: 'limit' })).toBe('Enter a limit price.');
     expect(error(e, { company: LIQUID, side: 'sell' })).toBe('You have no shares to sell.');
-    const tooMany = Math.ceil(1_000_000 / e.market.price[LIQUID]) + 10;
+    // A margin account at 2:1 (Phase 7): buying power is twice the equity.
+    const tooMany = Math.ceil(2_000_000 / e.market.price[LIQUID]) + 10;
     expect(error(e, { company: LIQUID, shares: tooMany })).toBe('Insufficient buying power.');
     place(e, { company: LIQUID, shares: 100 });
     expect(error(e, { company: LIQUID, side: 'sell', shares: 101 })).toBe('You can sell at most 100 shares.');
-    // Open orders hold back what they may need.
-    place(e, { company: 1, type: 'limit', limit: e.market.price[1] * 0.5, shares: 1000, tif: 'gtc' });
-    expect(e.account().buyingPower).toBeCloseTo(e.account().cash - 1000 * e.market.price[1] * 0.5 - 19.95, 6);
+    // Open orders hold back what they may need: a buy limit its value at the limit, and leverage times its commission.
+    const before = e.account().buyingPower;
+    const limit = e.market.price[1] * 0.5;
+    place(e, { company: 1, type: 'limit', limit, shares: 1000, tif: 'gtc' });
+    expect(e.account().buyingPower).toBeCloseTo(before - 1000 * limit - 2 * 19.95, 6);
   });
 
   it('rests limit orders until the market reaches them, then fills at the limit, a slice of volume at a time', () => {

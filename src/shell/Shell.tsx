@@ -3,12 +3,14 @@ import { boot, saveGame, useGame } from '../state/game';
 import { useShell } from '../state/shell';
 import { MessageBox } from '../ui98/MessageBox';
 import { TickerTape } from '../ui98/TickerTape';
+import { BlueScreen } from './BlueScreen';
 import { BootScreen } from './BootScreen';
 import { Desktop } from './Desktop';
 import { ShutdownScreen } from './ShutdownScreen';
 import { Taskbar } from './Taskbar';
 
 const SetupWizard = lazy(() => import('../apps/mycomputer/SetupWizard'));
+const FinalReportDialog = lazy(() => import('../apps/mycomputer/FinalReport'));
 
 export function Shell() {
   const power = useShell((s) => s.power);
@@ -17,6 +19,9 @@ export function Shell() {
   const busy = useGame((s) => s.busy);
   const alert = useGame((s) => s.alert);
   const setup = useShell((s) => s.setup);
+  const bankrupt = useGame((s) => s.bankrupt);
+  const bust = useGame((s) => s.bust);
+  const toReport = useCallback(() => useGame.setState({ bust: 'report' }), []);
   const booted = useCallback(() => setPower('running'), [setPower]);
 
   // Power on: continue the latest save or start a new game while the splash shows.
@@ -52,6 +57,12 @@ export function Shell() {
       <Desktop />
       <TickerTape />
       <Taskbar />
+      {bust === 'report' && (
+        <Suspense fallback={null}>
+          <FinalReportDialog />
+        </Suspense>
+      )}
+      {bust === 'blueScreen' && <BlueScreen report={bankrupt} onDone={toReport} />}
       {alert && <MessageBox text={alert} onClose={() => useGame.setState({ alert: undefined })} />}
     </div>
   );

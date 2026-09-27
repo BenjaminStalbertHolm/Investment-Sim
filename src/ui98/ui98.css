@@ -514,3 +514,143 @@ td.table-empty {
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* ---------- Margin, futures and financing (Phase 7) ---------- */
+
+.margin-banner {
+  flex: none;
+  margin: 0;
+  padding: 3px 6px;
+  background: #ffffc0;
+  border: 1px solid #c00000;
+  color: #c00000;
+  font-weight: bold;
+}
+
+/* The tab scrolls: the board and chain, a chart, then the firm's positions and whatever the lobby holds. */
+.tab-page.futures {
+  overflow-y: auto;
+}
+
+.futures-top {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  height: 250px;
+}
+
+.futures-board {
+  flex: 0 0 290px;
+}
+
+.futures-board tr.group-start td {
+  border-top: 1px solid #808080;
+}
+
+.futures-detail {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.futures-heading {
+  flex: none;
+}
+
+.futures-chain {
+  flex: 1;
+}
+
+.futures-positions {
+  flex: 0 0 90px;
+  min-height: 90px;
+}
+
+.futures .price-chart {
+  flex: 0 0 180px;
+  min-height: 180px;
+}
+
+.credit-meter {
+  flex: none;
+  height: 12px;
+  background: linear-gradient(to right, #c00000, #f0c020 45%, #00a000);
+  box-shadow: inset -1px -1px #fff, inset 1px 1px #808080;
+}
+
+/* The score is where the bar's notch sits. */
+.credit-meter span {
+  display: block;
+  height: 100%;
+  border-right: 3px solid #000;
+  box-sizing: border-box;
+}
+
+.loan-tiers td {
+  white-space: nowrap;
+}
+
+.loans {
+  flex: 1 1 0;
+}
+
+.loan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 560px;
+}
+
+.loan-form .field-row {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.loan-form input[type='range'] {
+  flex: 1;
+  min-width: 160px;
+}
+
+/* ---------- Final report (spec §16) ---------- */
+
+.final-report {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 620px;
+  max-width: 100%;
+}
+
+.final-report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.final-report-ceo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.final-report .performance-chart {
+  flex: none;
+  height: 200px;
+}
+
+.shame-report {
+  overflow: auto;
+}
+
+.final-report-backdrop {
+  z-index: 900;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.final-report-window {
+  max-height: calc(100% - 40px);
+  overflow: auto;
+}

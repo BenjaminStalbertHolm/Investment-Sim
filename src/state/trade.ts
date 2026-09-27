@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { OrderType, Side, TimeInForce } from '../sim/account';
 
-export type TradeTab = 'quotes' | 'ticket' | 'portfolio' | 'orders' | 'ledger' | 'calendar';
+export type TradeTab = 'quotes' | 'ticket' | 'portfolio' | 'futures' | 'orders' | 'ledger' | 'calendar' | 'financing';
 
 export interface Watchlist {
   id: string;
@@ -16,6 +16,9 @@ export interface Ticket {
   type: OrderType;
   shares: string;
   limit: string;
+  /** Stop price (stop and stop-limit orders), and a trailing stop's trail in percent. */
+  stop: string;
+  trail: string;
   tif: TimeInForce;
   /** Open order being modified. */
   replaces?: number;
@@ -41,7 +44,7 @@ interface TradeStore {
 
 /** The first watchlist of a new game: the top of the market, and the world's favourite cigarettes. */
 const STARTER = [0, 1, 2, 3, 4, 8, 9, 41];
-const EMPTY_TICKET: Ticket = { side: 'buy', type: 'market', shares: '100', limit: '', tif: 'day' };
+const EMPTY_TICKET: Ticket = { side: 'buy', type: 'market', shares: '100', limit: '', stop: '', trail: '5', tif: 'day' };
 
 export const newTradeState = () => ({
   watchlists: [{ id: 'w1', name: 'My Watchlist', companies: [...STARTER] }],

@@ -8,8 +8,12 @@ import { INDUSTRIES } from '../../world/industries';
 import { OUTLETS } from '../../sim/data/outlets';
 import { headlineOf } from '../news/articles';
 import { useNews } from '../news/data';
+import { HAZARDS } from '../../sim/data/commodities';
+import { useOutlooks } from '../hooks';
 import { useStories } from '../news/NewsSites';
-import { RAGINGBEAR, NEWSWIRE, QUOTEZONE, YEEHAW, companyUrl, firmUrl, playerUrl, quoteUrl, searchUrl, sites } from '../urls';
+import {
+  BANK, EQUIFACTS, EXCHANGE, FED, NEWSWIRE, OPEK, QUOTEZONE, RAGINGBEAR, WEATHER, YEEHAW, companyUrl, firmUrl, playerUrl, quoteUrl, searchUrl, sites,
+} from '../urls';
 import { Link, usePage, useTitle } from '../web';
 
 /** Yeehaw! (spec §14): the home portal with search, a directory by industry, headlines and a market summary. */
@@ -129,7 +133,44 @@ function Front() {
             · <Link href={`http://${RAGINGBEAR}/`}>Raging Bear boards</Link>
           </p>
         </div>
+        <WeatherTeaser />
+        <div className="yh-box">
+          <b>Money &amp; Markets</b>
+          <p>
+            <Link href={`http://${EXCHANGE}/`}>Futures</Link> · <Link href={`http://${FED}/`}>Interest rates</Link> ·{' '}
+            <Link href={`http://${OPEK}/`}>Oil</Link> · <Link href={`http://${BANK}/`}>Business loans</Link> ·{' '}
+            <Link href={`http://${EQUIFACTS}/`}>Your credit score</Link>
+          </p>
+        </div>
       </div>
+    </div>
+  );
+}
+
+/** The weather teaser (spec §14): whatever the National Weather Bureau is warning about, else fair skies. */
+function WeatherTeaser() {
+  const warnings = useOutlooks()?.filter((o) => o.source === 'weather' && !o.done) ?? [];
+  return (
+    <div className="yh-box">
+      <b>Weather</b>
+      {warnings.length ? (
+        <ul>
+          {warnings.slice(0, 3).map((o) => {
+            const h = HAZARDS.find((x) => x.id === o.kind);
+            return (
+              <li key={o.id}>
+                <Link href={`http://${WEATHER}/`}>
+                  {h?.warning ?? 'Warning'} for {h?.region ?? 'the region'}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p>
+          No severe weather expected. <Link href={`http://${WEATHER}/`}>National forecast</Link>
+        </p>
+      )}
     </div>
   );
 }

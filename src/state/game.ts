@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import type { AppId } from '../apps/catalog';
 import { formatDate, dayOf, setStartYear } from '../sim/calendar';
+import { contractLabel } from '../sim/commodities';
 import { simulation } from '../sim/client';
+import type { BankruptcyReport } from '../sim/bankruptcy';
 import type { NewGameOptions } from '../sim/engine';
 import type { Player } from '../sim/player';
 import { DIFFICULTIES, type GameSettings } from '../sim/settings';
@@ -34,6 +36,10 @@ interface GameStore {
   settings?: GameSettings;
   directory: Directory;
   snapshot?: Snapshot;
+  /** The firm went bankrupt (spec §16): its final report. The game is read-only from then on. */
+  bankrupt?: BankruptcyReport;
+  /** What the bankruptcy is showing: the Blue Screen of Debt, then the final report (closed: the desktop, read-only). */
+  bust?: 'blueScreen' | 'report';
 }
 
 export const useGame = create<GameStore>()(() => ({
@@ -92,7 +98,8 @@ async function start(): Promise<void> {
     useWindows.subscribe(syncWatch);
   }
   await cleanUp().catch(() => undefined);
-  const latest = (await listSaves().catch(() => [])).sort((a, b) => b.savedAt - a.savedAt)[0];
+  // A bankrupt firm's save is for the Hall of Shame, not for carrying on.
+  const latest = (await listSaves().catch(() => [])).filter((s) => !s.bankrupt).sort((a, b) => b.savedAt - a.savedAt)[0];
   if (latest) {
     try {
       return await loadGame(latest.id);
@@ -115,7 +122,7 @@ export async function newGame(options: NewGameOptions): Promise<void> {
   useTrade.setState(newTradeState());
   useBrowser.setState(newBrowserState());
   useMailView.setState(newMailView(), true);
-  useGame.setState({ ...started, ready: true, busy: undefined, slot: undefined, snapshot: undefined });
+  useGame.setState({ ...started, ready: true, busy: undefined, slot: undefined, snapshot: undefined, bankrupt: undefined, bust: undefined });
   resume();
 }
 
@@ -133,7 +140,13 @@ export async function loadGame(id: string): Promise<void> {
     const saved = (await listSaves()).find((s) => s.id === id);
     const { directory, seed, firmName, player, settings } = loaded;
     setStartYear(settings.startYear);
-    useGame.setState({ directory, seed, firmName, player, settings, ready: true, slot: saved && !saved.auto ? { id, name: saved.name } : undefined });
+    // A bankrupt firm loads read-only: straight to its final report (spec §16).
+    const bankrupt = loaded.manifest.bankrupt;
+    useGame.setState({
+      directory, seed, firmName, player, settings, ready: true, slot: saved && !saved.auto ? { id, name: saved.name } : undefined, bankrupt,
+      bust: bankrupt ? 'report' : undefined,
+    });
+    if (bankrupt) setSpeed(0);
     resume();
   } finally {
     useGame.setState({ busy: undefined });
@@ -145,7 +158,11 @@ export async function loadGame(id: string): Promise<void> {
  * and the game date. The worker stops the clock while it packs the file.
  */
 export async function saveGame(target?: { id: string; name: string }): Promise<SaveSlot | undefined> {
-  const { firmName, snapshot } = useGame.getState();
+  const { firmName, snapshot, bankrupt } = useGame.getState();
+  if (bankrupt) {
+    notify('A bankrupt firm cannot be saved again: its save is read-only.');
+    return undefined;
+  }
   const slot = target ??
     useGame.getState().slot ?? { id: `save-${Date.now()}`, name: `${firmName} ${formatDate(dayOf(snapshot?.time ?? 0))}` };
   const saved = await write(slot.id, slot.name, false);
@@ -156,8 +173,9 @@ export async function saveGame(target?: { id: string; name: string }): Promise<S
   return saved;
 }
 
-/** Every game week (spec §18): into the oldest of the three autosave slots. */
-async function autosave(): Promise<void> {
+/** Every game week, and before risky actions such as signing a loan (spec §18): into the oldest of the three autosave slots. */
+export async function autosave(): Promise<void> {
+  if (useGame.getState().bankrupt || useGame.getState().snapshot?.account.bankrupt) return;
   const id = nextAutosave(await listSaves());
   await write(id, `Autosave ${id.slice(-1)}`, true);
 }
@@ -168,7 +186,7 @@ async function write(id: string, name: string, auto: boolean): Promise<SaveSlot 
   try {
     const { bytes, manifest } = await simulation().save(name, gameState());
     const { savedAt, gameTime, firmName, netWorth } = manifest;
-    return await writeSave({ id, name, auto, savedAt, gameTime, firmName, netWorth }, bytes);
+    return await writeSave({ id, name, auto, savedAt, gameTime, firmName, netWorth, bankrupt: !!manifest.bankrupt }, bytes);
   } catch (error) {
     showError(error);
     return undefined;
@@ -185,7 +203,7 @@ export async function importSave(file: File): Promise<void> {
     const id = `import-${Date.now()}`;
     const { gameTime, firmName, netWorth } = manifest;
     const name = file.name.replace(/\.d98$/i, '') || manifest.name;
-    await writeSave({ id, name, auto: false, savedAt: Date.now(), gameTime, firmName, netWorth }, bytes);
+    await writeSave({ id, name, auto: false, savedAt: Date.now(), gameTime, firmName, netWorth, bankrupt: !!manifest.bankrupt }, bytes);
     await loadGame(id);
   } catch (error) {
     showError(error instanceof Error && /zip|invalid/i.test(error.message) ? 'This is not a Majorsoft Doors 98 saved game.' : error);
@@ -200,6 +218,19 @@ export async function exportSave(slot: SaveSlot): Promise<void> {
   link.download = `${slot.name.replace(/[\\/:*?"<>|]/g, '_')}.d98`;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+/**
+ * The firm has gone bankrupt (spec §16): the clock has stopped for good. The game is saved into its slot (a new one if it
+ * had none), marked Bankrupt for the Hall of Shame, and the Blue Screen of Debt comes up.
+ */
+async function goneBust(): Promise<void> {
+  setSpeed(0);
+  const bankrupt = await simulation().bankruptcy();
+  useGame.setState({ bankrupt, bust: 'blueScreen' });
+  const { firmName, slot } = useGame.getState();
+  const target = slot ?? { id: `save-${Date.now()}`, name: `${firmName} (bankrupt)` };
+  if (await write(target.id, target.name, false)) useGame.setState({ slot: target });
 }
 
 /** Opens the Setup Wizard over the desktop (My Computer → New Game); the clock stops meanwhile. */
@@ -271,9 +302,11 @@ function receive(snapshot: Snapshot): void {
     if (event.kind === 'close' && event.weekEnd) void autosave();
     else if (event.kind === 'halt') notify('Trading halted: the MAJOR 500 is down 10% today.');
     else if (event.kind === 'fill') {
-      const verb = event.side === 'buy' ? 'Bought' : 'Sold';
+      const verb = { buy: 'Bought', sell: 'Sold', short: 'Sold short', cover: 'Bought to cover' }[event.side];
       notify(`${verb} ${event.shares.toLocaleString('en-US')} ${tickers[event.company]} at $${event.price.toFixed(2)}`);
-    }
+    } else if (event.kind === 'futures') {
+      notify(`${event.contracts > 0 ? 'Bought' : 'Sold'} ${Math.abs(event.contracts)} ${contractLabel(event.contract)} at ${event.price.toFixed(event.price < 1 ? 4 : 2)}`);
+    } else if (event.kind === 'bankrupt') void goneBust();
   }
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { Side } from '../../sim/account';
 import { PriceChart } from '../../charts/PriceChart';
 import { dayOf, formatDate } from '../../sim/calendar';
 import { simulation } from '../../sim/client';
@@ -35,7 +36,7 @@ export default function QuoteWindow({ windowId }: AppProps) {
     };
   }, [company, day]);
 
-  const trade = (side: 'buy' | 'sell') => {
+  const trade = (side: Side) => {
     useTrade.getState().trade(company, side);
     open('trade');
   };
@@ -81,6 +82,8 @@ export default function QuoteWindow({ windowId }: AppProps) {
       <div className="button-row">
         <button onClick={() => trade('buy')}>Buy…</button>
         <button onClick={() => trade('sell')}>Sell…</button>
+        <button onClick={() => trade('short')}>Sell Short…</button>
+        <button onClick={() => trade('cover')}>Buy to Cover…</button>
         <button onClick={() => useTrade.getState().watch(company)}>Add to Watchlist</button>
         <button onClick={() => openUrl(companyUrl(sites(useGame.getState().directory, useGame.getState().firmName), company))}>Open Website</button>
       </div>
@@ -124,6 +127,8 @@ function KeyStats({ details: d, quote: q }: { details: CompanyDetails; quote: Qu
     ['Beta', d.beta.toFixed(2)],
     ['Shares out', count(d.shares)],
     ['Float', pct(d.floatPct)],
+    ['Short interest', `${pct(d.shortInterest)} of float`],
+    ['Borrow fee', `${pct(d.borrowFee, d.borrowFee < 0.01 ? 2 : 1)} a year`],
     ['Next earnings', formatDate(d.nextEarnings)],
     ['CEO', d.ceo],
   ];
