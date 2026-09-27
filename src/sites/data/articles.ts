@@ -11,6 +11,53 @@ const p = templates;
 
 type Sided = { up?: readonly string[]; down?: readonly string[] };
 
+/**
+ * Articles bought on the dark web and exposés of the firm (spec §14A), by what they are about. Extra words: {outlet} the
+ * paper that was bribed, {journalist} the writer; {firm} a competitor.
+ */
+export const DARK: Record<'puffFirm' | 'puffStock' | 'hitFirm' | 'hitCompany' | 'bribe' | 'blackmail' | 'forgery' | 'shell', { head: readonly string[]; lead: readonly string[]; detail: readonly string[] }> = {
+  puffFirm: {
+    head: p('{firmName}: The Smartest Money in Town?|Inside {firmName}, Wall Street’s Best-Kept Secret|Why Everyone Is Talking About {firmName}'),
+    lead: p('In a business full of pretenders, {firmName} stands apart. Its people are [brilliant|tireless|modest to a fault], its research [second to none|the envy of its rivals], and its clients, to a man, delighted.|Few firms have made as much of an impression this year as {firmName}, whose [disciplined|visionary|fearless] approach to investing has left rivals scrambling to keep up.'),
+    detail: p('“I have never seen anything like it,” said one client, who asked not to be named.|Competitors declined to comment, which may itself be telling.'),
+  },
+  puffStock: {
+    head: p('{short}: The Stock That Has It All|Why {short} Could Double|{short} Is the Buy of the Year'),
+    lead: p('{c} is [the best-run company in its industry|a hidden gem|a bargain at today’s prices], and investors who buy now will [thank us later|be richly rewarded].|Forget everything you have heard: {c} is [firing on all cylinders|about to take off|ready for a breakout year].'),
+    detail: p('Its {product} alone could be worth more than the whole company, by our reckoning.|Management is [first-rate|visionary|the best in the business].'),
+  },
+  hitFirm: {
+    head: p('What’s Wrong at {firm}?|Clients Head for the Exit at {firm}|{firm}: A Firm in Trouble'),
+    lead: p('Behind the polished brochures, all is not well at {firm}. Former staff describe [a chaotic trading floor|a culture of excuses|a strategy nobody can explain].|Questions are mounting at {firm}, where [returns have disappointed|risk controls are said to be lax|senior staff are said to be heading for the door].'),
+    detail: p('Several large clients are said to be [reviewing their accounts|taking their money elsewhere].|{firm} said the article was “[inaccurate|malicious|not worth dignifying with a response]”.'),
+  },
+  hitCompany: {
+    head: p('The Trouble With {short}|{short}: Sell Before It’s Too Late|Is {short} a House of Cards?'),
+    lead: p('The numbers at {c} [don’t add up|are not what they seem|tell a worrying story], according to people who know the company well.|Investors in {c} should [be very afraid|head for the exits|ask some hard questions], our investigation suggests.'),
+    detail: p('{short} called the article “[irresponsible|baseless|a smear]”.|Former employees describe [a toxic culture|reckless spending|a company living beyond its means].'),
+  },
+  bribe: {
+    head: p('{firmName} Tried to Bribe {outlet}|Exposed: {firmName}’s Cash-for-Coverage Offer|“We Are Not For Sale”: How {firmName} Tried to Buy the News'),
+    lead: p('{firmName} offered {journalist} of {outlet} money for a favourable story, this newspaper has learned. The offer, made through an anonymous go-between, was [declined|reported to editors|turned into this article].|An attempt by {firmName} to pay {outlet} for coverage has come to light. {journalist}, who was approached, [refused|went straight to the editor].'),
+    detail: p('{firmName} did not respond to repeated requests for comment. Clients are said to be reviewing their accounts.|The Securities Oversight Bureau is said to be taking an interest.'),
+  },
+  blackmail: {
+    head: p('I Took {firmName}’s Money. Here Is the Story|Confessions of a Bought Journalist|How {firmName} Paid for Its Press'),
+    lead: p('{journalist} of {outlet} admitted on {day} to having been paid by {firmName} for a favourable article, and published the details.|In an extraordinary confession, {journalist} of {outlet} said on {day} that {firmName} had paid for coverage.'),
+    detail: p('{outlet} said the journalist had been suspended. {firmName} declined to comment.|Clients of {firmName} are said to be reviewing their accounts.'),
+  },
+  forgery: {
+    head: p('{firmName} Sent Clients Forged Statements|Doctored Returns at {firmName}|{firmName} Faked Its Performance, Regulators Say'),
+    lead: p('{firmName} sent its clients statements showing returns it never earned, the Securities Oversight Bureau said on {day}, fining the firm {amount}.|Regulators said on {day} that {firmName} had doctored its quarterly statements to hide a bad quarter, and fined the firm {amount}.'),
+    detail: p('Clients are pulling their money out, according to people familiar with the matter.|The Bureau called it “one of the most brazen cases in years.”'),
+  },
+  shell: {
+    head: p('{firmName} Hid Stakes in Offshore Shell|The Secret Island Holdings of {firmName}|Regulators Unmask {firmName}’s Offshore Company'),
+    lead: p('{firmName} used an offshore shell company to build stakes without telling the market, the Securities Oversight Bureau said on {day}. The firm was fined {amount}.|A shell company registered in the Caribbean was secretly owned by {firmName}, regulators said on {day}, fining the firm {amount} for failing to disclose its holdings.'),
+    detail: p('The stakes have now been filed with the Bureau. Clients are said to be reviewing their accounts.|“Beneficial ownership rules exist for a reason,” a Bureau spokesman said.'),
+  },
+};
+
 export const HEADLINES: Record<NewsKind, Sided> = {
   fraud: { down: p('{short} Restates Three Years of Earnings|{short} Books Under Scrutiny as Auditor Quits|Accounting Scandal Engulfs {short}|{short} Admits Profits Were “Largely Imaginary”') },
   scandal: { down: p('{short} Chief Caught in Expense Scandal|{short} Board Probes Executive Conduct|Scandal Rocks {short}|{short} Shares Slide on Boardroom Scandal') },
@@ -48,6 +95,10 @@ export const HEADLINES: Record<NewsKind, Sided> = {
   stake: { up: p('{firmName} Discloses {stake} Stake in {short}|{firmName} Builds {stake} Position in {short}|{short} Draws a Big Holder: {firmName}') },
   league: { up: p('Barren’s {year} League Table: {winner} Comes Out on Top|The Best Money Managers of {year}|{winner} Tops Our Annual Survey of Fund Managers') },
   enforcement: { down: p('SOB Charges {firmName} Over Trading|Regulators Crack Down on {firmName}|{firmName} Fined {amount} in Trading Probe') },
+  // Phase 9's bought articles and exposés are worded by what they are about (DARK); these are what a stray one falls back on.
+  puff: { up: DARK.puffStock.head },
+  hitPiece: { down: DARK.hitCompany.head },
+  expose: { down: DARK.bribe.head },
   weather: {
     up: p('{warning} Issued for {region}|Forecasters Warn of {Hazard} in {region}|{Commodity} Firms on {Hazard} Forecast'),
     down: p('{warning} for {region}|Forecasters See {Hazard} in {region}|{Commodity} Eases on Weather Outlook'),
@@ -120,6 +171,9 @@ export const LEADS: Record<NewsKind, Sided> = {
   stake: { up: p('{firmName} disclosed a {stake} stake in {c} on {day} in a filing with the Securities Oversight Bureau.|A filing with the Securities Oversight Bureau on {day} showed that {firmName} now owns {stake} of {c}.') },
   league: { up: p('{winner} returned {winRet} in {year}, the best of the {count} firms in Barren’s annual survey of money managers. {firmName} returned {ret}, to finish {rank}.|Of the {count} firms in this year’s survey, {winner} did best in {year}, returning {winRet}. {firmName} came {rank}, with {ret}.') },
   enforcement: { down: p('The Securities Oversight Bureau on {day} brought an enforcement action against {firmName} after an audit of its trading, fining the firm {amount} and barring it from opening new positions for six weeks.|{firmName} was fined {amount} by the Securities Oversight Bureau on {day} and suspended from opening new positions, in one of the year’s largest enforcement actions.') },
+  puff: { up: DARK.puffStock.lead },
+  hitPiece: { down: DARK.hitCompany.lead },
+  expose: { down: DARK.bribe.lead },
   weather: {
     up: p('The National Weather Bureau on {day} issued a {warning} for {region}, where it expects {hazard} by {dueDay}. {Commodity} futures [firmed|edged higher|rose] on the forecast.|Forecasters warned on {day} of {hazard} in {region} by {dueDay}. {Commodity} prices [ticked up|firmed] as traders took note.'),
     down: p('The National Weather Bureau on {day} issued a {warning} for {region}, where it expects {hazard} by {dueDay}. {Commodity} futures [eased|slipped|drifted lower] on the forecast.|Forecasters said on {day} that {region} can expect {hazard} by {dueDay}. {Commodity} prices [eased|softened].'),
@@ -212,6 +266,7 @@ export const RUMOURS: Record<string, readonly string[]> = {
   trialFail: p('Hearing the {ticker} trial data is ugly. Get out.|{ticker} doctors are quiet. Too quiet.'),
   bankruptcy: p('{ticker} can’t pay its bonds. Lawyers seen at HQ.|Suppliers not getting paid at {ticker}. Chapter 11 incoming.'),
   pump: p('{ticker} TO THE MOON!!! Buy before Friday!!!|$$$ {ticker} is the next Majorsoft $$$ load up NOW|Huge news coming for {ticker}!!! 10-bagger!!!'),
+  fud: p('{ticker} is going to zero. Get out while you can.|Friend says {ticker} books are a mess. SELL.|{ticker} = the next bankruptcy. Mark my words.|Anyone still holding {ticker} deserves what’s coming.'),
   default: p('Hearing good things about {ticker}. Something’s up.|Friend at {ticker} says big announcement soon.|{ticker} chatter picking up. Positioning ahead.'),
   bad: p('Hearing bad things about {ticker}. Something’s up.|Friend at {ticker} says trouble brewing.|{ticker} insiders selling? Watch out.'),
 };

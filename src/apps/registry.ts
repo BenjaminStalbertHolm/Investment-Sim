@@ -10,6 +10,8 @@ const Placeholder: LazyApp = lazy(() => import('./placeholder/Placeholder'));
 const components: Partial<Record<AppId, LazyApp>> = {
   mycomputer: lazy(() => import('./mycomputer/MyComputer')),
   browser: lazy(() => import('./browser/Browser')),
+  garlic: lazy(() => import('./garlic/Garlic')),
+  installer: lazy(() => import('./installer/Installer')),
   trade: lazy(() => import('./trade/TradeApp')),
   mail: lazy(() => import('./mail/MailApp')),
   quote: lazy(() => import('./quote/QuoteWindow')),

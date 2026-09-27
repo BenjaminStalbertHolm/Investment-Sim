@@ -12,6 +12,8 @@ import { decodeCeo } from '../src/world/ceo';
 import { newBrowserState } from '../src/state/browser';
 import { SAVE_VERSION, migrate } from '../src/state/migrations';
 import { SAVE_FORMAT, packSave, unpackSave, type Manifest } from '../src/state/saveFile';
+import { newDarkWeb, type DarkRequest } from '../src/sim/darkweb';
+import type { ServiceId } from '../src/sim/data/darkweb';
 import { cleanUp, deleteSave, listSaves, nextAutosave, readSave, writeSave, type SaveSlot } from '../src/state/saves';
 import { generateWorld, type World } from '../src/world/generator';
 import { difference } from './util';
@@ -68,10 +70,38 @@ function trade(e: Engine, s: number): void {
     const small = e.companies.findIndex((_, i) => i > 400 && !e.market.state.status[i] && e.market.price[i] * e.model.shares[i] < 4e6 && e.market.price[i] > 1);
     e.placeOrder({ company: small, side: 'buy', type: 'market', shares: Math.ceil(0.06 * e.model.shares[small]), tif: 'day' });
   }
+  // Phase 9: the dark web — a shell, a bribe, a bot farm, a loan shark across the save, and purchases still in transit
+  // when the game is saved (a pump-and-dump and stolen trading plans), whose outcomes were decided before the save.
+  const dark = (service: ServiceId, extra: Partial<DarkRequest> = {}) => {
+    // From honest vendors: an SOB sting's enforcement action would empty the client list this test counts on.
+    const listing = e.darkweb().listings.find((l) => l.service === service && e.s.darkweb.vendors[l.vendor].nature === 'honest')!;
+    const request = { ...listing.request, ...extra };
+    const terms = e.darkQuote(request);
+    if (!('error' in terms)) e.darkBuy(request, terms);
+  };
+  if (s === 8) dark('shell');
+  if (s === 16) dark('puffFirm');
+  if (s === 22) dark('botHype');
+  if (s === 50) dark('rumour', { company: 30, viaShell: true });
+  if (s === 55) dark('shark', { amount: 5_000_000 });
+  if (s === 58) dark('pump', { amount: 20_000 });
+  if (s === 60) dark('leakEarnings');
+  if (s === 60) dark('spyTrades', { firm: 1 });
+  if (s === 70) e.closeShell();
+  if (s === 65) e.repayShark();
+  if (s === 80) dark('forgery');
 }
 
-/** A state without what Phase 8 added. */
-function beforePhase8(state: SimState) {
+/** A state without what Phase 9 added. */
+function beforePhase9(state: SimState) {
+  const { darkweb: _d, ...rest } = state;
+  const { darkweb: _rd, ...rng } = state.rng;
+  return { ...rest, rng };
+}
+
+/** A state without what Phases 8 and 9 added. */
+function beforePhase8(full: SimState) {
+  const state = beforePhase9(full) as unknown as SimState;
   const { funds: _f, competitors: _c, governance: _g, regulator: _r, scoring: _s, ...rest } = state;
   const { rivals: _rr, governance: _rg, regulator: _rreg, ...rng } = state.rng;
   const { funds: _af, ...account } = state.account;
@@ -147,7 +177,8 @@ describe('save system (spec §18)', () => {
     expect(state.mail.messages.some((m) => m.answer === 'accepted')).toBe(true);
     expect(state.events.news.length).toBeGreaterThan(500);
     expect(state.events.rumours.length).toBeGreaterThan(20);
-    expect(state.clients.clients.filter((c) => c.status === 'active').length).toBeGreaterThan(2);
+    // Clients who joined (Phase 9's dark web can cost the firm some of them again).
+    expect(state.clients.clients.filter((c) => c.joined !== undefined).length).toBeGreaterThan(2);
     expect(state.events.queue.length).toBeGreaterThan(0);
     // Phase 4: the quarterly results the IR pages show carry over, including reports made after loading.
     const quarters = saved.details(5).quarters;
@@ -176,12 +207,40 @@ describe('save system (spec §18)', () => {
     expect(state.governance.filings.filter((f) => f.firm === -1).length).toBeGreaterThanOrEqual(2);
     expect(state.scoring.growth).toHaveLength(120);
     expect(state.scoring.achievements.fund).toBeDefined();
+    // Phase 9: dark web purchases on both sides of the save, some still in transit when it was saved.
+    const purchases = state.darkweb.purchases;
+    expect(purchases.map((p) => p.request.service)).toEqual(['shell', 'puffFirm', 'botHype', 'rumour', 'shark', 'pump', 'leakEarnings', 'spyTrades', 'forgery']);
+    expect(purchases.filter((p) => p.time < at(days[60], 11 * 60) && (p.done ?? Infinity) > at(days[60], 11 * 60)).length).toBeGreaterThanOrEqual(2);
+    // The shell hid the stake bought on day 12 until it was wound up on day 70, when the stake was filed, late.
+    expect(state.darkweb.shells).toMatchObject([{ closed: days[70] }]);
+    expect(state.darkweb.shark).toBeUndefined();
+    expect(ledger.some((l) => l.kind === 'offshore')).toBe(true);
+    expect(ledger.filter((l) => l.kind === 'sharkInterest').length).toBeGreaterThanOrEqual(2);
+    expect(state.mail.messages.some((m) => m.kind === 'garlicInvite')).toBe(true);
     // Phase 5: the firm, its logo and CEO, and the Custom settings carry over.
     expect(saved.player).toMatchObject({ firmName: 'Renamed Capital', ceoName: 'Pat Doe-Ray', ceoCode: player.ceoCode });
     expect(decodeLogo(saved.player.logoCode).effect).toBe('bevel');
     expect(saved.settings).toEqual(settings);
     expect(saved.settings.difficulty).toBe('custom');
   }, 60_000);
+
+  it('upgrades a version 6 save: the dark web opens where the game stands', () => {
+    const e = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Old Firm' });
+    e.placeOrder({ company: 3, side: 'buy', type: 'market', shares: 100, tif: 'day' });
+    e.runSessions(20);
+    const old = beforePhase9(e.exportState());
+    const upgraded = migrate(unpackSave(packSave({ manifest: manifest({ version: 6 }), sim: old, game: { shell: { iconPositions: {}, speed: 1, tickerTape: false } } })));
+    const loaded = Engine.restore(upgraded.sim as SimState);
+    const state = loaded.exportState();
+    expect(difference(beforePhase9(state), old)).toBeUndefined();
+    expect(difference(state.darkweb, newDarkWeb(world.seed, dayOf(e.time)))).toBeUndefined();
+    loaded.runSessions(20);
+    expect(loaded.mail().messages.some((m) => m.kind === 'garlicInvite')).toBe(true);
+    const listing = loaded.darkweb().listings.find((l) => l.service === 'watch')!;
+    expect('purchase' in loaded.darkBuy(listing.request, listing.terms!)).toBe(true);
+    const a = loaded.account();
+    expect(a.netWorth - a.deposits).toBeCloseTo(a.realized + a.unrealized, 4);
+  });
 
   it('upgrades a version 5 save: funds launched, competitors’ books opened and the firm’s record worked out where the game stands', () => {
     const e = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: 'Old Firm' });

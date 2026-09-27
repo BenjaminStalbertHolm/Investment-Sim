@@ -11,7 +11,10 @@ import { companyOf } from '../../sites/hooks';
 import { FUNDS } from '../../sim/data/funds';
 import { headlineOf } from '../../sites/news/articles';
 import { dollars, percent, write } from '../../sites/text';
-import { JOTTINGS, NEWSWIRE, slugOf } from '../../sites/urls';
+import { JOTTINGS, RAGINGBEAR, TUCATS, sites, slugOf, storyUrl } from '../../sites/urls';
+import { MARKET, SERVICE } from '../../sim/data/darkweb';
+import { OUTLET } from '../../sim/data/outlets';
+import type { Journalist } from '../../sim/press';
 import { count, money, price, signedPct } from '../format';
 import { MOM, PARTY, SPAM, TIP_CLAIMS, TIP_CLOSERS, TIP_OPENERS, TIP_SENDERS, TIP_SUBJECTS } from './data';
 
@@ -37,6 +40,8 @@ export interface LetterContext {
   clients: ReadonlyMap<number, Client>;
   /** News items the letter refers to (briefings, alerts), when fetched. */
   news: ReadonlyMap<number, NewsItem>;
+  /** The press, for letters from journalists (Phase 9). */
+  journalists?: readonly Journalist[];
 }
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -346,7 +351,7 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
       ]);
     case 'bankrupt':
       return letter(COURT, `In re ${firmName}: order for relief`, () => [
-        { p: `TAKE NOTICE that ${firmName} could not meet ${mail.reason === 'loan' ? 'its obligations to First Continental Bank' : mail.reason === 'fine' ? 'a fine owed to the Securities Oversight Bureau' : 'a margin call from its broker'} even after the sale of everything it owned, falling ${money(mail.amount!)} short.` },
+        { p: `TAKE NOTICE that ${firmName} could not meet ${mail.reason === 'loan' ? 'its obligations to First Continental Bank' : mail.reason === 'fine' ? 'a fine owed to the Securities Oversight Bureau' : mail.reason === 'shark' ? 'a debt to a private lender who prefers not to be named' : 'a margin call from its broker'} even after the sale of everything it owned, falling ${money(mail.amount!)} short.` },
         { p: 'The firm is hereby declared bankrupt. Its clients have been notified. Its office furniture is being counted.' },
         { p: `The Court thanks ${ceoName} for their service to the capital markets, such as it was.` },
       ]);
@@ -359,7 +364,7 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
         const stories = (mail.items ?? []).map((id) => ctx.news.get(id)).filter((n): n is NewsItem => !!n);
         if (stories.length) {
           blocks.push({ p: 'Top stories:' });
-          for (const n of stories) blocks.push({ link: headlineOf(n, directory, firmName, ctx.seed), url: `http://${NEWSWIRE}/story?id=${n.id}-newswire` });
+          for (const n of stories) blocks.push({ link: headlineOf(n, directory, firmName, ctx.seed), url: storyUrl(n) });
         }
         blocks.push({ link: 'Read today’s paper', url: `http://${JOTTINGS}/` });
         return blocks;
@@ -369,7 +374,7 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
       const headline = n ? headlineOf(n, directory, firmName, ctx.seed) : 'News about one of your holdings';
       return letter('Majorsoft Newswire Alerts <alerts@newswire.majorsoft.com>', `NEWS ALERT: ${ticker} — ${headline}`, () => [
         { p: `News has broken about ${mention(c!)}, which you hold:` },
-        { link: headline, url: `http://${NEWSWIRE}/story?id=${mail.news}-newswire` },
+        { link: headline, url: storyUrl(ctx.news.get(mail.news!) ?? { id: mail.news! }) },
         { p: 'You receive alerts for companies in your portfolio. Turn them off in Tools → News Alerts.' },
       ]);
     }
@@ -488,6 +493,185 @@ export function writeLetter(mail: Mail, ctx: LetterContext, headerOnly = false):
       return letter(SOB_ENFORCEMENT, `Fine collected: ${money(mail.amount!)}`, () => [
         { p: `${money(mail.amount!)} has been collected from ${firmName}’s account in payment of the Bureau’s fine.` },
       ]);
+    // ---------- Phase 9: the dark web (spec §14A) ----------
+    case 'garlicInvite':
+      return letter(rng.pick(TIP_SENDERS), rng.pick(['A better browser', 'You didn’t get this from me', 'Where the real money is']), () => [
+        { p: 'The real money isn’t made on the World Wide Web. It’s made on the one underneath it.' },
+        { p: 'Journalists who can be persuaded. Earnings numbers before they are announced. Loans no bank would make. It’s all on the Garlic network, and every listing tells you its odds up front — which is more than the Securities Oversight Bureau does.' },
+        { link: 'Garlic Browser 0.9 beta, at Tucats Downloads', url: `http://${TUCATS}/garlic.html` },
+        { p: 'Don’t tell anyone where you got this.' },
+      ]);
+    case 'darkweb':
+      return darkLetter(mail, ctx, letter, words);
+    case 'blackmail': {
+      const j = ctx.journalists?.[mail.journalist!];
+      const outlet = j ? OUTLET[j.outlet] : undefined;
+      return letter(`${j?.name ?? 'A journalist'} <${slugOf(j?.name ?? 'reporter')}@${outlet?.host.replace(/^www\./, '') ?? 'freemail.net'}>`, 'Our arrangement', () => [
+        { p: `${ceoName}, remember the story I wrote for you? My editor has started asking questions, and I have started wondering whether I was paid enough.` },
+        { p: `${money(mail.amount!)} by ${words.date} and it stays between us. Otherwise I write the most honest article of my career, about ${firmName}.` },
+        { p: 'Your choice.' },
+      ]);
+    }
+    case 'sharkCall':
+      return letter(`${mail.handle} <${slugOf(mail.handle ?? 'tony')}@${MARKET.sharks.host}>`, 'You missed Friday', () => [
+        { p: `You missed Friday. The boys came by. The interest and our trouble came to ${money(mail.amount!)}, and they took what covered it, at our prices:` },
+        ...((mail.lines ?? []).length ? [{ table: { head: ['Symbol', 'Action', 'Quantity', 'Price', 'Value'], rows: (mail.lines ?? []).map((l) => row(l, directory.tickers)) } }] : []),
+        { p: `They took the furniture too. You’ll get it back on ${words.date}. Probably.` },
+        { p: 'The loan’s still on. See you Friday.' },
+      ]);
+    case 'shellFound':
+      return letter(SOB_ENFORCEMENT, `${mail.text}: beneficial ownership`, () => [
+        { p: `The Bureau has established that ${mail.text} is owned by ${firmName}, which used it to hold stakes without filing them as the law requires.` },
+        (mail.companies ?? []).length
+          ? { p: `The following holdings have now been filed on the firm’s behalf: ${(mail.companies ?? []).map((i) => mention(i)).join(', ')}.` }
+          : { p: 'The company held no stakes that required filing.' },
+        { p: `${firmName} is fined ${money(mail.amount!)}, payable by ${words.date}. The matter has been announced to the press.` },
+      ]);
+    case 'forgeryFound':
+      return letter(SOB_ENFORCEMENT, `Falsified client statements: ${firmName}`, () => [
+        { p: `The Bureau has found that statements ${firmName} sent its clients reported returns the firm never earned. The clients have been informed.` },
+        { p: `${firmName} is fined ${money(mail.amount!)}, payable by ${words.date}. The matter has been announced to the press.` },
+      ]);
+  }
+}
+
+const GARLIC_NOTICES = 'Garlic Market Notices <noreply@7khjpcpclcfv.garlic>';
+const FBU = 'Federal Bureau of Unauthorised-access, Cyber Division <cyber@fbu.gov>';
+const BEAT = ['miss', 'beat'];
+const BAZAAR: Record<string, [string, string]> = {
+  watch: ['Your Rolecks arrived. It even ticks, mostly on the hour.', 'Your Rolecks arrived. It is a drawing of a watch, on a sticker, on a potato.'],
+  software: ['The Doors 98 Plus! CD works. The themes are lovely. The virus scanner found nothing, which is itself suspicious.', 'The CD holds 600 MB of a screensaver of a dancing baby. It will not uninstall.'],
+  meanie: ['Twelve Princess bears, tags intact. Possibly even real. The collectors’ market thanks you.', 'Twelve bears arrived. On closer inspection they are cats.'],
+  newsletter: ['Issue 1: “The Federal Reservoir is run by lizards.” Surprisingly well argued. Issue 2 predicts the next rate decision correctly.', 'Issue 1 is a photocopy of a takeaway menu. Issues 2 to 12 are the same menu.'],
+};
+
+/** A dark web purchase's result (spec §14A): the vendor's letter, or the Bureau's, or the market's notice that the vendor is gone. */
+function darkLetter(
+  mail: Mail,
+  ctx: LetterContext,
+  letter: (from: string, subject: string, body: () => Block[], to?: string) => Letter,
+  words: Record<string, string>,
+): Letter {
+  const { directory, firmName } = ctx;
+  const service = SERVICE[mail.service!];
+  const vendor = `${mail.handle} <${slugOf(mail.handle ?? 'vendor')}@${MARKET[service.market].host}>`;
+  const order = `Order #${mail.purchase}: ${service.name}`;
+  const c = mail.company;
+  const who = c !== undefined ? `{c:${c}}` : '';
+  const firm = mail.firm !== undefined ? directory.firms[mail.firm]?.name ?? 'a competitor' : '';
+  const j = mail.journalist !== undefined ? ctx.journalists?.[mail.journalist] : undefined;
+  const writer = j ? `${j.name} of ${OUTLET[j.outlet].name}` : 'the journalist';
+  const ok = mail.result === 'success';
+  if (mail.result === 'scam') {
+    return letter(GARLIC_NOTICES, `${order}: the vendor has left the market`, () => [
+      { p: `${mail.handle} has closed their shop and stopped answering messages. Your order will not be delivered.` },
+      { p: 'There is no escrow on the Garlic network, and there are no refunds. Other buyers are comparing notes in The Cellar.' },
+    ]);
+  }
+  if (mail.result === 'sting') {
+    return letter(SOB_ENFORCEMENT, 'Your recent order', () => [
+      { p: `Thank you for your order of “${service.name}” from “${mail.handle}”. We regret to inform you that ${mail.handle} is an undercover operation of the Securities Oversight Bureau.` },
+      { p: `Your payment has been logged as evidence, and the Division of Enforcement has opened an examination of ${firmName}. Please do not attempt to contact the vendor again. It is us.` },
+    ]);
+  }
+  switch (mail.service) {
+    case 'puffFirm':
+    case 'puffStock':
+    case 'hitFirm':
+    case 'hitCompany':
+      if (!ok) {
+        return letter(vendor, `${order}: it went wrong`, () => [
+          { p: `Bad news. ${writer} took our offer straight to their editor. Expect to read about yourself.` },
+          ...(mail.amount ? [{ p: `And ${mail.service === 'hitFirm' ? firm : who} has sued. The court has awarded ${money(mail.amount)} in damages, taken from your account.` }] : []),
+          { p: 'No refunds. We did say it might happen.' },
+        ]);
+      }
+      return letter(vendor, `${order}: done`, () => [
+        { p: `${writer} came through. ${mail.service === 'hitFirm' ? `${firm}’s clients are already on the phone.` : mail.service === 'puffFirm' ? 'Your mother will be very proud.' : 'The readers are reacting as we speak.'}` },
+        ...(mail.news !== undefined ? [{ link: 'Read the article', url: storyUrl({ id: mail.news, outlets: j ? [j.outlet] : undefined }) }] : []),
+        { p: 'Pleasure doing business. Next time, mention our name for the discount.' },
+      ]);
+    case 'leakEarnings':
+      return letter(vendor, order, () => [
+        { p: `${who} reports before the bell on ${words.date}. The numbers will ${BEAT[(mail.direction ?? 1) > 0 ? 1 : 0]} the forecasts, and not by a little.` },
+        { p: 'Don’t trade it all at once. People notice.' },
+      ]);
+    case 'leakDeal':
+      if (mail.result === 'refund') {
+        return letter(vendor, `${order}: refunded`, () => [
+          { p: `Nothing in the pipeline this fortnight. I’ve refunded your ${money(mail.amount!)}. Honest vendor, see? Tell your friends.` },
+        ]);
+      }
+      return letter(vendor, order, () => [
+        { p: `${who} is getting a takeover bid within two weeks. Premium’s a fat one.` },
+        { p: 'You didn’t get it from me. You didn’t get it from anyone.' },
+      ]);
+    case 'botHype':
+    case 'botFud':
+      return letter(vendor, `${order}: ${ok ? 'posting' : 'caught'}`, () => ok
+        ? [
+            { p: `Our accounts are ${mail.service === 'botHype' ? 'hyping' : 'trashing'} ${who} on Raging Bear as we speak. Give it a day.` },
+            { link: 'See the board', url: `http://${RAGINGBEAR}/board?s=${directory.tickers[c!]}` },
+          ]
+        : [{ p: `The Raging Bear moderators caught our accounts and posted a notice naming ${firmName}. Sorry about that. No refunds.` }]);
+    case 'spyHoldings':
+    case 'spyTrades':
+      if (!ok) {
+        return letter(`Hacker, Lawless & Sue LLP <litigation@hls-law.com>`, `${firm} v. ${firmName}`, () => [
+          { p: `Our client ${firm} caught a person going through its files who admitted, under questioning, to having been paid by ${firmName}.` },
+          { p: `The court has awarded our client ${money(mail.amount!)} in damages, which have been collected from your account. We trust this concludes the matter.` },
+        ]);
+      }
+      return letter(vendor, `${order}: the documents`, () => [
+        { p: mail.service === 'spyHoldings' ? `${firm}’s book, as of this morning, largest positions first:` : `${firm}’s trading desk plans these trades at the week’s close, largest first:` },
+        mail.service === 'spyHoldings'
+          ? { table: { head: ['Symbol', 'Shares', 'Value'], rows: (mail.lines ?? []).map((l) => [directory.tickers[l.company], count(l.shares), money(l.amount)]) } }
+          : { table: { head: ['Symbol', 'Action', 'Shares', 'Value'], rows: (mail.lines ?? []).map((l) => [directory.tickers[l.company], l.side === 'buy' ? 'Buy' : 'Sell', count(l.shares), money(l.amount)]) } },
+        { p: 'Shred after reading.' },
+      ]);
+    case 'ddos':
+    case 'deface': {
+      const target = mail.service === 'ddos' ? firm : who;
+      if (!ok) {
+        return letter(FBU, 'Notice of investigation: unauthorised access', () => [
+          { p: `The Bureau has traced an attack on the web site of ${target} to a payment made by ${firmName}.` },
+          { p: 'This letter is a formal notice. The Securities Oversight Bureau has been informed. Please do not leave the country.' },
+        ]);
+      }
+      const url = mail.service === 'deface' && c !== undefined ? `http://${sites(directory, firmName).company[c]}/` : undefined;
+      return letter(vendor, `${order}: done`, () => [
+        { p: mail.service === 'ddos' ? `${firm}’s web site is down, and it stays down for three trading days.` : `${who}’s home page has a new look. The crew signed it.` },
+        ...(url ? [{ link: 'See for yourself', url }] : []),
+      ]);
+    }
+    case 'shell':
+      return letter(vendor, `${order}: registered`, () => [
+        { p: `${mail.text} is registered and ready. Its directors are two lawyers and a parrot; its owner is nobody’s business.` },
+        { p: 'Stakes you build from now on are held through it, so there are no 5% filings. You can route dark web payments through it too, for 10%, with less of a trail. The registered agent’s fee is $20,000 a year.' },
+      ]);
+    case 'pump':
+      return letter(vendor, `${order}: ${ok ? 'we’re out' : 'the dump came early'}`, () => [
+        ok
+          ? { p: `We sold ${who} into the buying. Your share comes to ${money(mail.amount!)}. Same time next month?` }
+          : { p: `Somebody sold ${who} before we did. You got back ${money(mail.amount!)}. Welcome to the bag-holders’ club.` },
+      ]);
+    case 'rumour':
+      return letter(vendor, `${order}: ${ok ? 'it’s out there' : 'problem'}`, () => [
+        ok
+          ? { p: `The takeover talk on ${who} is all over the trade press. It won’t last, so don’t get attached.` }
+          : { p: 'Our man talked to the Securities Oversight Bureau. Don’t call us. We’ll never call you.' },
+      ]);
+    case 'forgery':
+      return letter(vendor, `${order}: statements sent`, () => [
+        { p: 'Your clients’ quarterly statements went out on our finest letterhead. Every one of them beat the index this quarter. Congratulations.' },
+      ]);
+    case 'shark':
+      return letter(vendor, 'Welcome to the family', () => [
+        { p: `${money(mail.amount!)} is in your account. Every Friday, 4% of it comes back to us. Pay it off whenever you like.` },
+        { p: 'Miss a Friday and the boys come for what you owe, at our prices, and for the furniture.' },
+      ]);
+    default:
+      return letter(vendor, `${order}: delivered`, () => [{ p: BAZAAR[mail.service!]?.[ok ? 0 : 1] ?? 'Your order has arrived.' }]);
   }
 }
 

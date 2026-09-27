@@ -7,11 +7,11 @@ import { parseContract } from './commodities';
 
 /**
  * Bankruptcy (spec §16): the only way the game ends. It comes when an obligation falls due — a margin call, a loan, an
- * SOB fine — that
+ * SOB fine, a loan shark's collectors — that
  * the firm cannot meet even after the forced sale of everything it owns. The report is what the Blue Screen of Debt
  * leads to, and what the Hall of Shame keeps.
  */
-export type Cause = 'margin' | 'loan' | 'fine';
+export type Cause = 'margin' | 'loan' | 'fine' | 'shark';
 
 export interface Trade {
   /** "MVDA", "CL Mar 98" (as a contract key) or a commodity's name. */

@@ -42,8 +42,11 @@ interface OpenOffer {
 }
 
 export interface GovernanceState {
-  /** The player's stakes at or over a threshold, by the highest crossed. */
-  stakes: { company: number; level: Level }[];
+  /**
+   * The player's stakes at or over a threshold, by the highest crossed. A hidden stake crossed 5% through an offshore
+   * shell (spec §14A) and was never filed.
+   */
+  stakes: { company: number; level: Level; hidden?: boolean }[];
   /** Public filings, oldest first (the last FILINGS_KEPT). */
   filings: StakeFiling[];
   meetings: Meeting[];
@@ -87,6 +90,8 @@ export function fileStake(sim: Sim, firm: number, company: number, pct: number):
  */
 export function checkStakes(sim: Sim): void {
   const g = sim.s.governance;
+  // An offshore shell holds stakes without 5% filings (spec §14A).
+  const shell = sim.s.darkweb.shells.some((x) => x.closed === undefined);
   const shares = sim.model.shares;
   const held = new Map(sim.s.account.positions.filter((p) => p.shares > 0).map((p) => [p.company, p.shares]));
   for (const company of new Set([...held.keys(), ...g.stakes.map((s) => s.company)])) {
@@ -98,18 +103,14 @@ export function checkStakes(sim: Sim): void {
     if (record) record.level = level;
     else g.stakes.push({ company, level });
     if (level < before) {
-      // Stakes sold down are filed too; a delisted company's are simply gone.
-      if (level < 5 && !sim.market.state.status[company]) fileStake(sim, -1, company, pct);
+      // Stakes sold down are filed too (a hidden one never was); a delisted company's are simply gone.
+      if (level < 5 && !sim.market.state.status[company] && !record?.hidden) fileStake(sim, -1, company, pct);
+      if (level < 5 && record) record.hidden = undefined;
       if (level < 20) g.seats = g.seats.filter((c) => c !== company);
       continue;
     }
-    if (before < 5) {
-      fileStake(sim, -1, company, pct);
-      sim.send({ kind: 'stakeFiled', company, amount: pct });
-      sim.send({ kind: 'ceoLetter', company, amount: pct, variant: sim.rng.governance.int(0, 999) });
-      sim.report({ kind: 'stake', company, level: pct });
-      sim.unlock('filed');
-    }
+    if (before < 5 && shell) g.stakes.find((s) => s.company === company)!.hidden = true;
+    else if (before < 5) disclose(sim, company, pct);
     if (before < 20 && level >= 20) sim.send({ kind: 'boardSeat', company, amount: pct });
     if (before < 50 && level >= 50) {
       sim.send({ kind: 'control', company, amount: pct });
@@ -117,6 +118,27 @@ export function checkStakes(sim: Sim): void {
     }
   }
   g.stakes = g.stakes.filter((s) => s.level > 0);
+}
+
+/** A 5% stake made public: the SOB filing, its confirmation, the CEO's letter and the Newswire's story. */
+function disclose(sim: Sim, company: number, pct: number): void {
+  fileStake(sim, -1, company, pct);
+  sim.send({ kind: 'stakeFiled', company, amount: pct });
+  sim.send({ kind: 'ceoLetter', company, amount: pct, variant: sim.rng.governance.int(0, 999) });
+  sim.report({ kind: 'stake', company, level: pct });
+  sim.unlock('filed');
+}
+
+/** The shell is gone (discovered or wound up): every stake hidden in it is filed now. Returns the companies. */
+export function discloseHidden(sim: Sim): number[] {
+  const out: number[] = [];
+  for (const s of sim.s.governance.stakes) {
+    if (!s.hidden) continue;
+    s.hidden = undefined;
+    out.push(s.company);
+    disclose(sim, s.company, Math.max(0, sim.held(s.company)) / sim.model.shares[s.company]);
+  }
+  return out;
 }
 
 /** A company's annual meeting: twenty trading days after it reports its first quarter. */
@@ -249,7 +271,8 @@ export function weeklyGovernance(sim: Sim, day: number): void {
   const bidders = sim.s.world.firms.flatMap((f, k) => (f.strategy === 'index' ? [] : [k]));
   if (!chance || !bidders.length) return;
   for (const s of g.stakes) {
-    if (!rng.chance(chance)) continue;
+    // Competitors bid for the stakes they can see.
+    if (s.hidden || !rng.chance(chance)) continue;
     const shares = sim.held(s.company);
     if (shares <= 0) continue;
     const price = sim.market.price[s.company] * (1 + rng.range(0.1, 0.3));

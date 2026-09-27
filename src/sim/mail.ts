@@ -8,6 +8,8 @@ import { releasesOn } from './macro';
 import type { Vote } from './governance';
 import type { MacroKind, NewsItem } from './news';
 import type { SobOutcome } from './regulator';
+import type { Outcome } from './darkweb';
+import type { ServiceId } from './data/darkweb';
 
 /**
  * Outbox Express's mail (spec §15): the facts of each letter, never its words. The mail app writes the letters from
@@ -66,7 +68,15 @@ export type MailKind =
   | 'taunt'
   | 'audit'
   | 'sobOutcome'
-  | 'finePaid';
+  | 'finePaid'
+  // Phase 9: the anonymous letter pointing to the Garlic Browser; a dark web purchase's result; a blackmailing journalist;
+  // the loan sharks' collectors; a shell company or forged statements found out.
+  | 'garlicInvite'
+  | 'darkweb'
+  | 'blackmail'
+  | 'sharkCall'
+  | 'shellFound'
+  | 'forgeryFound';
 
 export type Folder = 'inbox' | 'clients' | 'broker' | 'news' | 'tips' | 'junk' | 'sent';
 
@@ -83,7 +93,8 @@ export const FOLDER_OF: Record<MailKind, Folder> = {
   stakeFiled: 'inbox', ceoLetter: 'inbox', boardSeat: 'inbox', control: 'inbox', proxy: 'inbox', voteResult: 'inbox',
   stakeBid: 'inbox', investmentOffer: 'inbox', taunt: 'inbox', audit: 'inbox', sobOutcome: 'inbox', finePaid: 'inbox',
   briefing: 'news', alert: 'news',
-  tip: 'tips',
+  tip: 'tips', garlicInvite: 'tips',
+  darkweb: 'inbox', blackmail: 'inbox', sharkCall: 'inbox', shellFound: 'inbox', forgeryFound: 'inbox',
   spam: 'junk',
 };
 
@@ -107,7 +118,7 @@ export interface Mail {
   flagged: boolean;
   deleted: boolean;
   /** The player's answer to a letter with action buttons. */
-  answer?: 'accepted' | 'declined' | 'reported' | 'expired' | Vote | 'done';
+  answer?: 'accepted' | 'declined' | 'reported' | 'expired' | Vote | 'done' | 'paid' | 'refused';
   client?: number;
   company?: number;
   /** News item (alerts). */
@@ -117,7 +128,7 @@ export interface Mail {
   day?: number;
   /** Which template, for letters that come in several versions. */
   variant?: number;
-  reason?: 'breach' | 'benchmark' | 'performance' | 'acquired' | 'bankrupt' | 'margin' | 'loan' | 'fine' | 'scandal';
+  reason?: 'breach' | 'benchmark' | 'performance' | 'acquired' | 'bankrupt' | 'margin' | 'loan' | 'fine' | 'scandal' | 'shark';
   /** A constraint index (warnings). */
   constraint?: number;
   /** The quarter: the client's return and the MAJOR 500's. */
@@ -142,10 +153,17 @@ export interface Mail {
   shares?: number;
   meeting?: number;
   outcome?: SobOutcome;
+  /** Phase 9: a dark web purchase — which, from whom, and how it turned out; a journalist; a name (a shell's). */
+  purchase?: number;
+  service?: ServiceId;
+  handle?: string;
+  result?: Outcome | 'refund';
+  journalist?: number;
+  text?: string;
 }
 
 /** The action buttons a letter can carry (spec §15, §15.5–15.6). */
-export type MailAction = 'accept' | 'decline' | 'report' | Vote | 'replaceCeo' | 'raiseDividend' | 'cutDividend';
+export type MailAction = 'accept' | 'decline' | 'report' | Vote | 'replaceCeo' | 'raiseDividend' | 'cutDividend' | 'pay' | 'refuse';
 
 export type MailDraft = Omit<Mail, 'id' | 'time' | 'read' | 'flagged' | 'deleted'> & { time?: GameTime; read?: boolean };
 

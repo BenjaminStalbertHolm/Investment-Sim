@@ -13,7 +13,7 @@ import type { Company } from '../../world/company';
 import { companyOf, useDetails } from '../hooks';
 import { headlineOf } from '../news/articles';
 import { useNews } from '../news/data';
-import { NEWSWIRE, companyUrl, firmUrl, playerUrl, quoteUrl, sites, type Sites } from '../urls';
+import { companyUrl, firmUrl, playerUrl, quoteUrl, sites, storyUrl, type Sites } from '../urls';
 import { BestViewed, HitCounter, Link, Marquee, Rule, UnderConstruction, tileStyle, useTitle } from '../web';
 import { companySite, shortName, type CompanySite } from './content';
 
@@ -121,7 +121,7 @@ function InTheNews({ items, directory, firmName, only }: { items?: NewsItem[]; d
       {shown.map((n) => (
         <li key={n.id}>
           <b>{formatDate(dayOf(n.time))}</b> —{' '}
-          <Link href={`http://${NEWSWIRE}/story?id=${n.id}-newswire`}>{headlineOf(n, directory, firmName, seed)}</Link>
+          <Link href={storyUrl(n)}>{headlineOf(n, directory, firmName, seed)}</Link>
         </li>
       ))}
     </ul>

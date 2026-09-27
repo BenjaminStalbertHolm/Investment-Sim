@@ -18,8 +18,13 @@ import {
   quarterlyBoardLetters, weeklyGovernance, holdMeeting, type GovernanceState,
 } from './governance';
 import {
-  auditReport, coolHeat, creditRecord, frozen, monthlyAudit, newRegulator, suspended, type RegulatorState,
+  auditReport, coolHeat, creditRecord, frozen, monthlyAudit, newRegulator, surveil, suspended, type RegulatorState,
 } from './regulator';
+import {
+  activeShell, answerBlackmail, buy, closeShell, discoveryChance, forgeryFound, morningDarkWeb, newDarkWeb, quote, resolve,
+  sameTerms, scheme, weeklyDarkWeb, type DarkRequest, type DarkWebState, type Purchase, type Terms,
+} from './darkweb';
+import { BOT_MAX_CAP, LEAK_DAYS, REPOSSESSED_DAYS, SEIZE_DISCOUNT, SERVICES, SHARK_PENALTY, SHARK_WEEKLY } from './data/darkweb';
 import { ACHIEVEMENTS, dayReturn, flowsSince, performance, type Performance, type ScoringState } from './scoring';
 import {
   BAR_MINUTES, BARS_PER_DAY, gameYear, CLOSE, OPEN, START_DAY, addTradingDays, at, dayOf, formatDate, holiday, isTradingDay, minuteOf,
@@ -67,7 +72,7 @@ import { RECALL_DAYS, borrowOf, pileIn, recallChance, revertShortInterest, squee
 import {
   FUND_CHART, INDEX, chartCommodity, chartFund, type AccountView, type CalendarEntry, type ClientsView, type CompanyDetails, type ContractQuote,
   type Directory, type EngineEvent, type Estimate, type FirmView, type FundsView, type FuturesView, type Holder, type LiveBars, type LoansView, type RepayQuote,
-  type SobView,
+  type SobView, type DarkWebStatus, type DarkWebView, type PurchaseView,
   type MarketTable, type OutlookView, type PositionView, type Quote, type QuarterResult, type Timeframe,
 } from './types';
 import { seasonOf } from './earnings';
@@ -112,18 +117,22 @@ export interface SimState {
   governance: GovernanceState;
   regulator: RegulatorState;
   scoring: ScoringState;
+  /** Phase 9: the dark web (spec §14A). */
+  darkweb: DarkWebState;
 }
 
 const STREAMS: (keyof Streams)[] = [
-  'tick', 'regime', 'earnings', 'events', 'macro', 'clients', 'mail', 'commodities', 'broker', 'rivals', 'governance', 'regulator',
+  'tick', 'regime', 'earnings', 'events', 'macro', 'clients', 'mail', 'commodities', 'broker', 'rivals', 'governance', 'regulator', 'darkweb',
 ];
 /** The stream each saved state is named after (spec §10.1). */
 export const STREAM_NAMES: Record<keyof Streams, string> = {
   tick: 'market:tick', regime: 'market:regime', earnings: 'earnings', events: 'events', macro: 'macro', clients: 'clients', mail: 'mail',
-  commodities: 'commodities', broker: 'broker', rivals: 'competitors:ai', governance: 'governance', regulator: 'regulator',
+  commodities: 'commodities', broker: 'broker', rivals: 'competitors:ai', governance: 'governance', regulator: 'regulator', darkweb: 'darkweb',
 };
 const MORNING = 7 * 60;
 const gameYearOf = (day: number) => new Date(day * 86_400_000).getUTCFullYear();
+/** Dark web services whose failure only shows later: wrong information, forged statements not yet found out. */
+const SECRET_FAILURES = new Set(['leakEarnings', 'leakDeal', 'forgery']);
 /** Half the bid-ask spread of a front-month futures contract; further months are wider. */
 const FUTURES_SPREAD = 0.0002;
 
@@ -235,6 +244,7 @@ export class Engine implements Sim {
       governance: newGovernance(START_DAY),
       regulator: newRegulator(),
       scoring: { growth: [], ledger: 1, achievements: {} },
+      darkweb: newDarkWeb(seed, START_DAY),
     };
     state.clients.nextOffer = firstOffer(START_DAY);
     const engine = new Engine(structuredClone(state), companies, model);
@@ -390,6 +400,10 @@ export class Engine implements Sim {
         return holdMeeting(this, task.meeting);
       case 'audit':
         return this.audited();
+      case 'darkweb':
+        return resolve(this, task.purchase);
+      case 'forgeryFound':
+        return forgeryFound(this, task.purchase);
     }
   }
 
@@ -415,6 +429,7 @@ export class Engine implements Sim {
     morningGovernance(this, day);
     investmentOffer(this, day);
     if (isPaymentDay(day)) monthlyAudit(this, day);
+    morningDarkWeb(this, day);
   }
 
   /**
@@ -426,7 +441,15 @@ export class Engine implements Sim {
     revertShortInterest(this.market.state.shortInterest, this.model.shortBase);
     this.commodities.startDay(this.rng.commodities, this.s.macro.inflation);
     this.market.startDay(this.rng.regime);
-    const reports = reportEarnings(day, this.s.fundamentals, this.market, this.companies, this.rng.earnings, (i, m) => this.squeeze(i, m));
+    // Surprises bought in advance on the dark web (spec §14A: the Leak Bazaar) are the ones reported.
+    const leaks = this.s.darkweb.leaks.filter((l) => l.report === day && l.z !== undefined);
+    const fixed = leaks.length ? (i: number) => leaks.find((l) => l.company === i)?.z : undefined;
+    const reports = reportEarnings(day, this.s.fundamentals, this.market, this.companies, this.rng.earnings, (i, m) => this.squeeze(i, m), fixed);
+    // The SOB looks at who traded ahead of a report whose surprise was sold (spec §14A: an insider-trading flag).
+    for (const l of leaks) {
+      const r = reports.find((x) => x.company === l.company);
+      if (r) surveil(this, l.company, Math.expm1(r.move), -1);
+    }
     this.payDividends(reports.map((r) => r.company));
     for (const { company, move } of reports) {
       // The archive keeps the reports that make news: large companies, and big surprises at the not-so-small.
@@ -516,6 +539,7 @@ export class Engine implements Sim {
     this.chargeBorrow(nights);
     this.chargeInterest(nights);
     this.accrueLoans(nextTradingDay(day));
+    this.accrueShark(nextTradingDay(day));
     chargeStorage(account, nights, (code) => this.commodities.spot(CONTRACT_INDEX[code], p), this.s.clock);
     this.recalls(day);
     digest(this, day);
@@ -526,6 +550,8 @@ export class Engine implements Sim {
       weeklyTrading(this, day);
       weeklyGovernance(this, day);
       coolHeat(this);
+      weeklyDarkWeb(this, day);
+      this.sharkDue(day);
     }
     if (quarter) {
       let published = day + FILING_DELAY;
@@ -747,6 +773,14 @@ export class Engine implements Sim {
       case 'control':
         if (action !== 'replaceCeo' && action !== 'raiseDividend' && action !== 'cutDividend') break;
         return answered('done', directBoard(this, mail.company!, action));
+      case 'blackmail': {
+        if (action !== 'pay' && action !== 'refuse') break;
+        const b = this.s.darkweb.bribed.find((x) => x.journalist === mail.journalist);
+        if (!b?.blackmail || b.blackmail.mail !== mail.id) return answered('expired', 'This demand has lapsed.');
+        if (action === 'pay' && !this.payable(b.blackmail.amount)) return 'You do not have the cash to pay.';
+        answerBlackmail(this, mail.journalist!, action === 'pay');
+        return answered(action === 'pay' ? 'paid' : 'refused');
+      }
       case 'stakeBid':
       case 'investmentOffer': {
         if (action !== 'accept' && action !== 'decline') break;
@@ -997,6 +1031,7 @@ export class Engine implements Sim {
     if (opens(order.side)) shares = Math.min(shares, this.affordable(order, half + market.impact(i, shares)));
     if (order.side === 'short') shares = Math.min(shares, (borrowable = this.borrow(i, this.pendingShort(i, order.id)).available));
     if (shares >= 1) {
+      if (this.crossed(order)) return;
       const impact = market.impact(i, shares);
       this.fill(order, shares, mid * (1 + sign * (half + impact)));
       // Half of the impact stays in the price after the fill (the I term of spec §11.2).
@@ -1043,8 +1078,26 @@ export class Engine implements Sim {
       if (opens(order.side)) shares = Math.min(shares, this.affordable(order, Math.max(0, sign * (limit / market.price[i] - 1))));
       else shares = Math.min(shares, this.closable(order));
       if (order.side === 'short') shares = Math.min(shares, this.borrow(i, this.pendingShort(i, order.id)).available);
-      if (shares >= 1) this.fill(order, shares, limit);
+      if (shares >= 1 && !this.crossed(order)) this.fill(order, shares, limit);
     }
+  }
+
+  /**
+   * Buy and Sell Short open positions, and can't fill against the opposite one: the rule `check()` applies when an order
+   * is placed, applied again when a resting order (limit, stop, GTC) comes to fill after the position has turned. Such an
+   * order is cancelled with a note. Returns whether it was.
+   */
+  private crossed(order: Order): boolean {
+    const held = this.held(order.company);
+    const ticker = this.companies[order.company].ticker;
+    const note =
+      order.side === 'short' && held > 0
+        ? `You own ${ticker}: sell the shares before selling short.`
+        : order.side === 'buy' && held < 0
+          ? `You are short ${ticker}: use Buy to Cover to close the short first.`
+          : undefined;
+    if (note) this.finish(order, 'cancelled', note);
+    return note !== undefined;
   }
 
   /** Shares an order to close a position can still close: a sale up to the long, a cover up to the short. */
@@ -1207,7 +1260,7 @@ export class Engine implements Sim {
    * Forced liquidation (spec §12.4, §16A): the broker cancels the firm's open orders, then closes positions worst first —
    * those losing most — each only as far as needed, until `goal` is met; goods in the lobby go last.
    */
-  private liquidate(goal: Goal, reason: 'margin' | 'loan' | 'fine'): MailLine[] {
+  private liquidate(goal: Goal, reason: Cause): MailLine[] {
     for (const o of this.openOrders()) this.finish(o, 'cancelled', 'Cancelled by the broker for a forced liquidation.');
     const leverage = this.s.settings.maxLeverage;
     const shortfall = () => {
@@ -1905,6 +1958,230 @@ export class Engine implements Sim {
     return { tables: structuredClone(this.s.competitors.league), live: standings(this, year, { aum: this.nav(), ret }) };
   }
 
+  // ---------- The dark web (spec §14A) ----------
+
+  /** The Garlic Browser's markets: vendors and their listings with terms, the firm's orders, shell, loan and contacts. */
+  darkweb(): DarkWebView {
+    const d = this.s.darkweb;
+    const now = this.s.clock;
+    const today = dayOf(now);
+    const { status } = this.market.state;
+    const cap = (i: number) => this.market.price[i] * this.model.shares[i];
+    const held = this.s.account.positions.filter((p) => p.shares > 0).map((p) => p.company);
+    const firstListed = (test: (i: number) => boolean) => {
+      for (let i = 0; i < this.companies.length; i++) if (!status[i] && test(i)) return i;
+      return undefined;
+    };
+    const reporting = this.reporting();
+    // Every listing shows its terms (spec §14A): for a sensible target until the player picks one.
+    const company = held.find((i) => !status[i]) ?? firstListed(() => true);
+    const small = held.find((i) => !status[i] && cap(i) < BOT_MAX_CAP) ?? firstListed((i) => cap(i) < BOT_MAX_CAP);
+    const journalist = this.s.journalists.find((j) => j.outlet === 'dailyscoop')?.id ?? 0;
+    const listings = d.vendors
+      .filter((v) => v.left === undefined)
+      .flatMap((v) =>
+        SERVICES.filter((service) => service.market === v.market).map((service) => {
+          const request: DarkRequest = { service: service.id, vendor: v.id };
+          for (const param of service.params) {
+            if (param === 'journalist') request.journalist = journalist;
+            if (param === 'firm') request.firm = 0;
+            if (param === 'amount') request.amount = service.id === 'shark' ? 5_000_000 : 50_000;
+            if (param === 'company') request.company = service.id === 'leakEarnings' ? reporting[0] : service.id.startsWith('bot') ? small : company;
+          }
+          const terms = quote(this, request);
+          return typeof terms === 'string' ? { service: service.id, vendor: v.id, request, error: terms } : { service: service.id, vendor: v.id, request, terms };
+        }),
+      );
+    const shell = activeShell(d);
+    return {
+      enabled: this.s.settings.darkWeb,
+      heat: this.s.regulator.heat,
+      vendors: d.vendors.map((v) => ({ id: v.id, handle: v.handle, market: v.market, rating: v.rating, reviews: v.reviews, age: today - v.joined, left: v.left })),
+      listings,
+      purchases: d.purchases.map((p) => this.purchaseView(p)).reverse(),
+      shell: shell && { ...shell, discovery: discoveryChance(this.s.regulator.heat) },
+      shells: structuredClone(d.shells),
+      shark: d.shark && { ...d.shark, owed: d.shark.principal + d.shark.accrued, weekly: d.shark.principal * SHARK_WEEKLY },
+      bribed: d.bribed.filter((b) => b.bribes > 0).map((b) => ({ journalist: b.journalist, bribes: b.bribes })),
+      reporting,
+      hidden: this.s.governance.stakes.filter((s) => s.hidden).map((s) => s.company),
+      cellar: d.cellar.filter((c) => c.time <= now).map((c) => ({ ...c })),
+    };
+  }
+
+  /** Companies reporting in the next two weeks, largest first (the Leak Bazaar sells their surprises). */
+  private reporting(): number[] {
+    const day = dayOf(this.s.clock);
+    // Each trading day of a season is one slot's report day (today's has gone once the bell has rung).
+    const slots = new Set<number>();
+    const last = addTradingDays(day, LEAK_DAYS);
+    const started = isTradingDay(day) && minuteOf(this.s.clock) >= OPEN;
+    for (let d = isTradingDay(day) && !started ? day : nextTradingDay(day); d <= last; d = nextTradingDay(d)) {
+      const { index } = seasonOf(d);
+      if (index >= 0) slots.add(index);
+    }
+    const out: number[] = [];
+    for (let i = 0; i < this.companies.length; i++) if (slots.has(this.model.slot[i]) && !this.market.state.status[i]) out.push(i);
+    const cap = (i: number) => this.market.price[i] * this.model.shares[i];
+    return out.sort((a, b) => cap(b) - cap(a) || a - b).slice(0, 60);
+  }
+
+  /** A purchase as the buyer sees it: how it turned out only once it is due. */
+  private purchaseView(p: Purchase): PurchaseView {
+    const done = p.done !== undefined;
+    return {
+      id: p.id, time: p.time, request: { ...p.request }, terms: { ...p.terms }, handle: p.handle, due: p.due, done: p.done,
+      // A wrong leak, or forged statements yet to be found out, look like a delivery until the news says otherwise.
+      result: done ? (p.refund ? 'refund' : p.outcome === 'failure' && SECRET_FAILURES.has(p.request.service) ? 'success' : p.outcome) : undefined,
+      company: done || p.request.service === 'pump' ? p.company : undefined,
+      direction: done ? p.direction : undefined,
+    };
+  }
+
+  /** What a vendor asks for a request (spec §14A: price, success chance, failure outcome and heat), or why it can't be had. */
+  darkQuote(r: DarkRequest): Terms | { error: string } {
+    if (this.s.bankruptcy) return { error: 'The firm is bankrupt.' };
+    const terms = quote(this, r);
+    return typeof terms === 'string' ? { error: terms } : terms;
+  }
+
+  /**
+   * Buys a listing on the terms the player was shown (the confirmation repeats them, spec §14A); if they have changed in
+   * the meantime, nothing is bought. Vendors take payment up front, from cash the positions don't need.
+   */
+  darkBuy(r: DarkRequest, shown: Terms): { purchase: PurchaseView } | { error: string } {
+    const terms = this.darkQuote(r);
+    if ('error' in terms) return terms;
+    if (!sameTerms(terms, shown)) return { error: 'The vendor has changed the terms. Please read them again.' };
+    const cost = terms.price + terms.fee;
+    if (cost > 0 && !this.payable(cost)) return { error: 'You do not have the cash: vendors take payment up front.' };
+    return { purchase: this.purchaseView(buy(this, r, terms)) };
+  }
+
+  /** The Pump Syndicate's stock this week, for a vendor (shown on its listing). */
+  pumpStock(vendor: number): number | undefined {
+    return scheme(this, vendor);
+  }
+
+  /** Pays off the loan shark: the principal and the interest to date (spec §14A). */
+  repayShark(): { paid: number } | { error: string } {
+    if (this.s.bankruptcy) return { error: 'The firm is bankrupt.' };
+    const d = this.s.darkweb;
+    const loan = d.shark;
+    if (!loan) return { error: 'You owe the loan sharks nothing. Keep it that way.' };
+    const owed = loan.principal + loan.accrued;
+    if (!this.payable(owed)) return { error: `You need ${dollars(owed)} of free cash to pay off the loan.` };
+    const handle = d.vendors[loan.vendor].handle;
+    if (loan.accrued > 0) book(this.s.account, this.s.clock, 'sharkInterest', -loan.accrued, { note: handle });
+    book(this.s.account, this.s.clock, 'shark', -loan.principal, { note: `${handle}: paid off` });
+    d.shark = undefined;
+    return { paid: owed };
+  }
+
+  /** Winds up the firm's offshore shell; the stakes it hid are filed with the SOB. */
+  closeShell(): { error?: string } {
+    if (this.s.bankruptcy) return { error: 'The firm is bankrupt.' };
+    const error = closeShell(this);
+    return error ? { error } : {};
+  }
+
+  /** Furniture repossessed and web sites down or defaced (spec §14A), for the desktop and the browser. */
+  darkwebStatus(): DarkWebStatus {
+    const d = this.s.darkweb;
+    const day = dayOf(this.s.clock);
+    return { repossessed: (d.repossessed ?? -1) > day ? d.repossessed : undefined, outages: d.outages.filter((o) => o.until > day).map((o) => ({ ...o })) };
+  }
+
+  /** The loan shark's loan and the interest accrued on it: a debt against net worth. */
+  private sharkDebt(): number {
+    const loan = this.s.darkweb.shark;
+    return loan ? loan.principal + loan.accrued : 0;
+  }
+
+  /** Each close: the loan shark's interest accrues up to the next session (spec §14A: 4% a week). */
+  private accrueShark(to: number): void {
+    const loan = this.s.darkweb.shark;
+    if (!loan || to <= loan.accruedTo) return;
+    const interest = (loan.principal * SHARK_WEEKLY * (to - loan.accruedTo)) / 7;
+    loan.accrued += interest;
+    loan.accruedTo = to;
+    this.s.account.charges += interest;
+  }
+
+  /** Every Friday's close the week's interest is due; if it can't be paid, the collectors come for it. */
+  private sharkDue(day: number): void {
+    const loan = this.s.darkweb.shark;
+    if (!loan || loan.accrued <= 0) return;
+    if (!this.payable(loan.accrued)) return this.collectors(day);
+    book(this.s.account, this.s.clock, 'sharkInterest', -loan.accrued, { note: this.s.darkweb.vendors[loan.vendor].handle });
+    loan.paid += loan.accrued;
+    loan.accrued = 0;
+  }
+
+  /**
+   * A missed payment (spec §14A): the collectors seize positions at 30% below market to cover it plus a penalty, and
+   * the office furniture goes for a week; the loan runs on. Whatever they can't recover ends the firm.
+   */
+  private collectors(day: number): void {
+    const d = this.s.darkweb;
+    const loan = d.shark!;
+    const handle = d.vendors[loan.vendor].handle;
+    const account = this.s.account;
+    const penalty = loan.principal * SHARK_PENALTY;
+    account.charges += penalty;
+    const owed = loan.accrued + penalty;
+    for (const o of this.openOrders()) this.finish(o, 'cancelled', 'Cancelled: the collectors came.');
+    const lines = this.seize(owed);
+    book(account, this.s.clock, 'sharkInterest', -owed, { note: `${handle}: interest and penalty, collected` });
+    loan.paid += loan.accrued;
+    loan.accrued = 0;
+    d.repossessed = addTradingDays(day, REPOSSESSED_DAYS);
+    this.send({ kind: 'sharkCall', handle, amount: owed, lines, day: d.repossessed });
+    const equity = this.marginFigures().equity;
+    if (equity < 0) this.goBankrupt('shark', owed, Math.min(owed, -equity));
+  }
+
+  /** The collectors take long positions, fund units and goods at 30% below their value, largest first, until `owed` is covered. */
+  private seize(owed: number): MailLine[] {
+    const account = this.s.account;
+    const leverage = this.s.settings.maxLeverage;
+    const keep = 1 - SEIZE_DISCOUNT;
+    const need = () => owed - Math.max(0, this.marginFigures().excess);
+    // Each unit seized adds what the collectors credit for it, and frees its initial margin, but takes its value.
+    const count = (value: number, units: number) => {
+      const frees = value * (keep - 1 + 1 / leverage);
+      return frees > 0 ? Math.min(units, Math.ceil(need() / frees)) : units;
+    };
+    const { price } = this.market;
+    const lines: MailLine[] = [];
+    const longs = account.positions.filter((p) => p.shares > 0).sort((a, b) => b.shares * price[b.company] - a.shares * price[a.company] || a.company - b.company);
+    for (const p of longs) {
+      if (need() <= 0) break;
+      const shares = count(price[p.company], p.shares);
+      const order: Order = {
+        company: p.company, side: 'sell', type: 'market', shares, tif: 'day', id: account.nextOrder++, placed: this.s.clock, status: 'open',
+        filled: 0, price: 0, commission: 0, updated: this.s.clock, forced: 'shark', note: 'Seized by the collectors at 30% below market.',
+      };
+      account.orders.push(order);
+      bookFill(account, order, shares, price[p.company] * keep, 0, this.s.clock);
+      lines.push({ company: p.company, shares, amount: shares * price[p.company] * keep, side: 'sell', order: order.id });
+    }
+    for (const f of [...account.funds]) {
+      if (need() <= 0) break;
+      const nav = this.fundPrice(f.fund);
+      const units = count(nav, f.units);
+      bookFund(account, f.fund, -units, nav * keep, 0, this.s.clock);
+      lines.push({ company: -1, fund: f.fund, shares: units, amount: units * nav * keep, side: 'sell' });
+    }
+    const pc = this.prices();
+    for (const g of [...account.goods]) {
+      if (need() <= 0) break;
+      const amount = sellGoods(account, g.code, this.commodities.spot(CONTRACT_INDEX[g.code], pc) * keep, this.s.clock);
+      if (amount !== undefined) lines.push({ company: -1, contract: g.code, shares: g.quantity, amount });
+    }
+    return lines;
+  }
+
   // ---------- Bankruptcy (spec §16) ----------
 
   /** An obligation the firm cannot meet after selling everything: the end, unless the game is a sandbox. */
@@ -1929,7 +2206,7 @@ export class Engine implements Sim {
 
   /** What the firm is worth (spec §16): equity plus goods at resale value, less bank debt and what it owes on it. */
   netWorth(): number {
-    return this.marginFigures().equity + this.goodsValue() - bankDebt(this.s.loans) - accrued(this.s.loans) - (this.s.regulator.fine?.amount ?? 0);
+    return this.marginFigures().equity + this.goodsValue() - bankDebt(this.s.loans) - accrued(this.s.loans) - (this.s.regulator.fine?.amount ?? 0) - this.sharkDebt();
   }
 
   private goodsValue(): number {
@@ -1986,12 +2263,13 @@ export class Engine implements Sim {
     const goodsCost = goods.reduce((a, g) => a + g.cost + g.storage, 0);
     const loans = bankDebt(this.s.loans) + accrued(this.s.loans);
     const fine = this.s.regulator.fine?.amount ?? 0;
+    const sharks = this.sharkDebt();
     const funds = this.s.account.funds;
     const fundsValue = this.fundsValue();
     return {
       cash,
       value: m.long - m.short,
-      netWorth: m.equity + goodsValue - loans - fine,
+      netWorth: m.equity + goodsValue - loans - fine - sharks,
       deposits,
       dayChange: sum((p) => p.dayChange) + funds.reduce((a, f) => a + f.units * (this.fundPrice(f.fund) - this.fundPrev(f.fund)), 0),
       unrealized: sum((p) => p.unrealized) + m.open + goodsValue - goodsCost + fundsValue - funds.reduce((a, f) => a + f.cost, 0),
@@ -2000,6 +2278,7 @@ export class Engine implements Sim {
         closed.reduce((a, c) => a + c.realized, 0) - charges,
       fundsValue,
       fine,
+      sharks,
       buyingPower: this.buyingPower(),
       equity: m.equity,
       longValue: m.long,
@@ -2162,6 +2441,7 @@ export class Engine implements Sim {
       quarters: this.quarters(i),
       holders: this.holders(i),
       seat: this.s.governance.seats.includes(i),
+      shell: this.s.governance.stakes.some((s) => s.company === i && s.hidden) ? activeShell(this.s.darkweb)?.name : undefined,
     };
   }
 

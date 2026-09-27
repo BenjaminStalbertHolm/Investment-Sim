@@ -28,7 +28,11 @@ export type NewsKind =
   // Phase 8: the player's 5% filings, Barren's annual league table, the SOB's enforcement action against the firm.
   | 'stake'
   | 'league'
-  | 'enforcement';
+  | 'enforcement'
+  // Phase 9: articles bought on the dark web — puff pieces and hit pieces — and exposés naming the firm.
+  | 'puff'
+  | 'hitPiece'
+  | 'expose';
 
 /** News about commodities rather than companies (spec §11.7: sector and macro events work the same way). */
 export const COMMODITY_KINDS: readonly NewsKind[] = ['weather', 'weatherHit', 'weatherBust', 'opekHint', 'opek'];
@@ -63,18 +67,24 @@ export interface NewsItem {
   /** New CEO's code, and the one they replace. */
   ceo?: string;
   prevCeo?: string;
-  /** A name the story needs: the client of a mandate; a weather hazard (data/commodities.ts); OPEK's decision. */
+  /** A name the story needs: the client of a mandate; a weather hazard (data/commodities.ts); OPEK's decision; what an exposé exposes. */
   text?: string;
   /** The commodity most affected (its contract code), for weather and OPEK stories. */
   commodity?: string;
+  /** Only these outlets run it (a bought article runs where it was bought, spec §14A), and who wrote it. */
+  outlets?: string[];
+  journalist?: number;
 }
 
 /** A rumour on the Raging Bear boards or in the trade press (spec §11.7), true or bait. */
 export interface Rumour {
   time: GameTime;
   company: number;
-  /** What is rumoured to be coming. 'pump' is a pump-and-dump's hype. */
-  kind: EventKind | 'pump';
+  /**
+   * What is rumoured to be coming. 'pump' is a pump-and-dump's hype (or a bot farm's), 'fud' a bot farm's fear, and
+   * 'mod' the moderators' notice exposing a bot farm (spec §14A).
+   */
+  kind: EventKind | 'pump' | 'fud' | 'mod';
   /** Which way the rumour says the price will go. */
   direction: 1 | -1;
   where: 'forum' | 'trade';

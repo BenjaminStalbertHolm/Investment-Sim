@@ -9,6 +9,8 @@ export interface Page {
   /** Status bar text; undefined restores the default. */
   status(text?: string): void;
   setTitle(title: string): void;
+  /** Shown in the Garlic Browser, which alone reaches .garlic addresses (spec §14A). */
+  garlic?: boolean;
 }
 
 export const PageContext = createContext<Page>({

@@ -69,6 +69,7 @@ export function Portfolio() {
           />
           {account.fundsValue > 0 && <Figure label="Index funds" value={money(account.fundsValue)} />}
           {account.fine > 0 && <Figure label="SOB fine owed" value={money(account.fine)} tone="down" />}
+          {account.sharks > 0 && <Figure label="Private loan owed" value={money(account.sharks)} tone="down" />}
           {(account.futuresMargin > 0 || account.goodsValue > 0 || account.loans > 0) && (
             <>
               <Figure label="Futures P&L today" value={signedMoney(account.futuresPnl)} tone={tone(account.futuresPnl)} />

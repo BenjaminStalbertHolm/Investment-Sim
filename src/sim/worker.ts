@@ -4,6 +4,7 @@ import { SAVE_FORMAT, packSave, unpackSave, type Manifest } from '../state/saveF
 import type { OrderRequest } from './account';
 import { CONTRACTS } from './data/commodities';
 import type { Structure } from './loans';
+import type { DarkRequest, Terms } from './darkweb';
 import type { Mail, MailAction } from './mail';
 import type { NewsQuery } from './news';
 import { dayOf, minutesPerSecond, phaseEnd, setStartYear } from './calendar';
@@ -95,6 +96,7 @@ function post(): void {
     news: e.newsCount,
     commodities: e.commodityQuotes(),
     sob: e.sobStatus(),
+    darkweb: e.darkwebStatus(),
   });
   events = [];
 }
@@ -238,6 +240,12 @@ const api = {
   league: () => game().league(),
   sob: () => game().sob(),
   record: () => game().record(),
+  // Phase 9: the dark web.
+  darkweb: () => game().darkweb(),
+  darkQuote: (request: DarkRequest) => game().darkQuote(request),
+  darkBuy: (request: DarkRequest, terms: Terms) => changed(game().darkBuy(request, terms)),
+  repayShark: () => changed(game().repayShark()),
+  closeShell: () => changed(game().closeShell()),
 };
 
 export type SimulationApi = typeof api;

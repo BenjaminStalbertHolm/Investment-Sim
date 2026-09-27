@@ -1,0 +1,76 @@
+/* A Tucats download's setup program (spec §4A): a small 98 installer. */
+
+.installer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.installer-body {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  min-height: 0;
+}
+
+.installer-banner {
+  flex: none;
+  width: 110px;
+  background: linear-gradient(160deg, #3a1a4a, #0c0412);
+  color: #e8dcf4;
+  padding: 10px;
+  box-sizing: border-box;
+  font-size: 11px;
+}
+
+.installer-banner ol {
+  padding-left: 16px;
+}
+
+.installer-banner .current {
+  font-weight: bold;
+  color: #fff080;
+}
+
+.installer-page {
+  flex: 1;
+  overflow: auto;
+}
+
+.installer-page h2 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.installer-warning {
+  color: #a00000;
+}
+
+.installer-risks li {
+  margin-bottom: 4px;
+}
+
+.installer-small {
+  font-size: 10px;
+  color: #606060;
+}
+
+.installer .setup-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid #808080;
+  box-shadow: 0 1px 0 #fff inset;
+}
+
+.installer .setup-buttons .spacer {
+  margin-right: 12px;
+}
+
+.installer .install-progress {
+  width: 100%;
+}

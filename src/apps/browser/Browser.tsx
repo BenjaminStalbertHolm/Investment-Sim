@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../../art/icons';
 import { companyAt, Site } from '../../sites/Site';
+import { CELLAR, CLOVE, MARKETS } from '../../sim/data/darkweb';
 import { BARRENS, JOTTINGS, NEWSWIRE, QUOTEZONE, normalizeUrl } from '../../sites/urls';
 import { PageContext, type Page } from '../../sites/web';
 import { HOME_PAGE, useBrowser, type Dialup } from '../../state/browser';
@@ -19,16 +20,41 @@ export function loadingDelay(url: string, dialup: Dialup): number {
   return lo + (hash % (hi - lo));
 }
 
+/** The Garlic Browser's route through the network: three hops, each slower than the web (spec §14A: multi-hop loading). */
+export const HOPS = 3;
+export function garlicDelay(url: string, dialup: Dialup): number {
+  return HOPS * (dialup === 'off' ? 150 : 300 + loadingDelay(url, dialup) / 2);
+}
+
+/** The Garlic Browser's home page and bookmarks: the directory, the forum and the markets (spec §14A). */
+export const GARLIC_HOME = `http://${CLOVE}/`;
+const GARLIC_BOOKMARKS = [
+  { url: GARLIC_HOME, title: 'The Clove (directory)' },
+  { url: `http://${CELLAR}/`, title: 'The Cellar (forum)' },
+  ...MARKETS.map((m) => ({ url: `http://${m.host}/`, title: m.name })),
+];
+
 type Move = 'go' | 'back' | 'forward' | 'reload';
+const forget = () => undefined;
+
+/** Internet Exploiter 4.0 (spec §14). */
+export default function Browser(props: AppProps) {
+  return <BrowserWindow {...props} />;
+}
 
 /**
  * Internet Exploiter 4.0 (spec §14): back, forward, stop, refresh, home, favourites, history, an address bar with
- * fake domains, a status bar and a spinning logo while the (optional) dial-up delay runs.
+ * fake domains, a status bar and a spinning logo while the (optional) dial-up delay runs. The same chrome, dark and
+ * slow and without history, is the Garlic Browser (spec §14A).
  */
-export default function Browser({ windowId }: AppProps) {
-  const url = useWindows((s) => s.windows.find((w) => w.id === windowId)?.params?.url) ?? HOME_PAGE;
+export function BrowserWindow({ windowId, garlic = false }: AppProps & { garlic?: boolean }) {
+  const home = garlic ? GARLIC_HOME : HOME_PAGE;
+  const url = useWindows((s) => s.windows.find((w) => w.id === windowId)?.params?.url) ?? home;
   const { setParams, setTitle } = useWindows.getState();
-  const { favourites, history, dialup, visit, addFavourite, removeFavourite, clearHistory, setDialup } = useBrowser();
+  const { history, dialup, addFavourite, removeFavourite, clearHistory, setDialup } = useBrowser();
+  const favourites = useBrowser((s) => (garlic ? GARLIC_BOOKMARKS : s.favourites));
+  // The Garlic Browser keeps no history.
+  const visit = garlic ? forget : useBrowser.getState().visit;
   const [back, setBack] = useState<string[]>([]);
   const [forward, setForward] = useState<string[]>([]);
   const [pending, setPending] = useState<{ url: string; move: Move; ms: number }>();
@@ -37,6 +63,7 @@ export default function Browser({ windowId }: AppProps) {
   const [title, setPageTitle] = useState('');
   const [panel, setPanel] = useState<'history' | 'favourites'>();
   const [reloads, setReloads] = useState(0);
+  const [layer, setLayer] = useState(1);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const scroller = useRef<HTMLDivElement>(null);
   const parsed = useMemo(() => new URL(url), [url]);
@@ -72,13 +99,22 @@ export default function Browser({ windowId }: AppProps) {
     (target: string, move: Move = 'go') => {
       clearTimeout(timer.current);
       const next = move === 'go' ? normalizeUrl(target) : target;
-      const ms = loadingDelay(next, useBrowser.getState().dialup);
+      const ms = (garlic ? garlicDelay : loadingDelay)(next, useBrowser.getState().dialup);
       if (!ms) return commit(next, move);
       setPending({ url: next, move, ms });
       timer.current = setTimeout(() => commit(next, move), ms);
     },
-    [commit],
+    [commit, garlic],
   );
+
+  // "Peeling layer 2 of 3…": which hop a Garlic page has reached.
+  useEffect(() => {
+    if (!garlic || !pending) return;
+    const start = performance.now();
+    setLayer(1);
+    const timer = setInterval(() => setLayer(Math.min(HOPS, 1 + Math.floor(((performance.now() - start) / pending.ms) * HOPS))), 50);
+    return () => clearInterval(timer);
+  }, [garlic, pending]);
 
   const stop = () => {
     clearTimeout(timer.current);
@@ -95,16 +131,30 @@ export default function Browser({ windowId }: AppProps) {
   }, []);
 
   useEffect(() => {
-    setTitle(windowId, `${title || parsed.hostname} - Internet Exploiter`);
-  }, [title, parsed, windowId, setTitle]);
+    setTitle(windowId, `${title || parsed.hostname} - ${garlic ? 'Garlic Browser 0.9 beta' : 'Internet Exploiter'}`);
+  }, [title, parsed, windowId, setTitle, garlic]);
 
   const page: Page = useMemo(
-    () => ({ url: parsed, navigate: (href) => go(new URL(href, parsed).href), status: setHover, setTitle: setPageTitle }),
-    [parsed, go],
+    () => ({ url: parsed, navigate: (href) => go(new URL(href, parsed).href), status: setHover, setTitle: setPageTitle, garlic }),
+    [parsed, go, garlic],
   );
 
   const loading = pending !== undefined;
-  const menus = [
+  const menus = garlic
+    ? [
+        {
+          label: 'View',
+          items: [
+            { label: 'Refresh', shortcut: 'F5', onClick: () => go(url, 'reload') },
+            { label: 'Stop', disabled: !loading, onClick: stop },
+          ],
+        },
+        {
+          label: 'Bookmarks',
+          items: GARLIC_BOOKMARKS.map((f) => ({ label: f.title, onClick: () => go(f.url) })),
+        },
+      ]
+    : [
     {
       label: 'View',
       items: [
@@ -141,7 +191,7 @@ export default function Browser({ windowId }: AppProps) {
   ];
 
   return (
-    <div className="app browser">
+    <div className={`app browser${garlic ? ' garlic' : ''}`}>
       <AppMenuBar windowId={windowId} menus={menus} />
       <div className="browser-toolbar">
         <button disabled={!back.length} onClick={() => go(back.at(-1)!, 'back')} title="Back">
@@ -156,17 +206,19 @@ export default function Browser({ windowId }: AppProps) {
         <button onClick={() => go(url, 'reload')} title="Refresh">
           <span className="tb-glyph">↻</span>Refresh
         </button>
-        <button onClick={() => go(HOME_PAGE)} title="Home">
+        <button onClick={() => go(home)} title="Home">
           <span className="tb-glyph">⌂</span>Home
         </button>
         <button className={panel === 'favourites' ? 'pressed' : ''} onClick={() => setPanel(panel === 'favourites' ? undefined : 'favourites')}>
           <span className="tb-glyph">★</span>Favorites
         </button>
-        <button className={panel === 'history' ? 'pressed' : ''} onClick={() => setPanel(panel === 'history' ? undefined : 'history')}>
-          <span className="tb-glyph">◷</span>History
-        </button>
+        {!garlic && (
+          <button className={panel === 'history' ? 'pressed' : ''} onClick={() => setPanel(panel === 'history' ? undefined : 'history')}>
+            <span className="tb-glyph">◷</span>History
+          </button>
+        )}
         <span className={`browser-throbber${loading ? ' spinning' : ''}`}>
-          <Icon name="browser" size={32} />
+          <Icon name={garlic ? 'garlic' : 'browser'} size={32} />
         </span>
       </div>
       <form
@@ -190,7 +242,7 @@ export default function Browser({ windowId }: AppProps) {
         {panel && (
           <div className="browser-panel sunken-panel">
             <div className="browser-panel-title">
-              <b>{panel === 'history' ? 'History' : 'Favorites'}</b>
+              <b>{panel === 'history' ? 'History' : garlic ? 'Bookmarks' : 'Favorites'}</b>
               {panel === 'history' && <button onClick={clearHistory}>Clear</button>}
             </div>
             <ul>
@@ -211,11 +263,13 @@ export default function Browser({ windowId }: AppProps) {
         </div>
       </div>
       <div className="status-bar browser-status">
-        <p className="status-bar-field">{loading ? `Opening page ${pending.url}…` : (hover ?? 'Done')}</p>
+        <p className="status-bar-field">
+          {loading ? (garlic ? `Peeling layer ${layer} of ${HOPS}… ${pending.url}` : `Opening page ${pending.url}…`) : (hover ?? 'Done')}
+        </p>
         <p className="status-bar-field browser-progress">
           {loading && <span className="browser-progress-bar" style={{ animationDuration: `${pending.ms}ms` }} />}
         </p>
-        <p className="status-bar-field browser-zone">Internet zone</p>
+        <p className="status-bar-field browser-zone">{garlic ? 'Garlic network (3 hops)' : 'Internet zone'}</p>
       </div>
     </div>
   );

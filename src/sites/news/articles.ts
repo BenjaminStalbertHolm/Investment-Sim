@@ -10,7 +10,7 @@ import { FIRST_NAMES, LAST_NAMES } from '../../world/people-names';
 import { Rng } from '../../world/rng';
 import { companySite, shortName } from '../company/content';
 import {
-  ANALYST, DETAILS, FED_HOLD, FOLLOW, HEADLINES, LEADS, OPEK_HEADLINES, OUTLET_VOICE, REACTION, RUMOURED,
+  ANALYST, DARK, DETAILS, FED_HOLD, FOLLOW, HEADLINES, LEADS, OPEK_HEADLINES, OUTLET_VOICE, REACTION, RUMOURED,
 } from '../data/articles';
 import { CONTRACTS, CONTRACT_INDEX, HAZARDS } from '../../sim/data/commodities';
 import { companyOf } from '../hooks';
@@ -58,6 +58,14 @@ function level(kind: MacroKind, v: number): string {
 
 const pickSide = (sided: { up?: readonly string[]; down?: readonly string[] }, up: boolean) =>
   (up ? sided.up ?? sided.down : sided.down ?? sided.up) ?? [];
+
+/** A bought article or an exposé (spec §14A): which of DARK's texts it takes. */
+function darkText(item: NewsItem): keyof typeof DARK | undefined {
+  if (item.kind === 'puff') return item.company >= 0 ? 'puffStock' : 'puffFirm';
+  if (item.kind === 'hitPiece') return item.company >= 0 ? 'hitCompany' : 'hitFirm';
+  if (item.kind === 'expose') return (item.text as keyof typeof DARK | undefined) ?? 'bribe';
+  return undefined;
+}
 
 /** The words a template may use. */
 function words(item: NewsItem, directory: Directory, firmName: string, rng: Rng): Record<string, string | number> {
@@ -158,8 +166,15 @@ export function writeArticle(
   const rng = Rng.stream(seed, `article:${item.id}-${outletId}`);
   const w = words(item, directory, firmName, rng);
   const up = upside(item);
+  const dark = darkText(item);
+  if (dark) {
+    // Who was bribed, and at which paper.
+    const bribed = item.outlets?.[0] ? OUTLET[item.outlets[0]] : undefined;
+    w.outlet = bribed?.name ?? 'the press';
+    w.journalist = (item.journalist !== undefined ? journalists[item.journalist]?.name : undefined) ?? 'a reporter';
+  }
   const opek = (item.kind === 'opek' || item.kind === 'opekHint') && item.text ? OPEK_HEADLINES[item.kind][item.text] : undefined;
-  const heads = item.kind === 'fed' && item.level === item.prev ? FED_HOLD : opek ?? pickSide(HEADLINES[item.kind], up);
+  const heads = dark ? DARK[dark].head : item.kind === 'fed' && item.level === item.prev ? FED_HOLD : opek ?? pickSide(HEADLINES[item.kind], up);
   let headline = write(rng.pick(heads), w, rng);
   if (outlet.id === 'dailyscoop') headline = `${headline.toUpperCase()}!`;
   const article = coverage(item, journalists, factsOf(directory, item.company)).find((a) => a.outlet.id === outletId);
@@ -169,11 +184,11 @@ export function writeArticle(
   const voice = OUTLET_VOICE[outlet.id] ?? {};
   const later = outlet.cadence === 'morning' || outlet.cadence === 'weekly';
   const paragraphs: string[] = [];
-  const lead = write(rng.pick(pickSide(LEADS[item.kind], up)), w, rng);
+  const lead = write(rng.pick(dark ? DARK[dark].lead : pickSide(LEADS[item.kind], up)), w, rng);
   paragraphs.push(voice.open ? `${rng.pick(voice.open)} ${lead}` : lead);
   const company = item.company >= 0 && !isMacro(item);
   if (later && company && item.move !== undefined && item.kind !== 'takeoverDone') paragraphs.push(write(rng.pick(REACTION[up ? 'up' : 'down']), w, rng));
-  const detail = DETAILS[item.kind];
+  const detail = dark ? DARK[dark].detail : DETAILS[item.kind];
   if (detail && outlet.id !== 'newswire') paragraphs.push(write(rng.pick(detail), w, rng));
   if (company && outlet.id !== 'newswire' && item.kind !== 'tvPick' && item.kind !== 'fowlPick') {
     paragraphs.push(write(rng.pick(ANALYST[up ? 'up' : 'down']), w, rng));

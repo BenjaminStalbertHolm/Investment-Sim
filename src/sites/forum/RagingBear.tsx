@@ -40,11 +40,16 @@ function useRumours(company?: number): Rumour[] {
  * A board's posts (spec §14): the rumours that really leaked, dressed up as any other post, among the usual chatter —
  * hype, doom, questions and nonsense, a few a day, the same every time the board is read.
  */
-function boardPosts(company: number, ticker: string, name: string, rumours: Rumour[], now: GameTime, seed: string): Post[] {
+function boardPosts(company: number, ticker: string, name: string, rumours: Rumour[], now: GameTime, seed: string, firmName: string): Post[] {
   const posts: Post[] = [];
   const words = { ticker, short: shortName(name) };
   for (const r of rumours) {
     if (r.company !== company || r.where !== 'forum' || r.time > now) continue;
+    if (r.kind === 'mod') {
+      // A bot farm caught (spec §14A): the moderators name who paid for it.
+      posts.push({ time: r.time, handle: 'MODERATOR', text: `NOTICE: we have removed ${ticker} posts from a network of fake accounts, paid for by ${firmName}. Their accounts are banned. Please report suspicious posts.` });
+      continue;
+    }
     const rng = Rng.stream(seed, `rumour:${company}:${r.time}`);
     const lines = RUMOURS[r.kind] ?? (r.direction > 0 ? RUMOURS.default : RUMOURS.bad);
     posts.push({ time: r.time, handle: rng.pick(HANDLES), text: write(rng.pick(lines), words, rng) });
@@ -77,7 +82,7 @@ export default function RagingBear({ url }: { url: URL }) {
   const rumours = useRumours(company >= 0 ? company : undefined);
   const table = useTable();
   const posts = useMemo(
-    () => (company >= 0 ? boardPosts(company, directory.tickers[company], directory.names[company], rumours, now, seed) : []),
+    () => (company >= 0 ? boardPosts(company, directory.tickers[company], directory.names[company], rumours, now, seed, firmName) : []),
     [company, rumours, Math.floor(now / 30)],
   );
   const hot = useMemo(() => {

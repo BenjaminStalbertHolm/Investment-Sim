@@ -135,6 +135,8 @@ export function reportEarnings(
   rng: Rng,
   /** What short sellers make of the move (spec §12.4): good news squeezes heavily shorted stocks. */
   squeeze: (company: number, move: number) => number = (_, move) => move,
+  /** A surprise fixed in advance (spec §14A: an earnings leak bought on the dark web). */
+  fixed: (company: number) => number | undefined = () => undefined,
 ): { company: number; move: number }[] {
   const { start, index } = seasonOf(day);
   if (index < 0) return [];
@@ -147,7 +149,8 @@ export function reportEarnings(
   const reporting: { company: number; move: number }[] = [];
   for (let i = 0; i < model.count; i++) {
     if (model.slot[i] !== index || status[i]) continue;
-    const z = ECONOMY * f.seasonSurprise + Math.sqrt(1 - ECONOMY ** 2) * rng.normal();
+    const drawn = ECONOMY * f.seasonSurprise + Math.sqrt(1 - ECONOMY ** 2) * rng.normal();
+    const z = fixed(i) ?? drawn;
     const size = Math.min(1.8, Math.max(0.5, model.volatility[i] / 0.35)) * (1.25 - 0.5 * model.quality[i]);
     const move = Math.sign(z) * Math.min(0.4, (0.02 + 0.06 * Math.abs(z) ** 1.5) * size);
     jump[i] += squeeze(i, move);

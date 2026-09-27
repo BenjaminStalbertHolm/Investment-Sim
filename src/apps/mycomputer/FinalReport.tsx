@@ -15,6 +15,7 @@ const CAUSES = {
   margin: 'A margin call it could not meet, even after its broker had sold everything it owned.',
   loan: 'A First Continental Bank loan it could not repay, even after the bank had sold everything it owned.',
   fine: 'A Securities Oversight Bureau fine it could not pay, even after its broker had sold everything it owned.',
+  shark: 'A loan shark’s loan, called in when a weekly payment was missed. The collectors took everything, and it was not enough.',
 };
 
 /**

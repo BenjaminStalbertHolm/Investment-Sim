@@ -14,6 +14,7 @@ const KIND: Record<LedgerEntry['kind'], string> = {
   interest: 'Interest', futures: 'Futures', variation: 'Variation margin', delivery: 'Delivery', storage: 'Storage',
   goods: 'Goods sold', fine: 'Fine', loan: 'Loan', repayment: 'Repayment', loanInterest: 'Loan interest', loanFee: 'Loan fee',
   fund: 'Index fund', sobFine: 'SOB fine', investment: 'Investment', feeShare: 'Investor’s fees',
+  consulting: 'Consulting fees', offshore: 'Offshore transfer', lawsuit: 'Legal settlement', shark: 'Private loan', sharkInterest: 'Private loan interest',
 };
 
 /** What goods a commodity code stands for: "bushels of corn". */
@@ -73,6 +74,13 @@ export function Ledger() {
       case 'loanInterest':
       case 'loanFee':
         return `First Continental Bank: ${e.note ?? ''}`;
+      case 'consulting':
+      case 'offshore':
+      case 'shark':
+      case 'sharkInterest':
+        return e.note ?? '';
+      case 'lawsuit':
+        return `Damages awarded to ${e.note}`;
       default:
         return what;
     }

@@ -24,6 +24,8 @@ export interface Streams {
   rivals: Rng;
   governance: Rng;
   regulator: Rng;
+  /** Phase 9: the dark web — whether a purchase works, vendors coming and going, blackmail (spec §14A). */
+  darkweb: Rng;
 }
 
 /** What the engine offers the modules that run on its clock: events, macro, clients and mail. */

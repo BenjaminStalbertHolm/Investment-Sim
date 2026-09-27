@@ -3,6 +3,7 @@ import { founding } from '../sim/clients';
 import { initialCommodities } from '../sim/commodities';
 import { initialCompetitors } from '../sim/competitors';
 import { launchFunds } from '../sim/funds';
+import { newDarkWeb } from '../sim/darkweb';
 import { newGovernance } from '../sim/governance';
 import { newRegulator } from '../sim/regulator';
 import { growthSeries } from '../sim/scoring';
@@ -23,7 +24,7 @@ import { newBrowserState } from './browser';
 import { SAVE_FORMAT, type Manifest, type SaveDocuments } from './saveFile';
 
 /** Version of the save format. Bump it, and add a migration, whenever what is saved changes shape (spec §18). */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 type Migration = (documents: SaveDocuments) => SaveDocuments;
 
@@ -108,6 +109,13 @@ export const MIGRATIONS: Record<number, Migration> = {
     sim.regulator = newRegulator();
     sim.scoring = { growth: growthSeries(sim.stats, sim.account.ledger), ledger: sim.account.ledger.length, achievements: {} };
     for (const k of ['rivals', 'governance', 'regulator'] as const) sim.rng[k] = Rng.stream(seed, STREAM_NAMES[k]).state();
+    return { ...docs, sim };
+  },
+  // Phase 9: the dark web opens where the game stands — its vendors, and the invitation a few weeks later.
+  6: (docs) => {
+    const sim = docs.sim as SimState;
+    sim.darkweb = newDarkWeb(sim.world.seed, dayOf(sim.clock));
+    sim.rng.darkweb = Rng.stream(sim.world.seed, STREAM_NAMES.darkweb).state();
     return { ...docs, sim };
   },
 };

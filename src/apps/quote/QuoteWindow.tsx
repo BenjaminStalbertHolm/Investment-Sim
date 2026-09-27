@@ -7,7 +7,7 @@ import { TIMEFRAMES, type CompanyDetails, type Quote } from '../../sim/types';
 import { openUrl, useGame } from '../../state/game';
 import { headlineOf } from '../../sites/news/articles';
 import { useNews } from '../../sites/news/data';
-import { NEWSWIRE, companyUrl, sites } from '../../sites/urls';
+import { companyUrl, sites, storyUrl } from '../../sites/urls';
 import { useTrade } from '../../state/trade';
 import { useWindows } from '../../state/windows';
 import { AppMenuBar } from '../AppMenuBar';
@@ -102,7 +102,7 @@ function CompanyNews({ company }: { company: number }) {
       {items.map((n) => (
         <li key={n.id}>
           {formatDate(dayOf(n.time))}:{' '}
-          <a role="link" onClick={() => openUrl(`http://${NEWSWIRE}/story?id=${n.id}-newswire`)}>
+          <a role="link" onClick={() => openUrl(storyUrl(n))}>
             {headlineOf(n, directory, firmName, seed)}
           </a>
         </li>
