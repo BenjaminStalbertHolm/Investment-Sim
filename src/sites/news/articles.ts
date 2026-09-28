@@ -12,6 +12,7 @@ import { companySite, shortName } from '../company/content';
 import {
   ANALYST, DARK, DETAILS, FED_HOLD, FOLLOW, HEADLINES, LEADS, OPEK_HEADLINES, OUTLET_VOICE, REACTION, RUMOURED, STORIES,
 } from '../data/articles';
+import { COUNTRY } from '../../sim/data/countries';
 import { CONTRACTS, CONTRACT_INDEX, HAZARDS } from '../../sim/data/commodities';
 import { companyOf } from '../hooks';
 import { dollars, percent, write } from '../text';
@@ -129,6 +130,15 @@ function words(item: NewsItem, directory: Directory, firmName: string, rng: Rng)
     w.aum = dollars(item.amount!);
   }
   if (item.text && item.kind !== 'story') w.client = item.text;
+  if (item.kind === 'story' && item.args) {
+    // A fun module's story (Phase 10B): countries by id, and the figure or name it needs.
+    const [a = '', b = ''] = item.args;
+    const country = (id: string) => COUNTRY[id]?.name ?? id;
+    Object.assign(w, {
+      x: country(a), y: country(b), leader: b, territory: b, nth: ordinal(Number(b)), dotcom: a, region: a, rival: a, shell: a, stake: `${b}%`,
+      mark: `$${Number(a).toLocaleString('en-US')}`, ratio: Number(a).toLocaleString('en-US'), darts: a, firmRet: b,
+    });
+  }
   if (item.commodity) {
     // Weather and OPEK stories (spec §12.3, §14): the commodity, the hazard and where, the meeting and its decision.
     const name = CONTRACTS[CONTRACT_INDEX[item.commodity]].name;

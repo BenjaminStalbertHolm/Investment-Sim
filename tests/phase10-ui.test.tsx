@@ -1,126 +1,39 @@
 // @vitest-environment happy-dom
-import { act, type ComponentType } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
+import { type ComponentType } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CLOSE, OPEN, START_DAY, addTradingDays, at } from '../src/sim/calendar';
 import { Engine } from '../src/sim/engine';
 import { DIFFICULTIES } from '../src/sim/settings';
-import { useGame } from '../src/state/game';
 import { usePrograms } from '../src/state/programs';
-import { Site } from '../src/sites/Site';
 import {
   DANCING_BABY, DAVOZ, EBUY, GREGSLIST, HAMSTERS, HINDSIGHT, HOMECITIES, IPO_HOTLINE, LIFESTYLES, LOTTO, MAJORSOFT, MONSTROUS, MOODY, REEVES,
   STANDARD_POURS, Y2K, YEEHAW, intranetHost,
 } from '../src/sites/urls';
-import { PageContext, type Page } from '../src/sites/web';
 import { generateWorld } from '../src/world/generator';
 import type { AppProps } from '../src/apps/types';
 import type { Manifest } from '../src/state/saveFile';
+import { button, clean, click, connect, render, site, submit, type, unmount } from './harness';
 
-// Phase 10 (spec §19): every §4A app and §14.2 site, rendered against a running game. The worker is the engine itself,
-// called in-process: each call is answered on the next tick, as Comlink would.
+// Phase 10 (spec §19): every §4A app and §14.2 site, rendered against a running game (tests/harness.tsx).
 
-const worker = vi.hoisted(() => ({
-  engine: undefined as unknown as Record<string, (...args: unknown[]) => unknown>,
-  /** The worker's names that aren't the engine's. */
-  renamed: { outlooks: 'outlookViews' } as Record<string, string>,
-}));
-vi.mock('../src/sim/client', () => ({
-  simulation: () =>
-    new Proxy(
-      {},
-      {
-        get: (_, key: string) =>
-          async (...args: unknown[]) => {
-            const f = worker.engine[worker.renamed[key] ?? key];
-            if (typeof f !== 'function') throw new Error(`The worker has no ${key}()`);
-            return structuredClone(f.apply(worker.engine, args));
-          },
-      },
-    ),
-}));
+vi.mock('../src/sim/client', async () => (await import('./worker')).client);
 
 let engine: Engine;
 const FIRM = 'Ten Capital';
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-
-function snapshot(e: Engine) {
-  return {
-    time: e.time, phase: e.phase, holiday: e.holiday(), halted: e.halted, speed: 0, index: e.indexQuote(), quotes: {}, live: {}, account: e.account(),
-    positions: e.positions(), openOrders: e.openOrders(), revision: Math.random(), events: [], mail: e.mailStatus(), news: e.newsCount,
-    commodities: e.commodityQuotes(), sob: e.sobStatus(), darkweb: e.darkwebStatus(), desk: e.deskStatus(),
-  };
-}
-/** The UI learns of a change the way the worker's snapshots tell it. */
-const refresh = () => useGame.setState({ snapshot: snapshot(engine) as never, directory: engine.directory() });
 
 beforeAll(() => {
   const world = generateWorld({ seed: 'phase 10 ui', companyCount: 800 });
   engine = Engine.create(world, { settings: DIFFICULTIES.medium, firmName: FIRM });
-  worker.engine = engine as never;
   // Five weeks in, and on until an IPO is on the calendar: listings, auctions on eBuy, rating actions in the news.
   let day = addTradingDays(START_DAY, 25);
   engine.advanceTo(at(day, CLOSE));
   while (!engine.ipos().pending.some((p) => p.company === undefined && p.day > addTradingDays(day, 1))) engine.advanceTo(at((day = addTradingDays(day, 1)), CLOSE));
   expect(engine.ipos().pending.some((p) => p.company !== undefined)).toBe(true);
   engine.advanceTo(at(addTradingDays(day, 1), OPEN + 30));
-  useGame.setState({ ready: true, seed: engine.seed, firmName: FIRM, player: engine.player, settings: engine.settings });
-  refresh();
+  connect(engine, FIRM);
 }, 120_000);
 
-let root: Root | undefined;
-let host: HTMLDivElement;
-afterEach(() => {
-  act(() => root?.unmount());
-  root = undefined;
-  host?.remove();
-});
-
-const tick = () => act(() => new Promise<void>((r) => setTimeout(r, 0)));
-async function render(node: React.ReactNode): Promise<HTMLDivElement> {
-  host = document.createElement('div');
-  document.body.append(host);
-  root = createRoot(host);
-  await act(async () => root!.render(node));
-  // Fetches from the "worker", then what they fetch in turn.
-  for (let k = 0; k < 4; k++) await tick();
-  return host;
-}
-function page(href: string): Page {
-  return { url: new URL(href), navigate: () => undefined, status: () => undefined, setTitle: () => undefined };
-}
-const site = (href: string) =>
-  render(
-    <PageContext.Provider value={page(href)}>
-      <Site url={new URL(href)} />
-    </PageContext.Provider>,
-  );
-/** No holes in the text: every number and name made it through. */
-const clean = (el: HTMLElement) => expect(el.textContent).not.toMatch(/undefined|NaN|Infinity|\[object/);
-const button = (el: HTMLElement, text: string | RegExp) => {
-  const b = [...el.querySelectorAll('button')].find((x) => (typeof text === 'string' ? x.textContent === text : text.test(x.textContent ?? '')));
-  if (!b) throw new Error(`No button ${text}`);
-  return b;
-};
-async function click(el: HTMLElement) {
-  await act(async () => el.click());
-  for (let k = 0; k < 3; k++) await tick();
-  refresh();
-  await tick();
-}
-async function type(input: HTMLInputElement, value: string) {
-  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
-  await act(async () => {
-    setter.call(input, value);
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-  });
-}
-async function submit(form: HTMLFormElement) {
-  await act(async () => form.requestSubmit());
-  for (let k = 0; k < 3; k++) await tick();
-  refresh();
-  await tick();
-}
+afterEach(unmount);
 
 describe('Phase 10 sites (spec §14.2)', () => {
   it('renders every new site from the running game, with no gaps', async () => {
@@ -152,8 +65,7 @@ describe('Phase 10 sites (spec §14.2)', () => {
       const el = await site(href);
       expect(el.textContent, href).toMatch(text);
       clean(el);
-      act(() => root!.unmount());
-      root = undefined;
+      unmount();
     }
   }, 60_000);
 
@@ -172,16 +84,16 @@ describe('Phase 10 sites (spec §14.2)', () => {
     const staff = () => engine.staff().people.filter((p) => p.status === 'staff').length;
     await click(button(el, 'Hire'));
     expect(staff()).toBe(1);
-    act(() => root!.unmount());
+    unmount();
     el = await site(`http://${GREGSLIST}/offices`);
     await click(button(el, /Sign the lease/));
     expect(engine.staff().office).toBe(1);
-    act(() => root!.unmount());
+    unmount();
     el = await site(`http://${LIFESTYLES}/`);
     await click(button(el, 'Buy it now'));
     expect(engine.lifestyle().assets.length).toBe(1);
     expect(el.textContent).toMatch(/Sell to dealer/);
-    act(() => root!.unmount());
+    unmount();
     el = await site(`http://${intranetHost(FIRM)}/`);
     expect(el.textContent).toMatch(/Please welcome/);
     clean(el);
@@ -195,7 +107,7 @@ describe('Phase 10 sites (spec §14.2)', () => {
     await type(input, '100');
     await submit(input.form!);
     expect(engine.ipos().pending.find((p) => p.id === deal!.id)?.applied).toBe(100);
-    act(() => root!.unmount());
+    unmount();
 
     el = await site(`http://${EBUY}/`);
     const auction = engine.lifestyle().auctions.find((a) => !a.result && a.selling === undefined)!;
@@ -205,12 +117,12 @@ describe('Phase 10 sites (spec §14.2)', () => {
     await submit(bid.form!);
     expect(engine.lifestyle().auctions.find((a) => a.id === first.id)?.max).toBe(Math.ceil(first.price * 3 + 100));
     expect(auction).toBeDefined();
-    act(() => root!.unmount());
+    unmount();
 
     el = await site(`http://${DAVOZ}/`);
     await click(button(el, 'Buy a ticket'));
     expect(engine.lifestyle().tickets.length).toBe(1);
-    act(() => root!.unmount());
+    unmount();
 
     el = await site(`http://${LOTTO}/`);
     await submit(el.querySelector('form')!);
@@ -247,8 +159,7 @@ describe('Phase 10 apps (spec §4A)', () => {
       const el = await render(<App windowId={`w-${id}`} appId={id as never} />);
       expect(el.textContent, id).toMatch(text);
       clean(el);
-      act(() => root!.unmount());
-      root = undefined;
+      unmount();
     }
   }, 60_000);
 });

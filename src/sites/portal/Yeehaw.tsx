@@ -13,7 +13,7 @@ import { useOutlooks } from '../hooks';
 import { useStories } from '../news/NewsSites';
 import {
   BANK, BARRENS, DANCING_BABY, DAVOZ, EBUY, EQUIFACTS, EXCHANGE, FED, GREGSLIST, HAMSTERS, HINDSIGHT, HOMECITIES, IPO_HOTLINE, LIFESTYLES, LOTTO, MAJORSOFT,
-  MONSTROUS, MOODY, NEWSWIRE, OPEK, QUOTEZONE, RAGINGBEAR, SOB, STANDARD_POURS, TUCATS, WEATHER, Y2K, YEEHAW, companyUrl, firmUrl, helpUrl, intranetHost,
+  MONSTROUS, MOODY, NEWSWIRE, OPEK, PIZZA, QUOTEZONE, RAGINGBEAR, SOB, STANDARD_POURS, TUCATS, WEATHER, Y2K, YEEHAW, companyUrl, firmUrl, helpUrl, intranetHost,
   playerUrl, quoteUrl, storyUrl, searchUrl, sites,
 } from '../urls';
 import { Link, usePage, useTitle } from '../web';
@@ -77,6 +77,7 @@ function Front() {
   const headlines = useStories().daily;
   const news = useNews({ minCap: 10e9, limit: 4 });
   const { firmName, seed } = useGame.getState();
+  const gags = useGame((s) => s.settings?.modules.gags);
   const columns = [0, 1, 2].map((k) => categories.filter((_, i) => i % 3 === k));
   return (
     <div className="yh-front">
@@ -170,6 +171,12 @@ function Front() {
             <Link href={`http://${HOMECITIES}/`}>HomeCities</Link> · <Link href={`http://${Y2K}/`}>Y2K Countdown</Link> ·{' '}
             <Link href={`http://${HAMSTERS}/`}>Hamster Prance</Link> · <Link href={`http://${DANCING_BABY}/`}>Dancing Baby</Link> ·{' '}
             <Link href={`http://${MAJORSOFT}/`}>Majorsoft</Link>
+            {gags && (
+              <>
+                {' '}
+                · <Link href={`http://${PIZZA}/`}>Pizza Delivery Hotspots</Link>
+              </>
+            )}
           </p>
         </div>
       </div>

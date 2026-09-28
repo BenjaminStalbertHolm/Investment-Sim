@@ -18,7 +18,7 @@ import type { Journalist } from '../../sim/press';
 import type { Employee } from '../../sim/staff';
 import { ROLE } from '../../sim/data/staff';
 import { CATEGORIES, CONFERENCES, HINDSIGHT_FEE } from '../../sim/data/lifestyle';
-import { count, money, price, signedPct } from '../format';
+import { count, money, pct, price, signedPct } from '../format';
 import { MOM, PARTY, SPAM, TIP_CLAIMS, TIP_CLOSERS, TIP_OPENERS, TIP_SENDERS, TIP_SUBJECTS } from './data';
 
 /** What a letter's body is made of. Paragraph text may hold `{c:123}` company mentions. */
@@ -652,10 +652,36 @@ function staffLetter(mail: Mail, ctx: LetterContext, letter: LetterOf, words: Re
       ]);
     }
     case 'split':
+      // A reverse split (Phase 10B: Birkshire Hatchaway's never-split shares) is "1 for N".
+      if (mail.amount! < 1) {
+        const n = Math.round(1 / mail.amount!).toLocaleString('en-US');
+        return letter('MajorTrade Pro Brokerage Services <confirms@majortrade.com>', `Reverse split: ${ticker} 1-for-${n}`, () => [
+          { p: `${mention(c!)} has consolidated its shares, one new share for every ${n} old ones. Your holding is now ${count(mail.shares!)} shares; the fraction of a share left over was paid out in cash.` },
+          { p: 'Open orders in the stock have been cancelled. Place them again at the new price.' },
+        ]);
+      }
       return letter('MajorTrade Pro Brokerage Services <confirms@majortrade.com>', `Stock split: ${ticker} ${mail.amount}-for-1`, () => [
         { p: `${mention(c!)} has split its shares ${mail.amount} for 1. Your holding is now ${count(mail.shares!)} shares; what it is worth has not changed.` },
         { p: 'Open orders in the stock have been adjusted to match.' },
       ]);
+    case 'momClub': {
+      // Mom's investment club (Phase 10B, spec §16C.3): a tip a month, until one goes badly.
+      const picks = (mail.options ?? []).map((i) => directory.tickers[i]);
+      const how = mail.amount === undefined ? undefined : mail.amount >= 0 ? `up ${pct(mail.amount)}` : `down ${pct(-mail.amount)}`;
+      if (mail.variant === 1) {
+        return letter('Mom <mom@aol.com>', 'About your tip', () => [
+          { p: `Dear ${ceoName.split(' ')[0]},` },
+          { p: `The club bought ${mention(c!)} like you said, and it is ${how}. Doris had to cancel her cruise. I am not angry, just disappointed.` },
+          { p: 'We are going to take a break from tips for a while. I still love you. Call your mother.' },
+        ]);
+      }
+      return letter('Mom <mom@aol.com>', rng.pick(['Investment club tip?', 'The girls want a tip', 'A quick question from the club']), () => [
+        { p: `Hi sweetheart,` },
+        ...(how ? [{ p: `The stock you told us about last month is ${how}. ${mail.amount! >= 0 ? 'Doris says you are a genius.' : 'Doris says it will come back.'}` }] : []),
+        { p: picks.length ? `The club meets Thursday and the girls want to know what to buy. Is it ${picks.join(', or ')}? Just click one.` : 'The club meets Thursday. Any tips? The girls read about you in the paper.' },
+        { p: 'Love, Mom. P.S. Are you eating properly?' },
+      ]);
+    }
     default:
       return letter('Majorsoft Doors 98 <system@majorsoft.com>', 'A message', () => [{ p: 'This message could not be displayed.' }]);
   }

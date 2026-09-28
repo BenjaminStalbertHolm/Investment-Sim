@@ -168,6 +168,8 @@ const URGENT = new Set<Mail['kind']>([
   'marginCall', 'liquidation', 'recall', 'loanLate', 'loanDefault', 'audit', 'sobOutcome', 'blackmail', 'sharkCall', 'bankrupt', 'poached', 'hacked',
   'staffLeft',
 ]);
+/** The goat chief executive's name (spec §16C.3). */
+const GOAT_CEO = 'Billy G. Oat';
 const gameYearOf = (day: number) => new Date(day * 86_400_000).getUTCFullYear();
 /** Dark web services whose failure only shows later: wrong information, forged statements not yet found out. */
 const SECRET_FAILURES = new Set(['leakEarnings', 'leakDeal', 'forgery']);
@@ -2904,6 +2906,8 @@ export class Engine implements Sim {
     const today = dayOf(this.s.clock);
     const year = this.daily(i).slice(-252);
     const borrow = this.borrow(i);
+    // A goat runs it (spec §16C.3), while the gags module is on.
+    const goat = this.s.settings.modules.gags && this.s.modules.gags?.goat?.company === i;
     return {
       id: i,
       genome: c.genome,
@@ -2912,8 +2916,9 @@ export class Engine implements Sim {
       industry: c.industry.name,
       subIndustry: c.subIndustry,
       hq: `${c.hq.name}, ${c.hq.country}`,
-      ceo: this.s.events.ceos[i] ? ceoName(decodeCeo(this.s.events.ceos[i])) : `${c.ceo.firstName} ${c.ceo.lastName}`,
-      ceoCode: this.s.events.ceos[i],
+      ceo: goat ? GOAT_CEO : this.s.events.ceos[i] ? ceoName(decodeCeo(this.s.events.ceos[i])) : `${c.ceo.firstName} ${c.ceo.lastName}`,
+      ceoCode: goat ? undefined : this.s.events.ceos[i],
+      ceoVariant: goat ? 'goat' : undefined,
       status: this.market.state.status[i] as Listing,
       founded: gameYear(START_DAY) - c.founded,
       shares,

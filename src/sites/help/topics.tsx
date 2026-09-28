@@ -1251,6 +1251,37 @@ export const TOPICS: Topic[] = [
     ),
   },
   {
+    id: 'modules',
+    title: 'Fun modules: geopolitics, 1998 and running gags',
+    section: 'office',
+    questions: ['What are fun modules?', 'How do I turn on geopolitics?', 'What is Encarter 98?', 'Why is my CEO going grey?', 'Where is the Tamagotcha?'],
+    keywords: 'fun module modules geopolitics encarter atlas map country leader tension sanctions tariff 1998 dot com bubble ltcm mad cow el nino tamagotcha sheep gags darts enrun pizza horoscope hemline intern goat mom',
+    body: () => (
+      <>
+        <p>
+          Three optional modules add jokes to the world. All are off unless you switch them on, in Setup’s Advanced Settings or at
+          any time in <Go app="mycomputer" view="game">My Computer → Game</Go>. None of them makes a game Custom.
+        </p>
+        <ul>
+          <li>
+            <b>Geopolitics</b>: countries, their leaders and their quarrels, which move their companies and commodities.{' '}
+            <Go app="encarter">Encarter 98</Go> is the atlas: point at a country, click for its page. The news sites show a tension meter.
+          </li>
+          <li>
+            <b>1998-era events</b>: the dot-com mania and its end, a hedge fund full of geniuses, mad cows, El Niño, a crash on
+            stage, a very expensive share that never splits, a sheep on your desktop and a <Go app="tamagotcha">Tamagotcha</Go> to keep alive.
+          </li>
+          <li>
+            <b>Recurring gags and storylines</b>: your chief executive greys in a drawdown; a chimpanzee picks stocks; a large energy
+            company is not what it seems; pizza deliveries know about audits; the Daily Scoop’s horoscope; your mother’s investment
+            club; an intern who adds zeros.
+          </li>
+        </ul>
+        <Tip>Switching a module off wraps up what it started, quietly. Switching it back on picks up where it left off.</Tip>
+      </>
+    ),
+  },
+  {
     id: 'bankruptcy',
     title: 'Bankruptcy: the only way to lose',
     section: 'firm',

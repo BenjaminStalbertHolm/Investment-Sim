@@ -10,7 +10,7 @@ import { useGame } from '../../state/game';
 import type { NewsItem } from '../../sim/news';
 import { companyCeo, decodeCeo, type Ceo } from '../../world/ceo';
 import type { Company } from '../../world/company';
-import { companyOf, useDetails } from '../hooks';
+import { companyOf, useDetails, useModules } from '../hooks';
 import { headlineOf } from '../news/articles';
 import { useNews } from '../news/data';
 import { companyUrl, firmUrl, playerUrl, quoteUrl, sites, storyUrl, type Sites } from '../urls';
@@ -381,7 +381,7 @@ function About({ company: c, site, live }: PageProps) {
       ))}
       <h2>Our Leadership</h2>
       <div className="cs-ceo">
-        <Photo name={ceoName} ceo={ceo} />
+        <Photo name={ceoName} ceo={ceo} variant={live.details?.ceoVariant} />
         <div>
           <b>{ceoName}</b>
           <br />
@@ -398,10 +398,10 @@ function About({ company: c, site, live }: PageProps) {
 }
 
 /** A framed photo of a person (spec §8). */
-export function Photo({ name, ceo }: { name: string; ceo: Ceo }) {
+export function Photo({ name, ceo, variant }: { name: string; ceo: Ceo; variant?: 'goat' }) {
   return (
     <div className="web-photo" title={name}>
-      <Portrait ceo={ceo} size={90} title={`Photo of ${name}`} />
+      <Portrait ceo={ceo} size={90} title={`Photo of ${name}`} variant={variant} />
     </div>
   );
 }
@@ -592,12 +592,30 @@ function Holders({ d, directory, sites: s, firmName, held }: { d: CompanyDetails
   );
 }
 
-function Guestbook({ company: c, site }: PageProps) {
+/** Enrun's guestbook (spec §16C.3): the complaints its accounts don't show, once its fraud is far enough along. */
+const COMPLAINTS = [
+  ['A former employee', 'Houston', 'Ask them what the Velociraptor partnerships are for. Go on, ask.'],
+  ['Concerned shareholder', 'Omaha', 'Why does the annual report have three different profit figures? Asking for a friend.'],
+  ['Arthur A.', 'Chicago', 'Please stop calling us.'],
+  ['Pensioner', 'Tulsa', 'My whole retirement is in this stock. Everything is fine, right? RIGHT?'],
+  ['Night janitor', 'Houston', 'The shredders on the 50th floor have been running all week.'],
+];
+
+function Guestbook({ id, company: c, site }: PageProps) {
   const [signed, setSigned] = useState(false);
+  const enrun = useModules()?.gags?.enrun;
+  const complaints = enrun?.company === id && enrun.stage >= 3 ? COMPLAINTS : [];
+  const today = useGame((s) => (s.snapshot ? dayOf(s.snapshot.time) : START_DAY));
   return (
     <>
       <h1>Guestbook</h1>
       <p>Thank you for visiting! Please sign our guestbook and tell us what you think of {shortName(c.name)}.</p>
+      {complaints.map(([name, city, text], k) => (
+        <div key={`x${k}`} className="guestbook-entry">
+          <b>{name}</b> from {city} wrote on {formatDate(today - k * 3)}:
+          <blockquote>{text}</blockquote>
+        </div>
+      ))}
       {site.guestbook.map((g, k) => (
         <div key={k} className="guestbook-entry">
           <b>{g.name}</b> from {g.city} wrote on {formatDate(START_DAY - g.daysAgo)}:

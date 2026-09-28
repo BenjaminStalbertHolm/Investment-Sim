@@ -41,3 +41,33 @@ export function BlueScreen({ report, onDone }: { report?: BankruptcyReport; onDo
     </div>
   );
 }
+
+/**
+ * Doors crashes on stage at COMDEXX (spec §16C.2) — and, for two seconds, on the player's screen too. Any key or click
+ * skips it; it only ever happens once.
+ */
+export function DemoCrash({ onDone }: { onDone(): void }) {
+  useEffect(() => {
+    const done = () => onDone();
+    const timer = setTimeout(done, 2000);
+    window.addEventListener('keydown', done);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', done);
+    };
+  }, [onDone]);
+  return (
+    <div className="bsod" role="alertdialog" aria-label="Doors has crashed (not really)" onClick={onDone}>
+      <div className="bsod-text">
+        <p className="bsod-title">
+          <span>Majorsoft Doors</span>
+        </p>
+        <p>A fatal exception 0E has occurred at 0028:C0MDEXX8 in VXD KEYNOTE(01) + 00000098. The demonstration will be terminated.</p>
+        <p>
+          * This happened on stage at COMDEXX, too. Your computer is fine.
+          <br />* Press any key to continue <span className="bsod-cursor">_</span>
+        </p>
+      </div>
+    </div>
+  );
+}

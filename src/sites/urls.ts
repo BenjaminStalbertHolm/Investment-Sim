@@ -40,6 +40,8 @@ export const MAJORSOFT = 'www.majorsoft.com';
 export const HOMECITIES = 'www.homecities.com';
 export const HAMSTERS = 'www.hamsterprance.com';
 export const DANCING_BABY = 'www.dancingbaby.net';
+/** Phase 10B: the pizza chain whose delivery counts give the SOB's audits away (spec §16C.3, the gags module). */
+export const PIZZA = 'www.papajonas.com';
 /** The player's intranet (spec §14.2): intranet.<firm>.com. */
 export const intranetHost = (firmName: string) => `intranet.${slugOf(firmName) || 'firm'}.com`;
 
@@ -96,7 +98,7 @@ export function sites(directory: Directory, firmName: string): Sites {
 
 const RESERVED = new Set([
   YEEHAW, QUOTEZONE, RAGINGBEAR, EXCHANGE, WEATHER, OPEK, FED, BANK, EQUIFACTS, REEVES, SOB, TUCATS, MAJORSOFT, ...ALL_OUTLETS.map((o) => o.host),
-  STANDARD_POURS, MOODY, HINDSIGHT, IPO_HOTLINE, MONSTROUS, GREGSLIST, LIFESTYLES, EBUY, DAVOZ, LOTTO, Y2K, HOMECITIES, HAMSTERS, DANCING_BABY,
+  STANDARD_POURS, MOODY, HINDSIGHT, IPO_HOTLINE, MONSTROUS, GREGSLIST, LIFESTYLES, EBUY, DAVOZ, LOTTO, Y2K, HOMECITIES, HAMSTERS, DANCING_BABY, PIZZA,
 ]);
 
 /**

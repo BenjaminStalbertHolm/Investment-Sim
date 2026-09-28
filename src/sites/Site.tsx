@@ -25,8 +25,9 @@ import { DancingBaby, Hamsters, HomeCities, Majorsoft, Y2kCountdown } from './fl
 import Intranet from './firm/Intranet';
 import {
   BANK, DANCING_BABY, DAVOZ, EBUY, EQUIFACTS, EXCHANGE, FED, GREGSLIST, HAMSTERS, HINDSIGHT, HOMECITIES, IPO_HOTLINE, LIFESTYLES, LOTTO, MAJORSOFT,
-  MONSTROUS, MOODY, OPEK, QUOTEZONE, RAGINGBEAR, REEVES, SOB, STANDARD_POURS, TUCATS, WEATHER, Y2K, YEEHAW, intranetHost, sites,
+  MONSTROUS, MOODY, OPEK, PIZZA, QUOTEZONE, RAGINGBEAR, REEVES, SOB, STANDARD_POURS, TUCATS, WEATHER, Y2K, YEEHAW, intranetHost, sites,
 } from './urls';
+import Pizza from './flavour/Pizza';
 import { usePage, useTitle } from './web';
 
 type SiteComponent = ComponentType<{ url: URL }>;
@@ -89,11 +90,14 @@ export function Site({ url }: { url: URL }) {
   const directory = useGame((s) => s.directory);
   const firmName = useGame((s) => s.firmName);
   const outages = useGame((s) => s.snapshot?.darkweb.outages);
+  const gags = useGame((s) => s.settings?.modules.gags);
   const { garlic } = usePage();
   const page = url.pathname.replace(/^\//, '');
   // Only the Garlic Browser reaches the Garlic network (spec §14A).
   if (url.hostname.endsWith('.garlic')) return garlic ? <DarkSite url={url} /> : <CannotDisplay url={url} />;
   if (url.hostname === intranetHost(firmName)) return <Intranet />;
+  // Only the gags module's world has a pizza chain that knows about audits.
+  if (url.hostname === PIZZA) return gags ? <Pizza /> : <CannotDisplay url={url} />;
   const Static = STATIC[url.hostname];
   const target = Static ? undefined : sites(directory, firmName).byHost.get(url.hostname);
   // Web sites the dark web's hackers took down or defaced; the firm's own when hackers got past its IT (spec §4A).

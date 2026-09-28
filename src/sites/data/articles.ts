@@ -5,6 +5,7 @@
 // {level} {prev} {expect} {client} {firmName} {ret} {indexRet} {aum} {revenue} {result} {rumourDay}
 // Commodity stories: {commodity} {Commodity} {hazard} {Hazard} {region} {warning} {dueDay} {warnedDay} {decision}
 import { templates } from '../text';
+import { MODULE_STORIES } from './moduleStories';
 import type { NewsKind } from '../../sim/news';
 
 const p = templates;
@@ -122,6 +123,7 @@ export const HEADLINES: Record<NewsKind, Sided> = {
 
 /** Stories the archive tells by their `text` (Phase 10 onwards): their headlines, openings and a line of detail. */
 export const STORIES: Record<string, { head: readonly string[]; lead: readonly string[]; detail?: readonly string[] }> = {
+  ...MODULE_STORIES,
   y2k: {
     head: p('Y2K Jitters Grip Wall Street|The Millennium Bug Bites (a Little)|Stocks Slip as Y2K Nerves Linger'),
     lead: p('Investors sold first and asked questions later on {day} as the year 2000 began, dumping technology and bank shares on fears that computers might [confuse the year 2000 with 1900|mistake every loan for a century overdue|stop working altogether]. By lunchtime, nothing had broken.|The millennium bug was supposed to [end civilisation|shut down the banks|crash every computer on Earth]. On {day}, the first trading day of 2000, it managed a mild wobble in the stock market.'),

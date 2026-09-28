@@ -100,7 +100,7 @@ export default function MailApp({ windowId }: AppProps) {
   };
 
   const columns: Column<Row>[] = [
-    { header: '!', width: 16, cell: (m) => (m.flagged ? <span className="mail-flag">⚑</span> : m.answer === undefined && (ACTIONS[m.kind] || m.kind === 'tip') ? '•' : '') },
+    { header: '!', width: 16, cell: (m) => (m.flagged ? <span className="mail-flag">⚑</span> : m.answer === undefined && (actionsOf(m) || m.kind === 'tip') ? '•' : '') },
     { header: view.folder === 'sent' ? 'To' : 'From', cell: (m) => (view.folder === 'sent' ? writeLetter(m, ctx, true).to : m.from) },
     { header: 'Subject', cell: (m) => m.subject },
     { header: 'Received', cell: (m) => formatClock(m.time) },
@@ -295,6 +295,14 @@ const ACTIONS: Partial<Record<Mail['kind'], [MailAction, string][]>> = {
   poached: [['match', 'Match the Offer'], ['letGo', 'Let Them Go']],
 };
 
+/** A letter's buttons: Mom's club (Phase 10B) offers the holdings she might buy, by ticker. */
+function actionsOf(mail: Mail): [MailAction, string][] | undefined {
+  if (mail.kind !== 'momClub') return ACTIONS[mail.kind];
+  if (mail.variant === 1) return undefined;
+  const { tickers } = useGame.getState().directory;
+  return [...(mail.options ?? []).slice(0, 3).map((i, k): [MailAction, string] => [`tip${k}` as MailAction, `Tell Her ${tickers[i]}`]), ['noTip', 'No Tips This Month']];
+}
+
 /** Letters from the broker and the bank open the MajorTrade tab they are about. */
 const GOTO: Partial<Record<Mail['kind'], { tab: TradeTab; label: string }>> = {
   marginCall: { tab: 'portfolio', label: 'Open Portfolio' },
@@ -337,9 +345,9 @@ function Preview({ mail, ctx, onAction, onDelete }: { mail: Mail; ctx: LetterCon
         ))}
       </div>
       {mail.answer && <p className="mail-answer">{ANSWERS[mail.answer]}</p>}
-      {!mail.answer && ACTIONS[mail.kind] && (
+      {!mail.answer && actionsOf(mail) && (
         <div className="button-row">
-          {ACTIONS[mail.kind]!.map(([action, label], k) => (
+          {actionsOf(mail)!.map(([action, label], k) => (
             <button key={action} className={k ? '' : 'default'} onClick={() => onAction(mail, action)}>
               {label}
             </button>

@@ -105,7 +105,7 @@ export function morningPeriod(sim: Sim, day: number, monthStart: boolean): void 
     const i = sim.companies.findIndex((c) => c.ticker === 'MJSF');
     if (i >= 0 && !sim.market.state.status[i]) {
       jump(sim, i, Math.log1p(-0.03), 0.2, rng.int(5, 20));
-      story(sim, 'demoCrash', i);
+      story(sim, 'demoCrash', i, [], -0.03);
     }
     sim.emit({ kind: 'demoCrash' });
   }

@@ -46,6 +46,8 @@ interface GameStore {
   bust?: 'blueScreen' | 'report';
   /** Soli-Tear's bouncing cards, for a trade closed at +100% (Phase 10). */
   bounce?: boolean;
+  /** Doors crashed on stage at COMDEXX (Phase 10B): the screen fakes a blue screen for two seconds. */
+  demoCrash?: boolean;
 }
 
 export const useGame = create<GameStore>()(() => ({
@@ -336,6 +338,7 @@ function receive(snapshot: Snapshot): void {
       notify(`Achievement unlocked: ${ACHIEVEMENTS.find((a) => a.id === event.id)?.name ?? event.id}!`);
     } else if (event.kind === 'bankrupt') void goneBust();
     else if (event.kind === 'bounce') useGame.setState({ bounce: true });
+    else if (event.kind === 'demoCrash') useGame.setState({ demoCrash: true });
     else if (event.kind === 'im') uhOh();
   }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { dayOf } from '../sim/calendar';
 import { simulation } from '../sim/client';
-import type { CompanyDetails, FirmView, FuturesView, LoansView, MarketTable, OutlookView, SobView } from '../sim/types';
+import type { CompanyDetails, FirmView, FuturesView, LoansView, MarketTable, ModulesView, OutlookView, SobView } from '../sim/types';
 import { decodeCompany, type Company } from '../world/company';
 import { useGame } from '../state/game';
 
@@ -74,6 +74,13 @@ export const useStaff = () => useDesked(() => simulation().staff());
 export const useLifestyle = () => useDesked(() => simulation().lifestyle());
 export const useDesk = () => useDesked(() => simulation().desk());
 export const useIpos = () => useDesked(() => simulation().ipos());
+
+/** The fun modules as they stand (Phase 10B), refetched daily, as news arrives and when modules are switched on or off. */
+export function useModules(): ModulesView | undefined {
+  const key = useGame((s) => (s.snapshot ? `${dayOf(s.snapshot.time)}:${s.snapshot.news}:${s.snapshot.revision}` : ''));
+  const flags = useGame((s) => JSON.stringify(s.settings?.modules ?? {}));
+  return useFetched(() => simulation().modules(), [key, flags]);
+}
 
 /** Barren's league tables and this year's standings so far, refetched daily. */
 export function useLeague() {

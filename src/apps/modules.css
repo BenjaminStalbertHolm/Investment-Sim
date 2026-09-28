@@ -1,0 +1,221 @@
+/* The fun modules' programs and pieces (Phase 10B, spec §16C). */
+
+.encarter-banner {
+  flex: none;
+  padding: 3px 8px;
+  background: linear-gradient(90deg, #1a3a78, #4a78c8);
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #fff;
+}
+
+.encarter-body {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  min-height: 0;
+  padding: 4px;
+}
+
+.encarter-map {
+  position: relative;
+  flex: 3;
+  min-width: 0;
+  overflow: hidden;
+  background: #3d6fb0;
+}
+
+.encarter-map > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.encarter-country {
+  cursor: pointer;
+}
+
+.encarter-country:hover {
+  filter: brightness(1.15);
+}
+
+.encarter-hover {
+  position: absolute;
+  z-index: 2;
+  width: 220px;
+  padding: 4px 6px;
+  background: #ffffe1;
+  border: 1px solid #000;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.encarter-hover p {
+  margin: 2px 0 4px;
+}
+
+.encarter-page {
+  flex: 2;
+  min-width: 200px;
+  overflow: auto;
+  padding: 4px 8px;
+  background: #fff;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 12px;
+}
+
+.encarter-page h3 {
+  margin: 2px 0;
+  font-size: 17px;
+  color: #1a3a78;
+}
+
+.encarter-page h4 {
+  margin: 8px 0 2px;
+  font-size: 13px;
+  color: #1a3a78;
+}
+
+.encarter-page a,
+.encarter-off a,
+.tension-list a {
+  color: #0000ee;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.encarter-leader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.encarter-facts {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.encarter-facts td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.encarter-facts th {
+  width: 90px;
+  padding-right: 8px;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.encarter-off {
+  padding: 16px;
+}
+
+.tension-list {
+  margin: 2px 0;
+  padding-left: 16px;
+}
+
+.tension-bar {
+  color: #c02020;
+  letter-spacing: -1px;
+}
+
+.portrait-censored {
+  display: inline-block;
+  overflow: hidden;
+  filter: blur(6px) grayscale(0.6);
+}
+
+/* The Tamagotcha. */
+.tamagotcha {
+  background: #f070b0;
+}
+
+.tamagotcha > .tama-shell,
+.tamagotcha > .hint {
+  align-self: center;
+}
+
+.module-choice {
+  margin-bottom: 8px;
+}
+
+.module-choice .hint {
+  margin: 2px 0 0 20px;
+}
+
+.tama-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 8px;
+  padding: 12px 16px 16px;
+  background: radial-gradient(circle at 35% 25%, #ffb0d8, #e04890);
+  border-radius: 50% 50% 46% 46% / 55% 55% 45% 45%;
+  box-shadow: inset -4px -6px 0 rgba(0, 0, 0, 0.15);
+}
+
+.tama-screen {
+  width: 150px;
+  padding: 6px;
+  background: #b8d0a0;
+  border: 3px inset #708060;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #203020;
+  text-align: center;
+}
+
+.tama-pet {
+  font-size: 34px;
+  line-height: 40px;
+}
+
+.tama-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+/* The desktop sheep (spec §16C.2), walking along a window's top edge. */
+.desktop-sheep {
+  position: fixed;
+  z-index: 9000;
+  pointer-events: none;
+  transition: left 0.25s linear, top 0.25s linear;
+}
+
+.desktop-sheep.left svg {
+  transform: scaleX(-1);
+}
+
+/* Doors crashes on stage (spec §16C.2): the player's screen too, for two seconds. */
+.demo-crash {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px;
+  background: #0000aa;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.demo-crash .bsod-title {
+  padding: 0 6px;
+  background: #aaa;
+  color: #0000aa;
+}
+
+.fat-finger {
+  font-size: 13px;
+}

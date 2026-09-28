@@ -44,7 +44,7 @@ function NumberField(props: { label: string; value: number; min: number; max: nu
   );
 }
 
-function Check(props: { label: string; value: boolean; onChange(v: boolean): void }) {
+export function Check(props: { label: string; value: boolean; onChange(v: boolean): void }) {
   const id = useId();
   return (
     <div className="field-row">

@@ -4,7 +4,7 @@ import { useShell } from '../state/shell';
 import { useWindows } from '../state/windows';
 import { MessageBox } from '../ui98/MessageBox';
 import { TickerTape } from '../ui98/TickerTape';
-import { BlueScreen } from './BlueScreen';
+import { BlueScreen, DemoCrash } from './BlueScreen';
 import { BootScreen } from './BootScreen';
 import { Desktop } from './Desktop';
 import { ShutdownScreen } from './ShutdownScreen';
@@ -14,6 +14,7 @@ const SetupWizard = lazy(() => import('../apps/mycomputer/SetupWizard'));
 const FinalReportDialog = lazy(() => import('../apps/mycomputer/FinalReport'));
 const BouncingCards = lazy(() => import('../apps/games/BouncingCards').then((m) => ({ default: m.BouncingCards })));
 const Stapley = lazy(() => import('../apps/stapley/Stapley'));
+const Sheep = lazy(() => import('./Sheep'));
 
 export function Shell() {
   const power = useShell((s) => s.power);
@@ -26,6 +27,9 @@ export function Shell() {
   const bust = useGame((s) => s.bust);
   const bounce = useGame((s) => s.bounce);
   const stopBounce = useCallback(() => useGame.setState({ bounce: false }), []);
+  const demoCrash = useGame((s) => s.demoCrash);
+  const stopCrash = useCallback(() => useGame.setState({ demoCrash: false }), []);
+  const periodEvents = useGame((s) => s.settings?.modules.periodEvents);
   const toReport = useCallback(() => useGame.setState({ bust: 'report' }), []);
   const booted = useCallback(() => setPower('running'), [setPower]);
 
@@ -77,7 +81,9 @@ export function Shell() {
       <Suspense fallback={null}>
         <Stapley />
         {bounce && <BouncingCards onDone={stopBounce} />}
+        {periodEvents && <Sheep />}
       </Suspense>
+      {demoCrash && <DemoCrash onDone={stopCrash} />}
       {alert && <MessageBox text={alert} onClose={() => useGame.setState({ alert: undefined })} />}
     </div>
   );

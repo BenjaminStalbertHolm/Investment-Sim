@@ -31,6 +31,9 @@ const components: Partial<Record<AppId, LazyApp>> = {
   winramp: lazy(() => import('./winramp/WinRamp')),
   sweeper: lazy(() => import('./games/Sweeper')),
   solitear: lazy(() => import('./games/Solitaire')),
+  // Phase 10B: the fun modules' programs (spec §16C).
+  encarter: lazy(() => import('./encarter/Encarter')),
+  tamagotcha: lazy(() => import('./tamagotcha/Tamagotcha')),
   run: lazy(() => import('./run/RunDialog')),
   shutdown: lazy(() => import('./shutdown/ShutdownDialog')),
 };

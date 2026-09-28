@@ -5,6 +5,7 @@ import { OFFICES, ROLE } from '../../sim/data/staff';
 import type { Employee } from '../../sim/staff';
 import { decodeCeo } from '../../world/ceo';
 import { useGame } from '../../state/game';
+import { usePlayerLook } from '../../apps/mycomputer/PlayerBadge';
 import { SiteFrame } from '../frame';
 import { useDesk, useLifestyle, useRecord, useStaff } from '../hooks';
 import { MONSTROUS, intranetHost } from '../urls';
@@ -20,6 +21,7 @@ const WHY = { fired: 'has left the firm', quit: 'has resigned', poached: 'has jo
 export default function Intranet() {
   const firmName = useGame((s) => s.firmName);
   const player = useGame((s) => s.player);
+  const look = usePlayerLook();
   useTitle(`${firmName} Intranet`);
   const staff = useStaff();
   const desk = useDesk();
@@ -42,7 +44,7 @@ export default function Intranet() {
         <div>
           <h2>Staff Directory</h2>
           <div className="frame-card">
-            {player && <Portrait ceo={decodeCeo(player.ceoCode)} size={48} title={player.ceoName} />}
+            {look && <Portrait ceo={look.ceo} size={48} title={look.player.ceoName} />}
             <div>
               <b>{player?.ceoName ?? 'You'}</b>
               <br />

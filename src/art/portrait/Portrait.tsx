@@ -1,4 +1,6 @@
 import { useId, type ReactNode } from 'react';
+import type { PortraitVariant } from '../../sim/data/countries';
+import { VariantPortrait } from './variants';
 import { colourHex } from '../../world/bitcode';
 import { ceoAge, type Ceo } from '../../world/ceo';
 import { TOP100 } from '../../world/top100';
@@ -53,7 +55,20 @@ export function portraitColours(ceo: Ceo) {
  * A CEO's portrait (spec §8): head and upper chest, front-facing, flat 90s clip art built from layered SVG parts.
  * `size` is the width in pixels; the photo is 4:5.
  */
-export function Portrait({ ceo, size = 120, title }: { ceo: Ceo; size?: number; title?: string }) {
+export function Portrait({ ceo, size = 120, title, variant }: { ceo: Ceo; size?: number; title?: string; variant?: PortraitVariant }) {
+  // The fun modules' faces (spec §16C): a penguin, a goat, a silhouette, or a face behind the censor's blur.
+  if (variant && variant !== 'blur') return <VariantPortrait variant={variant} size={size} title={title} />;
+  if (variant === 'blur') {
+    return (
+      <span className="portrait-censored" title={title}>
+        <Portrait ceo={ceo} size={size} title="Censored" />
+      </span>
+    );
+  }
+  return <Face ceo={ceo} size={size} title={title} />;
+}
+
+function Face({ ceo, size = 120, title }: { ceo: Ceo; size?: number; title?: string }) {
   const id = useId().replace(/:/g, '');
   const c = portraitColours(ceo);
   const face = FACES[FACE_SHAPES[ceo.faceShape]];

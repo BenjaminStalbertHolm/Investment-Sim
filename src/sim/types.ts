@@ -130,6 +130,8 @@ export interface CompanyDetails {
   ceo: string;
   /** The CEO's portrait code when a new CEO has taken over (spec §11.6). */
   ceoCode?: string;
+  /** Phase 10B: the chief executive is a goat (spec §16C.3). */
+  ceoVariant?: 'goat';
   /** Still trading, or taken over or bankrupt (spec §11.6). */
   status: Listing;
   founded: number;
