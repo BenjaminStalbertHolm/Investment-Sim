@@ -5,12 +5,13 @@ import { TUCATS } from '../urls';
 import { HitCounter, Link, Marquee, useTitle } from '../web';
 import '../darkweb/darkweb.css';
 
-/** What Tucats offers: the Garlic Browser now; the optional apps of spec §4A arrive with Phase 10. */
+/** What Tucats offers (spec §4A): the Garlic Browser (and a mirror of it), WinRamp and the games. */
 const DOWNLOADS = [
-  { id: 'garlic', name: 'Garlic Browser 0.9 beta', size: '1.4 MB', cats: 5, blurb: 'Browse the Garlic network, where addresses end in .garlic. Anonymous, slow, and not for the faint of heart.' },
-  { id: 'winramp', name: 'WinRamp 2.0', size: '2.1 MB', cats: 5, blurb: 'It really whips the market. Coming soon.' },
-  { id: 'sweeper', name: 'Margin Sweeper', size: '0.3 MB', cats: 4, blurb: 'The mines are companies that went bankrupt. Coming soon.' },
-  { id: 'solitear', name: 'Soli-Tear', size: '0.5 MB', cats: 4, blurb: 'Solitaire, with your firm’s logo on every card. Coming soon.' },
+  { id: 'garlic', app: 'garlic', name: 'Garlic Browser 0.9 beta', size: '1.4 MB', cats: 5, blurb: 'Browse the Garlic network, where addresses end in .garlic. Anonymous, slow, and not for the faint of heart.' },
+  { id: 'winramp', app: 'winramp', name: 'WinRamp 2.0', size: '2.1 MB', cats: 5, blurb: 'The music player with original synthesised tunes, a spectrum visualiser and skins. It really whips the market.' },
+  { id: 'sweeper', app: 'sweeper', name: 'Margin Sweeper', size: '0.3 MB', cats: 4, blurb: 'Minesweeper. The mines are companies that went bankrupt in your world.' },
+  { id: 'solitear', app: 'solitear', name: 'Soli-Tear', size: '0.5 MB', cats: 4, blurb: 'Solitaire, with your firm’s logo on every card. Bouncing cards included.' },
+  { id: 'garlicMirror', app: 'garlic', name: 'Garlic Browser 0.9 beta (mirror #2)', size: '1.4 MB', cats: 3, blurb: 'The same file, from a server in a country you have not heard of. Faster, apparently.' },
 ];
 
 /**
@@ -21,7 +22,7 @@ export default function Tucats({ url }: { url: URL }) {
   useTitle('Tucats Downloads');
   const darkWeb = useGame((s) => s.settings?.darkWeb ?? true);
   const installed = useShell((s) => s.installed);
-  const download = (id: string) => useWindows.getState().open('installer', { view: id });
+  const download = (app: string) => useWindows.getState().open('installer', { view: app });
   const garlicPage = url.pathname === '/garlic.html';
   const shown = garlicPage ? DOWNLOADS.slice(0, 1) : DOWNLOADS;
   return (
@@ -47,17 +48,15 @@ export default function Tucats({ url }: { url: URL }) {
                 <td>{d.size}</td>
                 <td className="tucats-cats">{'🐱'.repeat(d.cats)}</td>
                 <td>
-                  {d.id === 'garlic' && !darkWeb ? 'This download has been removed at the request of the Securities Oversight Bureau.' : d.blurb}
+                  {d.app === 'garlic' && !darkWeb ? 'This download has been removed at the request of the Securities Oversight Bureau.' : d.blurb}
                 </td>
                 <td>
-                  {d.id !== 'garlic' ? (
-                    <i>Coming soon</i>
-                  ) : !darkWeb ? (
+                  {d.app === 'garlic' && !darkWeb ? (
                     <i>Removed</i>
-                  ) : installed.includes('garlic') ? (
+                  ) : installed.includes(d.app) ? (
                     <i>Installed</i>
                   ) : (
-                    <button onClick={() => download(d.id)}>Download</button>
+                    <button onClick={() => download(d.app)}>Download</button>
                   )}
                 </td>
               </tr>

@@ -52,7 +52,10 @@ export type Task =
   | { do: 'audit' }
   // Phase 9: a dark web purchase falls due; forged statements come to light.
   | { do: 'darkweb'; purchase: number }
-  | { do: 'forgeryFound'; purchase: number };
+  | { do: 'forgeryFound'; purchase: number }
+  // Phase 10: an IPO lists; Hindsight Research tells its subscribers of a short report an hour early.
+  | { do: 'ipo'; id: number }
+  | { do: 'hindsight'; plan: number };
 
 export type Timed = Task & { time: GameTime; seq: number };
 
@@ -281,6 +284,11 @@ export function fire(sim: Sim, id: number): void {
       return;
     default: {
       jump(sim, i, Math.log1p(p.move) - leaked, type.persist);
+      // The ratings agencies' actions move the company's credit rating a notch, two for a big move (spec §14.2).
+      if (p.kind === 'upgrade' || p.kind === 'downgrade') {
+        const r = sim.market.state.rating;
+        r[i] = Math.max(-10, Math.min(10, r[i] + (p.kind === 'downgrade' ? 1 : -1) * (Math.abs(p.move) > 0.08 ? 2 : 1)));
+      }
       // A contract's value, as the company announces it.
       const amount = p.kind === 'contract' ? sim.market.price[i] * sim.model.shares[i] * rng.range(0.02, 0.2) : undefined;
       const item = sim.report({ ...base, move: p.move, amount });

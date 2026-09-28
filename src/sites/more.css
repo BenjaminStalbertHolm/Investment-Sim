@@ -1,0 +1,352 @@
+/* Phase 10's sites (spec §14.2): one frame, each site's colours in custom properties (sites/frame.tsx). */
+
+.site-frame {
+  min-height: 100%;
+  box-sizing: border-box;
+  background: var(--page);
+  font-family: var(--font);
+  font-size: 13px;
+}
+
+.frame-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 14px;
+  padding: 10px 12px;
+  background: var(--head);
+  color: var(--ink);
+  border-bottom: 3px solid var(--accent);
+}
+
+.web-page .frame-head a.frame-logo,
+.web-page .frame-head a.frame-logo.visited {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.frame-tagline {
+  font-style: italic;
+}
+
+.frame-nav {
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--accent);
+  font-size: 12px;
+}
+
+.frame-body {
+  padding: 0 12px;
+}
+
+.frame-body h2,
+.frame-body h3 {
+  color: var(--accent);
+}
+
+.frame-footer {
+  margin: 18px 12px 6px;
+  font-size: 11px;
+  color: #606060;
+}
+
+.frame-box {
+  padding: 6px 8px;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, white);
+}
+
+.frame-form {
+  margin: 8px 0;
+}
+
+.frame-table {
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.frame-table th {
+  text-align: left;
+  background: color-mix(in srgb, var(--accent) 15%, white);
+}
+
+.frame-table td {
+  border-bottom: 1px solid #ddd;
+  vertical-align: top;
+}
+
+.frame-table .right {
+  text-align: right;
+}
+
+.frame-marquee {
+  margin: 6px 0;
+  padding: 2px 0;
+  background: #000;
+  color: #ff0;
+  font-family: 'Courier New', monospace;
+}
+
+.frame-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #ccc;
+}
+
+.frame-card > div {
+  flex: 1;
+}
+
+.frame-listing {
+  margin: 8px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px dotted #999;
+}
+
+.gregs .frame-head {
+  border-bottom: 1px solid #551a8b;
+}
+
+/* Ratings agencies */
+.rating-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.rating-grade {
+  padding: 4px 14px;
+  border: 3px double var(--accent);
+  font-size: 32px;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.rating-grade.junk {
+  border-color: #c00000;
+  color: #c00000;
+}
+
+/* The Lifestyles Catalogue and eBuy */
+.catalogue {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.catalogue-item {
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #c8b27a;
+}
+
+.catalogue-glyph {
+  font-size: 34px;
+  text-align: center;
+}
+
+.ebuy-logo i {
+  font-style: normal;
+  font-size: 30px;
+  letter-spacing: -2px;
+}
+
+.lotto-ball {
+  display: inline-block;
+  width: 22px;
+  margin-right: 3px;
+  border-radius: 50%;
+  background: #ffcc00;
+  border: 1px solid #c8102e;
+  text-align: center;
+}
+
+/* majorsoft.com */
+.wallpapers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.wallpaper-sample {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.wallpaper-swatch {
+  width: 120px;
+  height: 80px;
+  border: 2px inset #fff;
+}
+
+/* The firm's intranet */
+.intranet {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 2fr;
+  gap: 16px;
+}
+
+.memo {
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: #ffffe0;
+  border: 1px solid #c8c890;
+  font-family: 'Courier New', monospace;
+}
+
+.trophy-shelf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px;
+  background: linear-gradient(transparent 80%, #8b5a2b 80%);
+}
+
+.trophy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 28px;
+}
+
+.trophy small {
+  font-size: 10px;
+}
+
+/* Flavour pages */
+.site-y2k {
+  min-height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  background: #000;
+  color: #0f0;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+}
+
+.site-y2k h1 {
+  color: #f00;
+  animation: y2k-blink 1s steps(1) infinite;
+}
+
+.y2k-digits {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.site-homecities {
+  min-height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive;
+  text-align: center;
+}
+
+.site-homecities ol {
+  display: inline-block;
+  text-align: left;
+}
+
+.site-hamsters,
+.site-baby {
+  min-height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+  text-align: center;
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive;
+}
+
+.site-hamsters {
+  background: #fff0f8;
+}
+
+.hamster {
+  animation: hamster-prance 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes hamster-prance {
+  to {
+    transform: translateY(-8px) rotate(8deg);
+  }
+}
+
+.site-baby {
+  background: #e8f4ff;
+}
+
+.baby {
+  animation: baby-sway 0.8s ease-in-out infinite alternate;
+}
+
+.baby-arm-l,
+.baby-leg-l {
+  animation: baby-kick 0.4s ease-in-out infinite alternate;
+  transform-origin: 18px 38px;
+}
+
+.baby-arm-r,
+.baby-leg-r {
+  animation: baby-kick 0.4s ease-in-out infinite alternate-reverse;
+  transform-origin: 42px 38px;
+}
+
+@keyframes baby-sway {
+  from {
+    transform: rotate(-6deg);
+  }
+  to {
+    transform: rotate(6deg);
+  }
+}
+
+@keyframes baby-kick {
+  to {
+    transform: rotate(18deg);
+  }
+}
+
+@keyframes y2k-blink {
+  50% {
+    visibility: hidden;
+  }
+}
+
+/* The fun modules on the news sites (Phase 10B): the tension meter and the Daily Scoop's horoscope. */
+.tension-meter {
+  margin: 6px 8px;
+  padding: 4px 8px;
+  background: #fff8e0;
+  border: 2px solid #c02020;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+}
+
+.tension-meter ul {
+  margin: 2px 0;
+  padding-left: 16px;
+}
+
+.scoop-horoscope {
+  margin: 8px 0;
+  padding: 6px 10px;
+  background: #fff0ff;
+  border: 3px dashed #c000c0;
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive;
+}
+
+.scoop-horoscope ul {
+  columns: 2;
+  padding-left: 16px;
+}
+
+.pizza-map td {
+  padding: 2px 6px;
+}

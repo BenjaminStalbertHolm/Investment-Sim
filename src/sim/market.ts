@@ -81,6 +81,8 @@ export interface MarketState {
   index: IndexState;
   /** Other investors' short interest, as a share of each company's float (spec §12.4). */
   shortInterest: Float32Array;
+  /** Credit rating notches above (−) or below (+) each company's standing at the start (spec §14.2 ratings agencies). */
+  rating: Int8Array;
 }
 
 /** Why a company left the market (spec §11.6): taken over, or bankrupt. */
@@ -112,6 +114,7 @@ export function initialMarket(companies: readonly Company[], model: Model, rng: 
     status: new Uint8Array(n),
     index: { divisor: cap / 1000, members, prevClose: 1000, open: 1000, high: 1000, low: 1000 },
     shortInterest: model.shortBase.slice(),
+    rating: new Int8Array(n),
   };
 }
 
@@ -128,14 +131,14 @@ export type FactorHook = (market: number, years: number, regime: number) => Floa
  * applied to the price when an order fills. Value V grows at the cost of equity and jumps on news.
  */
 export class Market {
-  /** exp(lnP). */
-  readonly price: Float64Array;
-  readonly barVolume: Float64Array;
+  /** exp(lnP). The arrays grow when a company lists (an IPO). */
+  price: Float64Array;
+  barVolume: Float64Array;
   /** |z| of each company's latest bar, which sizes the bar's wicks on intraday charts. */
-  readonly wick: Float64Array;
+  wick: Float64Array;
   /** Average daily volume in shares, ∝ market cap^0.8 / price (spec §11.2). */
-  readonly adv: Float64Array;
-  readonly halfSpread: Float64Array;
+  adv: Float64Array;
+  halfSpread: Float64Array;
   indexLevel = 0;
   /** The Federal Reservoir's policy rate (sim/macro.ts): value grows at it plus the equity premium. */
   rate = POLICY_RATE;
@@ -198,6 +201,24 @@ export class Market {
     s.index.low = Math.min(s.index.low, level);
     if (level <= CIRCUIT_BREAKER * s.index.prevClose) s.halted = true;
     return true;
+  }
+
+  /** Companies were added to the state (IPOs): the arrays derived from it grow to match. */
+  grow(): void {
+    const n = this.state.lnP.length;
+    const old = this.price.length;
+    const grown = (a: Float64Array) => {
+      const b = new Float64Array(n);
+      b.set(a);
+      return b;
+    };
+    this.price = grown(this.price);
+    for (let i = old; i < n; i++) this.price[i] = Math.exp(this.state.lnP[i]);
+    this.barVolume = grown(this.barVolume);
+    this.wick = grown(this.wick);
+    this.adv = grown(this.adv);
+    this.halfSpread = grown(this.halfSpread);
+    this.refreshLiquidity();
   }
 
   /** Market impact of trading `shares` now (square-root law, spec §11.2), as a fraction of the price. */

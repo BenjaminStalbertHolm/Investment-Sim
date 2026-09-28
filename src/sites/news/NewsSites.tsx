@@ -17,6 +17,7 @@ import { companyOf, useLeague, useTable } from '../hooks';
 import { companyUrl, firmUrl, playerUrl, quoteUrl, sites } from '../urls';
 import { Link, Marquee, usePage, useTitle } from '../web';
 import { articlesOf, writeArticle, type Article } from './articles';
+import { Horoscope, TensionMeter } from './ModuleBoxes';
 import { useJournalists, useNews } from './data';
 import { dailyStories, marketStats, weeklyStories, type Story } from './stories';
 
@@ -340,6 +341,7 @@ function OutletSite({ url, outlet, className, masthead, front, market, pages }: 
   return (
     <div className={`news-site ${className}`}>
       {masthead}
+      {body === front && <TensionMeter />}
       {body}
     </div>
   );
@@ -709,6 +711,7 @@ export function DailyScoop({ url }: { url: URL }) {
             <p>NO SCANDALS TODAY. SUSPICIOUS, ISN’T IT?</p>
           )}
           <Headlines articles={rest} empty="" />
+          <Horoscope />
           <SearchBox label="DIG THROUGH THE DIRT" />
           <StaffBox outlet={outlet} />
         </>

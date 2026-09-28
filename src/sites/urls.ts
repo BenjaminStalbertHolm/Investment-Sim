@@ -23,6 +23,27 @@ export const REEVES = 'www.askreeves.com';
 export const SOB = 'www.sob.gov';
 /** Phase 9: Tucats Downloads, where the Garlic Browser (and later the optional apps) are downloaded (spec §4A, §14A). */
 export const TUCATS = 'www.tucats.com';
+// Phase 10 (spec §14.2): the ratings agencies, the short seller, IPOs, jobs, offices, luxuries, auctions, conferences,
+// the lotto, the millennium, the OS maker, amateur home pages and pure flavour.
+export const STANDARD_POURS = 'www.standardandpours.com';
+export const MOODY = 'www.moodyblues.com';
+export const HINDSIGHT = 'www.hindsightresearch.com';
+export const IPO_HOTLINE = 'www.ipohotline.com';
+export const MONSTROUS = 'www.monstrous.com';
+export const GREGSLIST = 'www.gregslist.org';
+export const LIFESTYLES = 'www.lifestylescatalogue.com';
+export const EBUY = 'www.ebuy.com';
+export const DAVOZ = 'www.davoz.org';
+export const LOTTO = 'www.statelotto.gov';
+export const Y2K = 'www.y2kcountdown.com';
+export const MAJORSOFT = 'www.majorsoft.com';
+export const HOMECITIES = 'www.homecities.com';
+export const HAMSTERS = 'www.hamsterprance.com';
+export const DANCING_BABY = 'www.dancingbaby.net';
+/** Phase 10B: the pizza chain whose delivery counts give the SOB's audits away (spec §16C.3, the gags module). */
+export const PIZZA = 'www.papajonas.com';
+/** The player's intranet (spec §14.2): intranet.<firm>.com. */
+export const intranetHost = (firmName: string) => `intranet.${slugOf(firmName) || 'firm'}.com`;
 
 /** "Alphabeta (Goggle)" → "alphabeta", "Ridgepine Timber Co." → "ridgepinetimber", "Clickzilla.com" → "clickzilla". */
 export function slugOf(name: string): string {
@@ -76,7 +97,8 @@ export function sites(directory: Directory, firmName: string): Sites {
 }
 
 const RESERVED = new Set([
-  YEEHAW, QUOTEZONE, RAGINGBEAR, EXCHANGE, WEATHER, OPEK, FED, BANK, EQUIFACTS, REEVES, SOB, TUCATS, 'www.majorsoft.com', ...ALL_OUTLETS.map((o) => o.host),
+  YEEHAW, QUOTEZONE, RAGINGBEAR, EXCHANGE, WEATHER, OPEK, FED, BANK, EQUIFACTS, REEVES, SOB, TUCATS, MAJORSOFT, ...ALL_OUTLETS.map((o) => o.host),
+  STANDARD_POURS, MOODY, HINDSIGHT, IPO_HOTLINE, MONSTROUS, GREGSLIST, LIFESTYLES, EBUY, DAVOZ, LOTTO, Y2K, HOMECITIES, HAMSTERS, DANCING_BABY, PIZZA,
 ]);
 
 /**

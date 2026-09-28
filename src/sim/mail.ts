@@ -1,3 +1,4 @@
+import type { Rng } from '../world/rng';
 import type { Side } from './account';
 import { DAY_MINUTES, OPEN, at, dayOf, nextTradingDay, previousTradingDay, type GameTime } from './calendar';
 import type { Sim } from './context';
@@ -76,7 +77,24 @@ export type MailKind =
   | 'blackmail'
   | 'sharkCall'
   | 'shellFound'
-  | 'forgeryFound';
+  | 'forgeryFound'
+  // Phase 10: staff (research reports, a rival's offer, departures, compliance warnings, hacks); the letter to clients;
+  // eBuy, conferences, the lotto and Hindsight Research; IPO allocations and stock splits.
+  | 'research'
+  | 'poached'
+  | 'staffLeft'
+  | 'compliance'
+  | 'hackBlocked'
+  | 'hacked'
+  | 'clientLetter'
+  | 'ebuy'
+  | 'conference'
+  | 'lotto'
+  | 'hindsight'
+  | 'ipo'
+  | 'split'
+  // Phase 10B: Mom's investment club asks for a tip (spec §16C.3).
+  | 'momClub';
 
 export type Folder = 'inbox' | 'clients' | 'broker' | 'news' | 'tips' | 'junk' | 'sent';
 
@@ -95,6 +113,9 @@ export const FOLDER_OF: Record<MailKind, Folder> = {
   briefing: 'news', alert: 'news',
   tip: 'tips', garlicInvite: 'tips',
   darkweb: 'inbox', blackmail: 'inbox', sharkCall: 'inbox', shellFound: 'inbox', forgeryFound: 'inbox',
+  research: 'inbox', poached: 'inbox', staffLeft: 'inbox', compliance: 'inbox', hackBlocked: 'inbox', hacked: 'inbox', clientLetter: 'sent',
+  ebuy: 'inbox', conference: 'inbox', lotto: 'inbox', hindsight: 'news', ipo: 'broker', split: 'broker',
+  momClub: 'inbox',
   spam: 'junk',
 };
 
@@ -108,6 +129,8 @@ export interface MailLine {
   contract?: string;
   /** Index fund units (company −1). */
   fund?: number;
+  /** Luxuries and collectibles sold in a forced sale (Phase 10), in one line. */
+  note?: 'lifestyle';
 }
 
 export interface Mail {
@@ -119,8 +142,12 @@ export interface Mail {
   deleted: boolean;
   /** The player's answer to a letter with action buttons. */
   answer?: 'accepted' | 'declined' | 'reported' | 'expired' | Vote | 'done' | 'paid' | 'refused';
+  /** Junk mail the executive assistant filed, unread (Phase 10). */
+  filed?: boolean;
   client?: number;
   company?: number;
+  /** Phase 10B: the companies a letter offers to choose from (Mom's club). */
+  options?: number[];
   /** News item (alerts). */
   news?: number;
   tip?: number;
@@ -128,7 +155,7 @@ export interface Mail {
   day?: number;
   /** Which template, for letters that come in several versions. */
   variant?: number;
-  reason?: 'breach' | 'benchmark' | 'performance' | 'acquired' | 'bankrupt' | 'margin' | 'loan' | 'fine' | 'scandal' | 'shark';
+  reason?: 'breach' | 'benchmark' | 'performance' | 'acquired' | 'bankrupt' | 'margin' | 'loan' | 'fine' | 'scandal' | 'shark' | 'bills' | 'payroll' | 'quit' | 'whistleblower';
   /** A constraint index (warnings). */
   constraint?: number;
   /** The quarter: the client's return and the MAJOR 500's. */
@@ -157,13 +184,20 @@ export interface Mail {
   purchase?: number;
   service?: ServiceId;
   handle?: string;
-  result?: Outcome | 'refund';
+  result?: Outcome | 'refund' | 'won' | 'lost' | 'sold' | 'unpaid';
   journalist?: number;
   text?: string;
+  /** Phase 10: an employee; an eBuy item (category and item). */
+  employee?: number;
+  category?: number;
+  item?: number;
 }
 
 /** The action buttons a letter can carry (spec §15, §15.5–15.6). */
-export type MailAction = 'accept' | 'decline' | 'report' | Vote | 'replaceCeo' | 'raiseDividend' | 'cutDividend' | 'pay' | 'refuse';
+export type MailAction =
+  | 'accept' | 'decline' | 'report' | Vote | 'replaceCeo' | 'raiseDividend' | 'cutDividend' | 'pay' | 'refuse' | 'match' | 'letGo'
+  // Phase 10B: which of the holdings in her letter Mom's club should buy, or none.
+  | 'tip0' | 'tip1' | 'tip2' | 'noTip';
 
 export type MailDraft = Omit<Mail, 'id' | 'time' | 'read' | 'flagged' | 'deleted'> & { time?: GameTime; read?: boolean };
 
@@ -263,6 +297,16 @@ const CLAIMS: readonly EventKind[] = ['takeover', 'approval', 'contract', 'fraud
 /** An anonymous tip (spec §15.4): genuine as often as the difficulty's tip reliability says. */
 function tip(sim: Sim, reliability: number): void {
   const rng = sim.rng.mail;
+  const t = makeTip(sim, rng, reliability);
+  sim.send({ kind: 'tip', tip: t.id, company: t.company, claim: t.claim, direction: t.direction, day: dayOf(t.until), variant: rng.int(0, 999) });
+}
+
+/**
+ * A tip and what it really is (spec §15.4): genuine inside information about a planned event as often as `reliability`
+ * says, else bait for a pump-and-dump or nonsense. Recorded with the others, so trading on a genuine one is insider
+ * trading whoever passed it on (Phase 10: informants on ISeekYou).
+ */
+export function makeTip(sim: Sim, rng: Rng, reliability: number): Tip {
   const state = sim.s.mail;
   const { status } = sim.market.state;
   const n = sim.companies.length;
@@ -297,7 +341,7 @@ function tip(sim: Sim, reliability: number): void {
     t = { id, company, truth: 'nonsense', claim, direction, until: at(addTradingDays(dayOf(sim.time), rng.int(3, 10)), OPEN) };
   }
   state.tips.push(t);
-  sim.send({ kind: 'tip', tip: t.id, company: t.company, claim: t.claim, direction: t.direction, day: dayOf(t.until), variant: rng.int(0, 999) });
+  return t;
 }
 
 /** A fill in a tipped company before the tip came true: recorded for the regulator (spec §15.4). */

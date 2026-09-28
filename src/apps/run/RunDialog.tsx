@@ -12,7 +12,9 @@ export function resolveRunTarget(input: string): AppId | undefined {
   if (!q) return undefined;
   if (isAddress(q)) return 'browser';
   // Quote windows need a company: they open from a ticker instead.
-  const apps = Object.values(APPS).filter((a) => !a.dialog && a.id !== 'quote');
+  // A fun module's program runs only while its module is on.
+  const modules = useGame.getState().settings?.modules;
+  const apps = Object.values(APPS).filter((a) => !a.dialog && a.id !== 'quote' && (!a.module || modules?.[a.module]));
   return (apps.find((a) => a.id === q) ?? apps.find((a) => a.title.toLowerCase().startsWith(q)))?.id;
 }
 

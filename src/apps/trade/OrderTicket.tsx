@@ -5,12 +5,14 @@ import { HARD_TO_BORROW } from '../../sim/shorts';
 import type { Estimate } from '../../sim/types';
 import { useGame } from '../../state/game';
 import { useTrade, type Ticket } from '../../state/trade';
-import { Confirm } from '../../ui98/Modal';
+import { Confirm, Modal } from '../../ui98/Modal';
 import { count, money, pct, price } from '../format';
 import { SIDES, SIDE_DONE, SIDE_LABEL, TYPES, describeType } from './labels';
 import { HelpLink } from '../HelpLink';
 import { SymbolSearch } from './SymbolSearch';
 
+/** How often the intern adds a zero, with the gags module on. */
+const FAT_FINGER = 0.04;
 const integer = (text: string) => (/^\s*[\d,]+\s*$/.test(text) ? Number(text.replace(/[\s,]/g, '')) : NaN);
 
 /** The ticket as an order, if it is filled in. */
@@ -60,9 +62,31 @@ export function OrderTicket() {
     // Re-estimate when the order or the price changes.
   }, [key, quote?.last]);
 
+  // The fat-finger intern (Phase 10B, spec §16C.3): now and then an extra zero, with ten seconds to cancel.
+  const gags = useGame((s) => s.settings?.modules.gags);
+  const [fat, setFat] = useState<{ request: OrderRequest; left: number }>();
+  useEffect(() => {
+    if (!fat) return;
+    if (fat.left <= 0) {
+      setFat(undefined);
+      void submit(fat.request);
+      return;
+    }
+    const timer = setTimeout(() => setFat({ ...fat, left: fat.left - 1 }), 1000);
+    return () => clearTimeout(timer);
+  }, [fat]);
+
   const place = async () => {
     setConfirming(false);
-    const r = await simulation().placeOrder(request!);
+    // A player's own typing, not the simulation's dice: the platform's randomness, as games deal their boards.
+    if (gags && !request!.replaces && crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32 < FAT_FINGER) {
+      return setFat({ request: { ...request!, shares: request!.shares * 10 }, left: 10 });
+    }
+    return submit(request!);
+  };
+
+  const submit = async (order: OrderRequest) => {
+    const r = await simulation().placeOrder(order);
     if ('error' in r) return setResult({ ok: false, text: r.error });
     const o = r.order;
     const what = `${SIDE_DONE[o.side]} ${count(o.filled)} ${tickers[o.company]} at ${money(o.price)}`;
@@ -237,6 +261,27 @@ export function OrderTicket() {
         {ticket.replaces && <button onClick={() => set({ replaces: undefined })}>Don't modify</button>}
         {result && <span className={result.ok ? 'ticket-result' : 'ticket-result down'}>{result.text}</span>}
       </div>
+      {fat && (
+        <Modal title="Order Ticket" onClose={() => setFat(undefined)}>
+          <div className="dialog-body">
+            <div>
+              <p className="fat-finger">
+                Your intern has helpfully added a zero: <b>{SIDE_LABEL[fat.request.side]} {count(fat.request.shares)}</b> {tickers[fat.request.company]}, not{' '}
+                {count(fat.request.shares / 10)}.
+              </p>
+              <p className="fat-finger">
+                Sending in <b>{fat.left}</b> second{fat.left === 1 ? '' : 's'}…
+              </p>
+            </div>
+            <div className="dialog-buttons">
+              <button className="default" autoFocus onClick={() => setFat(undefined)}>
+                Cancel the Order
+              </button>
+              <button onClick={() => (setFat(undefined), void submit(fat.request))}>Send It Anyway</button>
+            </div>
+          </div>
+        </Modal>
+      )}
       {confirming && request && (
         <Confirm title="Confirm Order" ok="Place Order" onOk={() => void place()} onCancel={() => setConfirming(false)}>
           <p>

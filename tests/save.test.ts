@@ -16,6 +16,7 @@ import { newDarkWeb, type DarkRequest } from '../src/sim/darkweb';
 import type { ServiceId } from '../src/sim/data/darkweb';
 import { cleanUp, deleteSave, listSaves, nextAutosave, readSave, writeSave, type SaveSlot } from '../src/state/saves';
 import { generateWorld, type World } from '../src/world/generator';
+import { CHOICES } from '../src/sim/desk';
 import { difference } from './util';
 
 let world: World;
@@ -90,10 +91,61 @@ function trade(e: Engine, s: number): void {
   if (s === 70) e.closeShell();
   if (s === 65) e.repayShark();
   if (s === 80) dark('forgery');
+  // Phase 10: staff hired and an office moved into, rules and alerts, a luxury, eBuy bids, lotto and conference tickets,
+  // Hindsight's subscription, an IPO application, ISeekYou answered, a letter to clients; sales after the save.
+  const applicants = () => e.staff().people.filter((p) => p.status === 'applicant');
+  if (s === 2) e.staffAction({ do: 'hire', id: applicants()[0].id });
+  if (s === 10) {
+    e.staffAction({ do: 'move', office: 1 });
+    for (const p of applicants().slice(0, 3)) e.staffAction({ do: 'hire', id: p.id });
+  }
+  if (s === 5) e.deskAction({ do: 'addAlert', company: 3, level: e.market.price[3] * 1.03 });
+  if (s === 6) e.lifestyleAction({ do: 'buyAsset', asset: 'watch' });
+  if (s % 10 === 7) {
+    const lot = e.lifestyle().auctions.find((a) => !a.result && a.selling === undefined);
+    if (lot) e.lifestyleAction({ do: 'bid', auction: lot.id, max: Math.ceil(lot.price * 2 + 50) });
+  }
+  if (s % 10 === 8) e.lifestyleAction({ do: 'lotto', count: 5 });
+  if (s === 25) e.lifestyleAction({ do: 'ticket', conference: 'omaha' });
+  if (s === 28) e.lifestyleAction({ do: 'subscribe', on: true });
+  if (s % 15 === 11) {
+    const ipo = e.ipos().pending.find((p) => p.company === undefined && !p.applied);
+    if (ipo) e.ipoAction({ do: 'apply', id: ipo.id, shares: Math.min(500, Math.floor(ipo.offered / 10)) });
+  }
+  if (s === 40) {
+    const held = e.positions().find((p) => p.shares > 0);
+    if (held) e.deskAction({ do: 'addRule', rule: { kind: 'stopLoss', company: held.company, pct: 0.15 } });
+    e.deskAction({ do: 'addRule', rule: { kind: 'dca', fund: 0, amount: 5_000, every: 'week' } });
+  }
+  if (s % 10 === 3) {
+    for (const m of e.desk().messages) {
+      const choices = CHOICES[m.topic];
+      if (choices && m.answer === undefined) e.deskAction({ do: 'answer', message: m.id, choice: choices[0] });
+    }
+  }
+  if (s === 56) e.deskAction({ do: 'letter', tone: 'humble' });
+  if (s === 50) e.split(7, 2);
+  if (s === 64) {
+    const asset = e.lifestyle().assets.find((a) => a.sold === undefined);
+    if (asset) e.lifestyleAction({ do: 'sellAsset', id: asset.id });
+    const item = e.lifestyle().items[0];
+    if (item) e.lifestyleAction({ do: 'sellItem', id: item.id, reserve: 1 });
+  }
 }
 
-/** A state without what Phase 9 added. */
-function beforePhase9(state: SimState) {
+/**
+ * A state without what Phase 10 added. The market it describes is the one the engine played, IPOs and splits included, so
+ * the world's listings and splits and the market's credit ratings stay: an older save simply has none.
+ */
+function beforePhase10(state: SimState) {
+  const { staff: _s, lifestyle: _l, desk: _d, ipo: _i, ...rest } = state;
+  const { staff: _rs, lifestyle: _rl, ipo: _ri, extras: _re, ...rng } = state.rng;
+  return { ...rest, rng };
+}
+
+/** A state without what Phases 9 and 10 added. */
+function beforePhase9(full: SimState) {
+  const state = beforePhase10(full) as unknown as SimState;
   const { darkweb: _d, ...rest } = state;
   const { darkweb: _rd, ...rng } = state.rng;
   return { ...rest, rng };
@@ -136,7 +188,8 @@ describe('save system (spec §18)', () => {
   it('save test: 60 days, save, load, 60 more days = 120 days without saving', () => {
     const days = sessions(120);
     // Phase 5: a Custom game with its own logo and CEO, renamed and redesigned along the way.
-    const settings = changeSettings(DIFFICULTIES.hard, { startingCapital: 2_500_000, startYear: 2001 });
+    // Enough capital that the scenario's dark web shopping (and its lawsuits and fines) leaves the firm standing.
+    const settings = changeSettings(DIFFICULTIES.hard, { startingCapital: 10_000_000, startYear: 2001 });
     const player = { logoCode: encodeLogo(PLAYER_LOGO), ceoName: 'Pat Doe', ceoCode: 'BJaA2pIrBgMQEws' };
     const straight = Engine.create(world, { settings, firmName: 'Test', player });
     let saved = Engine.create(world, { settings, firmName: 'Test', player });
@@ -222,6 +275,23 @@ describe('save system (spec §18)', () => {
     expect(decodeLogo(saved.player.logoCode).effect).toBe('bevel');
     expect(saved.settings).toEqual(settings);
     expect(saved.settings.difficulty).toBe('custom');
+    // Phase 10: staff and the office, luxuries, collectibles, tickets, the subscription, IPOs and a split, rules, alerts
+    // and ISeekYou, on both sides of the save.
+    expect(state.staff.office).toBe(1);
+    expect(state.staff.people.filter((p) => p.hired !== undefined).length).toBeGreaterThanOrEqual(3);
+    expect(ledger.filter((l) => l.kind === 'payroll').length).toBeGreaterThanOrEqual(4);
+    expect(ledger.filter((l) => l.kind === 'rent').length).toBeGreaterThanOrEqual(5);
+    expect(state.lifestyle.assets).toMatchObject([{ asset: 'watch', sold: days[64] }]);
+    expect(state.lifestyle.auctions.length + state.lifestyle.items.length).toBeGreaterThan(0);
+    expect(state.lifestyle.lotto.draws.length).toBeGreaterThanOrEqual(8);
+    expect(state.lifestyle.hindsight).toBeDefined();
+    expect(state.ipo.pending.filter((p) => p.company !== undefined).length).toBeGreaterThan(2);
+    expect(state.ipo.pending.some((p) => p.applied)).toBe(true);
+    expect(Object.keys(state.world.listed).length).toBeGreaterThan(2);
+    expect(state.world.splits[7]).toBe(2);
+    expect(state.desk.rules.length).toBe(2);
+    expect(state.desk.messages.some((m) => m.answer !== undefined)).toBe(true);
+    expect(state.desk.letter?.tone).toBe('humble');
   }, 60_000);
 
   it('upgrades a version 6 save: the dark web opens where the game stands', () => {

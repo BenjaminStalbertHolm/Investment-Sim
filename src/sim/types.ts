@@ -12,6 +12,12 @@ import type { Listing } from './market';
 import type { MacroKind } from './news';
 import type { CellarPost, DarkRequest, Outage, Outcome, SharkLoan, Shell, Terms } from './darkweb';
 import type { MarketId, ServiceId } from './data/darkweb';
+import type { Employee } from './staff';
+import type { Auction, OwnedAsset, OwnedItem } from './lifestyle';
+import type { Alert, Contact, DeskState, ImMessage, Page, Rule } from './desk';
+import type { PendingIpo } from './ipo';
+import type { Tamagotcha } from './period';
+import type { GameSettings } from './settings';
 
 /** Chart timeframes (spec §13). */
 export type Timeframe = '1D' | '5D' | '1M' | '6M' | '1Y' | '5Y' | 'MAX';
@@ -85,6 +91,9 @@ export interface AccountView {
   fine: number;
   /** A loan shark's loan and the interest accrued on it (Phase 9). */
   sharks: number;
+  /** Phase 10: luxuries and collectibles at what they would fetch, and wages owed to staff. */
+  lifestyleValue: number;
+  wages: number;
   /** Requirements: initial (1 / max leverage on stocks) and maintenance (25% long, 30% short); and the equity above initial. */
   initial: number;
   maintenance: number;
@@ -121,6 +130,8 @@ export interface CompanyDetails {
   ceo: string;
   /** The CEO's portrait code when a new CEO has taken over (spec §11.6). */
   ceoCode?: string;
+  /** Phase 10B: the chief executive is a goat (spec §16C.3). */
+  ceoVariant?: 'goat';
   /** Still trading, or taken over or bankrupt (spec §11.6). */
   status: Listing;
   founded: number;
@@ -152,6 +163,10 @@ export interface CompanyDetails {
   seat: boolean;
   /** The offshore shell the player's stake is held through, unfiled (spec §14A). */
   shell?: string;
+  /** Phase 10: credit rating notches from its standing at the start (spec §14.2), the day it listed if it came later (an IPO), and its splits. */
+  rating: number;
+  listed?: number;
+  split?: number;
 }
 
 /** A competitor firm's book (spec §14 firm websites, spec §16). */
@@ -215,6 +230,8 @@ export interface MarketTable {
   week?: { day: number; close: Float64Array; previous: Float64Array };
   /** Listing status (market.ts LISTING): delisted companies no longer trade. */
   status: Uint8Array;
+  /** Phase 10: credit rating notches from each company's standing at the start (spec §14.2 ratings agencies). */
+  rating: Int8Array;
 }
 
 /** What the order ticket shows before you confirm (spec §12.2). */
@@ -250,7 +267,14 @@ export type EngineEvent =
   | { kind: 'futures'; contract: string; contracts: number; price: number }
   | { kind: 'bankrupt' }
   | { kind: 'fund'; fund: number; units: number; price: number }
-  | { kind: 'achievement'; id: string };
+  | { kind: 'achievement'; id: string }
+  // Phase 10: a page, an ISeekYou message, a new company on the market (an IPO).
+  | { kind: 'page' }
+  | { kind: 'im' }
+  | { kind: 'listed'; company: number }
+  | { kind: 'bounce' }
+  // Phase 10B: Doors crashes on stage at COMDEXX, and the player's screen fakes a blue screen (spec §16C.2).
+  | { kind: 'demoCrash' };
 
 /** The firm's clients and money (spec §15.1): everything is AUM; the firm's own capital is the part no client owns. */
 export interface ClientsView {
@@ -437,6 +461,8 @@ export interface Snapshot {
   sob: { heat: number; peak: number; suspended?: number };
   /** The dark web's marks on the world (spec §14A): furniture repossessed until a trading day, web sites down or defaced. */
   darkweb: DarkWebStatus;
+  /** Phase 10: ISeekYou's unread messages, the newest page, and how many companies there are (the directory grows with IPOs). */
+  desk: { im: { unread: number; latest: number }; page: number; companies: number };
 }
 
 export interface DarkWebStatus {
@@ -486,6 +512,68 @@ export interface DarkWebView {
   reporting: number[];
   hidden: number[];
   cellar: CellarPost[];
+}
+
+/** PeopleSoftie HR, Monstrous.com and Greg's List (Phase 10). */
+export interface StaffView {
+  people: Employee[];
+  /** The office (index into OFFICES), the day the firm moved in, and the staff it holds. */
+  office: number;
+  moved: number;
+  capacity: number;
+  /** A month's wages, and wages owed. */
+  payroll: number;
+  owed: number;
+  prestige: number;
+  bills: { rent: number; upkeep: number; subscriptions: number };
+}
+
+/** The Lifestyles Catalogue, eBuy, conferences, the lotto and Hindsight Research (Phase 10). */
+export interface LifestyleView {
+  assets: OwnedAsset[];
+  hype: { level: number; phase: number }[];
+  auctions: (Omit<Auction, 'ai'> & { value: number })[];
+  items: (OwnedItem & { value: number })[];
+  realized: number;
+  value: number;
+  prestige: number;
+  tickets: { conference: string; year: number }[];
+  lotto: { tickets: number; draws: { day: number; numbers: number[]; won: number; tickets: number }[] };
+  hindsight?: { since: number };
+}
+
+export interface DeskView {
+  rules: Rule[];
+  alerts: Alert[];
+  pages: Page[];
+  contacts: Contact[];
+  messages: ImMessage[];
+  letter?: DeskState['letter'];
+  /** Rules only run while a Trader is on staff. */
+  trader: boolean;
+}
+
+export interface IpoView {
+  pending: Omit<PendingIpo, 'hot' | 'pop'>[];
+}
+
+/** The fun modules as the UI shows them (Phase 10B): each module's part only while it is on. */
+export interface ModulesView {
+  flags: GameSettings['modules'];
+  geo?: {
+    tensions: { pair: string; rung: number; since: number }[];
+    leaders: Record<string, { title: string; name: string; note?: string; ceo: string; since: number }>;
+  };
+  period?: { bubble: number; popped?: number; elNino?: { from: number; to: number }; tamagotcha?: Tamagotcha; renamed: number[] };
+  gags?: {
+    stress: number;
+    horoscope: { week: number; sign: 1 | -1 };
+    hemline: { month: number; sign: 1 | -1 };
+    pizza?: { month: number; decided: number; audit: boolean };
+    goat?: number;
+    enrun?: { company: number; stage: number };
+    darts: { picks: number[]; wins: number; losses: number };
+  };
 }
 
 export type { Bar, ClosedPosition, LedgerEntry, Order };

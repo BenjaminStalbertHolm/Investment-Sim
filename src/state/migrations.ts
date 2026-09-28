@@ -4,6 +4,10 @@ import { initialCommodities } from '../sim/commodities';
 import { initialCompetitors } from '../sim/competitors';
 import { launchFunds } from '../sim/funds';
 import { newDarkWeb } from '../sim/darkweb';
+import { newDesk } from '../sim/desk';
+import { newIpos } from '../sim/ipo';
+import { newLifestyle } from '../sim/lifestyle';
+import { newStaff } from '../sim/staff';
 import { newGovernance } from '../sim/governance';
 import { newRegulator } from '../sim/regulator';
 import { growthSeries } from '../sim/scoring';
@@ -24,7 +28,7 @@ import { newBrowserState } from './browser';
 import { SAVE_FORMAT, type Manifest, type SaveDocuments } from './saveFile';
 
 /** Version of the save format. Bump it, and add a migration, whenever what is saved changes shape (spec §18). */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 9;
 
 type Migration = (documents: SaveDocuments) => SaveDocuments;
 
@@ -116,6 +120,30 @@ export const MIGRATIONS: Record<number, Migration> = {
     const sim = docs.sim as SimState;
     sim.darkweb = newDarkWeb(sim.world.seed, dayOf(sim.clock));
     sim.rng.darkweb = Rng.stream(sim.world.seed, STREAM_NAMES.darkweb).state();
+    return { ...docs, sim };
+  },
+  // Phase 10: staff (applicants on the board, the firm in the garage), the firm's luxuries, the trading desk and its
+  // contacts, IPOs keeping the market at its size now, credit ratings as they started; the UI's programs start empty.
+  7: (docs) => {
+    const sim = docs.sim as SimState;
+    const { seed, genomes } = sim.world;
+    const day = dayOf(sim.clock);
+    sim.world.listed ??= {};
+    sim.world.splits ??= {};
+    sim.market.rating ??= new Int8Array(genomes.length);
+    sim.staff = newStaff(seed, day);
+    sim.lifestyle = newLifestyle();
+    sim.desk = newDesk(sim.clock);
+    sim.ipo = newIpos(sim.market.status.reduce((n, s) => n + (s ? 0 : 1), 0));
+    for (const k of ['staff', 'lifestyle', 'ipo', 'extras'] as const) sim.rng[k] = Rng.stream(seed, STREAM_NAMES[k]).state();
+    return { ...docs, sim };
+  },
+  // Phase 10B: the fun modules' state and streams. A module switched on in Setup (which had nothing to switch on yet) is
+  // started where the game stands when the save loads (Engine.restore).
+  8: (docs) => {
+    const sim = docs.sim as SimState;
+    sim.modules ??= {};
+    for (const k of ['geo', 'period', 'gags'] as const) sim.rng[k] ??= Rng.stream(sim.world.seed, STREAM_NAMES[k]).state();
     return { ...docs, sim };
   },
 };

@@ -12,6 +12,7 @@ import { AppMenuBar } from '../AppMenuBar';
 import { useRecord } from '../../sites/hooks';
 import { count, money, pct, signedPct } from '../format';
 import { FinalReport } from './FinalReport';
+import { GamePanel } from './GamePanel';
 import { FirmPanel } from './FirmPanel';
 import type { AppProps } from '../types';
 
@@ -22,7 +23,7 @@ const PANELS: { id: string; label: string; icon: IconName; phase?: number }[] = 
   { id: 'newgame', label: 'New Game', icon: 'doors' },
   { id: 'display', label: 'Display', icon: 'computer', phase: 11 },
   { id: 'sounds', label: 'Sounds', icon: 'settings', phase: 11 },
-  { id: 'game', label: 'Game', icon: 'settings', phase: 11 },
+  { id: 'game', label: 'Game', icon: 'settings' },
   { id: 'firm', label: 'Firm', icon: 'portfolio' },
   { id: 'about', label: 'About', icon: 'help' },
 ];
@@ -64,6 +65,7 @@ export default function MyComputer({ windowId }: AppProps) {
         {view === 'shame' && <HallOfShame />}
         {view === 'newgame' && <NewGame />}
         {view === 'firm' && <FirmPanel />}
+        {view === 'game' && <GamePanel />}
         {view === 'about' && <About />}
       </div>
     </div>

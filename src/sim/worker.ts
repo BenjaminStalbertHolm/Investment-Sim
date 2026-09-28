@@ -97,6 +97,7 @@ function post(): void {
     commodities: e.commodityQuotes(),
     sob: e.sobStatus(),
     darkweb: e.darkwebStatus(),
+    desk: e.deskStatus(),
   });
   events = [];
 }
@@ -196,7 +197,7 @@ const api = {
   firm: (id: number) => game().firm(id),
   table: () => {
     const t = game().table();
-    const arrays = [t.last, t.prevClose, t.volume, t.shares, t.revenue, t.income, t.dividendYield, t.sector, t.reported];
+    const arrays = [t.last, t.prevClose, t.volume, t.shares, t.revenue, t.income, t.dividendYield, t.sector, t.reported, t.status, t.rating];
     if (t.week) arrays.push(t.week.close, t.week.previous);
     return Comlink.transfer(t, arrays.map((a) => a.buffer));
   },
@@ -240,12 +241,27 @@ const api = {
   league: () => game().league(),
   sob: () => game().sob(),
   record: () => game().record(),
+  hotPicks: () => game().hotPicks(),
   // Phase 9: the dark web.
   darkweb: () => game().darkweb(),
   darkQuote: (request: DarkRequest) => game().darkQuote(request),
   darkBuy: (request: DarkRequest, terms: Terms) => changed(game().darkBuy(request, terms)),
   repayShark: () => changed(game().repayShark()),
   closeShell: () => changed(game().closeShell()),
+  // Phase 10: staff and the office, the firm's luxuries and pastimes, the trading desk and ISeekYou, IPOs.
+  staff: () => game().staff(),
+  staffAction: (a: Parameters<Engine['staffAction']>[0]) => changed(game().staffAction(a)),
+  lifestyle: () => game().lifestyle(),
+  lifestyleAction: (a: Parameters<Engine['lifestyleAction']>[0]) => changed(game().lifestyleAction(a)),
+  desk: () => game().desk(),
+  deskAction: (a: Parameters<Engine['deskAction']>[0]) => changed(game().deskAction(a)),
+  ipos: () => game().ipos(),
+  ipoAction: (a: Parameters<Engine['ipoAction']>[0]) => changed(game().ipoAction(a)),
+  // Phase 10B: the fun modules.
+  setModules: (flags: Parameters<Engine['setModules']>[0]) => changed(game().setModules(flags)),
+  tamagotcha: (a: Parameters<Engine['tamagotcha']>[0]) => changed(game().tamagotcha(a)),
+  modules: () => game().modules(),
+  directory: () => game().directory(),
 };
 
 export type SimulationApi = typeof api;

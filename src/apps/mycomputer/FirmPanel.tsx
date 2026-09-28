@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { LogoSpec } from '../../art/logo/Logo';
 import { simulation } from '../../sim/client';
 import type { Client } from '../../sim/clients';
 import { DEFAULT_FEES } from '../../sim/clients';
@@ -22,7 +23,7 @@ type Editing = 'logo' | 'ceo' | 'rename';
 export function FirmPanel() {
   const look = usePlayerLook();
   const [editing, setEditing] = useState<Editing>();
-  const [logo, setLogo] = useState(look?.logo);
+  const [logo, setLogo] = useState<LogoSpec | undefined>(look?.logo);
   const [ceo, setCeo] = useState(look?.ceo);
   const [name, setName] = useState(look?.player.ceoName ?? '');
   if (!look) return null;

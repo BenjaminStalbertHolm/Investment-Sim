@@ -1,5 +1,6 @@
 import { useId, type CSSProperties, type ReactNode } from 'react';
 import type { Genes } from '../../world/genome';
+import { PixelArt } from '../pixels';
 import { MOTIF_ICONS } from './motifs';
 import './logo.css';
 import {
@@ -18,6 +19,8 @@ export interface LogoSpec {
   font: LogoFont;
   layout: LogoLayout;
   effect?: LogoEffect;
+  /** A MajorPaint picture in place of the motif (spec §4A: a drawing imported as a custom logo emblem). */
+  emblem?: string;
 }
 
 const item = <T,>(list: readonly T[], index: number): T => list[index % list.length];
@@ -136,7 +139,7 @@ export function Emblem({ spec, name, height, x: left, y: top }: { spec: LogoSpec
           </text>
         ) : (
           <g stroke="none">
-            <Motif x={x} y={y} size={size} color={shape ? accent : main} />
+            {spec.emblem ? <PixelArt pixels={spec.emblem} x={x} y={y} size={size} transparent /> : <Motif x={x} y={y} size={size} color={shape ? accent : main} />}
           </g>
         )}
       </g>

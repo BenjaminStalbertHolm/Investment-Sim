@@ -41,6 +41,7 @@ import {
 import type { Sim, Streams } from './context';
 import { CONTRACTS, CONTRACT_INDEX, EXPIRY_WARNING_DAYS, MAINTENANCE, MJ, OPEK_MINUTE, STORAGE_RATE } from './data/commodities';
 import { FILING_DELAY } from './data/competitors';
+import { OFFICES } from './data/staff';
 import {
   addHolding, applyFollowUp, closeDeal, dump, enqueue, eventRates, fire, leak, newEvents, pick, planAhead, planPicks, type EventsState,
   type Timed,
@@ -76,6 +77,26 @@ import {
   type MarketTable, type OutlookView, type PositionView, type Quote, type QuarterResult, type Timeframe,
 } from './types';
 import { seasonOf } from './earnings';
+import {
+  addAlert, addRule, answer as answerIm, clientLetter, contactOf, markRead, morningDesk, newDesk, openDesk, pushMessage, pushPage, removeAlert,
+  removeRule, weeklyDesk, workDesk, y2k, type DeskState, type ImChoice, type ImMessage, type Page, type RuleRequest, type Tone,
+} from './desk';
+import {
+  answerOffer, capacity, complianceCheck, damage, employed, fire as dismiss, hire, morningStaff, moveOffice, newStaff, payday, raise, wagesOwed, weeklyStaff,
+  type StaffState,
+} from './staff';
+import {
+  bid, buyAsset, buyLotto, buyTicket, closeEbuy, conferences, deliverHindsight, itemValue, lifestyleValue, lottoDraw, monthlyBills, newLifestyle,
+  prestige, revalue, scheduleHindsight, sellAsset, sellEverything, sellItem, subscribe, type LifestyleState,
+} from './lifestyle';
+import { applyIpo, fileIpos, listIpo, newIpos, splits, withdrawIpo, type IpoState } from './ipo';
+import { closeModules, morningModules, setModules, startModules, type ModuleFlags, type ModulesState } from './modules';
+import { exemptFromSplits, tamagotcha } from './period';
+import { momsTip } from './gags';
+import { leaderOf } from './geo';
+import { addToHistory, splitHistory } from './history';
+import type { Bill } from './context';
+import type { LifestyleView, StaffView, DeskView, IpoView, ModulesView } from './types';
 
 /** The generated world, as saved: genomes rather than decoded companies (spec §18). */
 export interface SavedWorld {
@@ -86,6 +107,9 @@ export interface SavedWorld {
   holdings: Holding[];
   insiderPct: Float64Array;
   floatPct: Float64Array;
+  /** Phase 10: the day each company that came to the market later listed (its IPO), and each split company's shares for one of its genome's. */
+  listed: Record<number, number>;
+  splits: Record<number, number>;
 }
 
 /** Everything the simulation needs to carry on exactly where it was (spec §18 SimState). */
@@ -119,17 +143,33 @@ export interface SimState {
   scoring: ScoringState;
   /** Phase 9: the dark web (spec §14A). */
   darkweb: DarkWebState;
+  /** Phase 10: staff and the office, the firm's luxuries and pastimes, the trading desk and its messages, IPOs. */
+  staff: StaffState;
+  lifestyle: LifestyleState;
+  desk: DeskState;
+  ipo: IpoState;
+  /** Phase 10B: the fun modules' state (spec §16C), made the first time each is switched on. */
+  modules: ModulesState;
 }
 
 const STREAMS: (keyof Streams)[] = [
   'tick', 'regime', 'earnings', 'events', 'macro', 'clients', 'mail', 'commodities', 'broker', 'rivals', 'governance', 'regulator', 'darkweb',
+  'staff', 'lifestyle', 'ipo', 'extras', 'geo', 'period', 'gags',
 ];
 /** The stream each saved state is named after (spec §10.1). */
 export const STREAM_NAMES: Record<keyof Streams, string> = {
   tick: 'market:tick', regime: 'market:regime', earnings: 'earnings', events: 'events', macro: 'macro', clients: 'clients', mail: 'mail',
   commodities: 'commodities', broker: 'broker', rivals: 'competitors:ai', governance: 'governance', regulator: 'regulator', darkweb: 'darkweb',
+  staff: 'staff', lifestyle: 'lifestyle', ipo: 'ipo', extras: 'extras', geo: 'modules:geo', period: 'modules:period', gags: 'modules:gags',
 };
 const MORNING = 7 * 60;
+/** Letters that page the player (spec §4A: margin calls and urgent mail). */
+const URGENT = new Set<Mail['kind']>([
+  'marginCall', 'liquidation', 'recall', 'loanLate', 'loanDefault', 'audit', 'sobOutcome', 'blackmail', 'sharkCall', 'bankrupt', 'poached', 'hacked',
+  'staffLeft',
+]);
+/** The goat chief executive's name (spec §16C.3). */
+const GOAT_CEO = 'Billy G. Oat';
 const gameYearOf = (day: number) => new Date(day * 86_400_000).getUTCFullYear();
 /** Dark web services whose failure only shows later: wrong information, forged statements not yet found out. */
 const SECRET_FAILURES = new Set(['leakEarnings', 'leakDeal', 'forgery']);
@@ -158,8 +198,8 @@ export class Engine implements Sim {
   readonly market: Market;
   readonly rng: Streams;
   readonly commodities: Commodities;
-  /** Chance per trading day that each company has a corporate event (derived, never saved). */
-  private readonly eventRate: Float64Array;
+  /** Chance per trading day that each company has a corporate event (derived, never saved; recomputed after an IPO). */
+  private eventRate: Float64Array;
   /** Companies the player is looking at get real 5-minute bars (spec §11.3), as do holdings and the MAJOR 500. */
   private watched = new Set<number>();
   private readonly intraday = new Map<number, Bar[]>();
@@ -171,7 +211,7 @@ export class Engine implements Sim {
     /** The whole saved state. Modules on the engine's clock (events, clients, mail) read and change it. */
     readonly s: SimState,
     readonly companies: readonly Company[],
-    readonly model: Model = buildModel(s.world.seed, companies, s.settings),
+    readonly model: Model = buildModel(s.world.seed, companies, s.settings, s.world.splits),
   ) {
     this.market = new Market(s.market, model, s.settings);
     this.market.rate = s.macro.rate;
@@ -188,7 +228,9 @@ export class Engine implements Sim {
 
   /** A new game on a generated world, at the opening bell of the start date. */
   static create(world: World, options: Pick<NewGameOptions, 'settings' | 'firmName' | 'player' | 'playerFirm'>): Engine {
-    const { seed, companies } = world;
+    const { seed } = world;
+    // The game's own list: IPOs add to it, and the generated world may start other games.
+    const companies = [...world.companies];
     const { settings } = options;
     const model = buildModel(seed, companies, settings);
     const clock = at(START_DAY, OPEN);
@@ -209,6 +251,8 @@ export class Engine implements Sim {
         holdings: world.holdings,
         insiderPct: Float64Array.from(world.insiderPct),
         floatPct: Float64Array.from(world.floatPct),
+        listed: {},
+        splits: {},
       },
       settings,
       player,
@@ -245,6 +289,11 @@ export class Engine implements Sim {
       regulator: newRegulator(),
       scoring: { growth: [], ledger: 1, achievements: {} },
       darkweb: newDarkWeb(seed, START_DAY),
+      staff: newStaff(seed, START_DAY),
+      lifestyle: newLifestyle(),
+      desk: newDesk(clock),
+      ipo: newIpos(companies.length),
+      modules: {},
     };
     state.clients.nextOffer = firstOffer(START_DAY);
     const engine = new Engine(structuredClone(state), companies, model);
@@ -258,6 +307,8 @@ export class Engine implements Sim {
     this.send({ kind: 'welcome' });
     if (this.s.settings.clients) this.send({ kind: 'founders', amount: this.s.settings.startingCapital });
     this.scheduleDay(day);
+    // Fun modules switched on in Setup (spec §16C).
+    startModules(this);
   }
 
   /** Continues a game from exportState(). Companies are decoded from their genomes, not regenerated. */
@@ -267,7 +318,10 @@ export class Engine implements Sim {
       loan.interest ??= 0;
       loan.accruedTo ??= dayOf(saved.clock);
     }
-    return new Engine({ ...saved, history: unpackHistory(saved.history) }, saved.world.genomes.map(decodeCompany));
+    const engine = new Engine({ ...saved, history: unpackHistory(saved.history) }, saved.world.genomes.map(decodeCompany));
+    // A module switched on before it existed (a Phase 10 save) starts now; one already running is left as it is.
+    startModules(engine);
+    return engine;
   }
 
   /** A snapshot of the whole simulation, ready to save (spec §18). Intraday bars are not part of it. */
@@ -404,6 +458,10 @@ export class Engine implements Sim {
         return resolve(this, task.purchase);
       case 'forgeryFound':
         return forgeryFound(this, task.purchase);
+      case 'ipo':
+        return listIpo(this, task.id);
+      case 'hindsight':
+        return deliverHindsight(this, task.plan);
     }
   }
 
@@ -430,6 +488,15 @@ export class Engine implements Sim {
     investmentOffer(this, day);
     if (isPaymentDay(day)) monthlyAudit(this, day);
     morningDarkWeb(this, day);
+    // Phase 10: staff offers lapse, informants' tips, conferences, Hindsight's early reports, splits, and Y2K.
+    morningStaff(this, day);
+    morningDesk(this, day);
+    conferences(this, day, this.fees);
+    scheduleHindsight(this, day);
+    splits(this, day, exemptFromSplits(this));
+    y2k(this, day, previousTradingDay(day));
+    // Phase 10B: the fun modules, when on.
+    morningModules(this, day, isPaymentDay(day));
   }
 
   /**
@@ -465,8 +532,25 @@ export class Engine implements Sim {
     this.marginDue(day);
     if (!this.s.bankruptcy) this.loansDue(day);
     if (!this.s.bankruptcy) this.fineDue(day);
+    if (!this.s.bankruptcy && isPaymentDay(day)) this.monthly(day);
     if (this.s.bankruptcy) return;
     for (const order of this.openOrders()) this.execute(order);
+    // The Trader's dollar-cost averaging and monthly rebalancing (spec §4A).
+    openDesk(this, day);
+  }
+
+  /**
+   * The first trading day of each month, at the open (Phase 10): wages, then the bills — rent (spec §14.2 Greg's List),
+   * the luxuries' upkeep and subscriptions — and the luxuries are revalued.
+   */
+  private monthly(day: number): void {
+    payday(this, day);
+    const bills = monthlyBills(this);
+    const office = OFFICES[this.s.staff.office].name;
+    if (!this.s.bankruptcy) this.settle(bills.rent, { kind: 'rent', note: office, cause: 'bills' });
+    if (!this.s.bankruptcy) this.settle(bills.upkeep, { kind: 'upkeep', note: 'Lifestyles: upkeep, insurance and crew', cause: 'bills' });
+    if (!this.s.bankruptcy) this.settle(bills.subscriptions, { kind: 'subscription', note: 'Hindsight Research', cause: 'bills' });
+    revalue(this);
   }
 
   /**
@@ -513,6 +597,7 @@ export class Engine implements Sim {
     });
     if (this.market.state.halted) this.events.push({ kind: 'halt' });
     this.workOrders();
+    workDesk(this);
   }
 
   private close(): void {
@@ -544,6 +629,8 @@ export class Engine implements Sim {
     this.recalls(day);
     digest(this, day);
     closeOfDay(this, this.fees);
+    complianceCheck(this, day);
+    closeEbuy(this, day);
     if (quarter) quarterEnd(this, this.fees, settings.clientPatience);
     // Competitors trade at the week's end (spec §16); bids for the player's stakes; heat cools (spec §16B).
     if (endsWeek(day)) {
@@ -552,6 +639,10 @@ export class Engine implements Sim {
       coolHeat(this);
       weeklyDarkWeb(this, day);
       this.sharkDue(day);
+      weeklyStaff(this, day);
+      weeklyDesk(this);
+      lottoDraw(this, day);
+      fileIpos(this, day);
     }
     if (quarter) {
       let published = day + FILING_DELAY;
@@ -559,6 +650,7 @@ export class Engine implements Sim {
       quarterlyFlows(this, day, published);
       quarterlyBoardLetters(this);
     }
+    closeModules(this, day, endsWeek(day), quarter);
     checkStakes(this);
     this.checkMargin(day);
     const worth = this.netWorth();
@@ -604,7 +696,10 @@ export class Engine implements Sim {
       .filter(({ firm }) => this.s.world.firms[firm].strategy !== 'index')
       .sort((a, b) => b.ret - a.ret || a.firm - b.firm);
     const best = rivals[0];
-    if (best && best.ret - mine > 0.03 && this.rng.rivals.chance(0.4)) this.send({ kind: 'taunt', firm: best.firm, returns: [mine, best.ret] });
+    if (best && best.ret - mine > 0.03 && this.rng.rivals.chance(0.4)) {
+      this.send({ kind: 'taunt', firm: best.firm, returns: [mine, best.ret] });
+      this.im({ contact: contactOf(this, 'rival', best.firm), topic: 'taunt', amount: best.ret - mine });
+    }
   }
 
   /** The year's league table (spec §14: Barren's), the news of it, and what it does for the firm's name. */
@@ -654,11 +749,29 @@ export class Engine implements Sim {
 
   send(draft: MailDraft): Mail {
     const messages = this.s.mail.messages;
-    const mail: Mail = { ...draft, id: messages.length + 1, time: draft.time ?? this.s.clock, read: draft.read ?? FOLDER_OF[draft.kind] === 'sent', flagged: false, deleted: false };
+    // An executive assistant files the junk mail, unread (spec §4A).
+    const filed = draft.kind === 'spam' && employed(this, 'assistant').length > 0;
+    const mail: Mail = {
+      ...draft, id: messages.length + 1, time: draft.time ?? this.s.clock, read: draft.read ?? (filed || FOLDER_OF[draft.kind] === 'sent'), flagged: false,
+      deleted: false, filed: filed || undefined,
+    };
     for (const key of Object.keys(mail) as (keyof Mail)[]) if (mail[key] === undefined) delete mail[key];
     messages.push(mail);
     if (!mail.read) this.events.push({ kind: 'mail', id: mail.id });
+    // Urgent letters page the player (spec §4A Pager).
+    if (URGENT.has(mail.kind)) this.page({ code: mail.kind === 'marginCall' ? '911' : '0800', mail: mail.id });
     return mail;
+  }
+
+  page(page: Omit<Page, 'id' | 'time'>): void {
+    pushPage(this, page);
+    this.events.push({ kind: 'page' });
+  }
+
+  im(message: Omit<ImMessage, 'id' | 'time' | 'read'>): ImMessage {
+    const m = pushMessage(this, message);
+    this.events.push({ kind: 'im' });
+    return m;
   }
 
   /**
@@ -780,6 +893,16 @@ export class Engine implements Sim {
         if (action === 'pay' && !this.payable(b.blackmail.amount)) return 'You do not have the cash to pay.';
         answerBlackmail(this, mail.journalist!, action === 'pay');
         return answered(action === 'pay' ? 'paid' : 'refused');
+      }
+      case 'momClub': {
+        if (action !== 'tip0' && action !== 'tip1' && action !== 'tip2' && action !== 'noTip') break;
+        momsTip(this, action === 'noTip' ? undefined : Number(action.slice(3)), mail.options ?? []);
+        mail.answer = 'done';
+        return undefined;
+      }
+      case 'poached': {
+        if (action !== 'match' && action !== 'letGo') break;
+        return answered(action === 'match' ? 'accepted' : 'declined', answerOffer(this, mail.employee!, action === 'match'));
       }
       case 'stakeBid':
       case 'investmentOffer': {
@@ -1124,6 +1247,8 @@ export class Engine implements Sim {
     const commission = this.commission(shares * price, !order.filled);
     const position = this.s.account.positions.find((p) => p.company === order.company);
     if (order.side === 'sell' && position && position.cost > 0 && price >= (10 * position.cost) / position.shares) this.unlock('tenBagger');
+    // A trade closed at +100% or better: Soli-Tear's bouncing cards (spec §4A).
+    if (order.side === 'sell' && position && position.cost > 0 && price >= (2 * position.cost) / position.shares) this.events.push({ kind: 'bounce' });
     this.unlock('firstTrade');
     bookFill(this.s.account, order, shares, price, commission, this.s.clock);
     noteTrade(this, order.company, order.side, shares, price);
@@ -1232,6 +1357,7 @@ export class Engine implements Sim {
         const due = m.equity <= 0 ? nextTradingDay(day) : addTradingDays(day, this.s.settings.marginGrace);
         account.call = { issued: this.s.clock, due, amount: deficit };
         this.send({ kind: 'marginCall', amount: deficit, day: due });
+        this.im({ contact: 1, topic: 'marginNag', amount: deficit });
       }
     } else if (account.call) {
       account.call = undefined;
@@ -1315,6 +1441,9 @@ export class Engine implements Sim {
       const amount = sellGoods(this.s.account, g.code, this.commodities.spot(CONTRACT_INDEX[g.code], pc), this.s.clock);
       if (amount !== undefined) lines.push({ company: -1, contract: g.code, shares: g.quantity, amount });
     }
+    // Then the luxuries and collectibles (spec §16: everything is sold before a firm is declared bankrupt).
+    const fetched = sellEverything(this, () => shortfall() <= 0);
+    if (fetched) lines.push({ company: -1, shares: 0, amount: fetched, note: 'lifestyle' });
     return lines;
   }
 
@@ -1620,7 +1749,7 @@ export class Engine implements Sim {
   }
 
   /** Whether the bank can debit `amount`: the account keeps its initial margin afterwards. */
-  private payable(amount: number): boolean {
+  payable(amount: number): boolean {
     return amount <= Math.max(0, this.marginFigures().excess) + 1e-9;
   }
 
@@ -1845,7 +1974,7 @@ export class Engine implements Sim {
     if (outcome === 'enforcement') {
       this.report({ kind: 'enforcement', company: -1, amount: fine });
       // Clients read the papers (spec §16B: redemptions).
-      for (const c of this.s.clients.clients) if (c.status === 'active' && c.kind !== 'founder' && this.rng.regulator.chance(0.5)) redeem(this, c, 1, 'scandal');
+      for (const c of this.s.clients.clients) if (c.status === 'active' && c.kind !== 'founder' && this.rng.regulator.chance(0.5 * damage(this))) redeem(this, c, 1, 'scandal');
     }
   }
 
@@ -2182,6 +2311,203 @@ export class Engine implements Sim {
     return lines;
   }
 
+  // ---------- Staff, the office, the firm's luxuries and pastimes (Phase 10, spec §4A, §14.2) ----------
+
+  /** PeopleSoftie HR, Monstrous.com and Greg's List: staff, applicants and former staff, the office, and the month's bills. */
+  staff(): StaffView {
+    const people = structuredClone(this.s.staff.people);
+    const payroll = employed(this).reduce((a, p) => a + p.salary / 12, 0);
+    return { people, office: this.s.staff.office, moved: this.s.staff.moved, capacity: capacity(this), payroll, owed: wagesOwed(this), prestige: prestige(this), bills: monthlyBills(this) };
+  }
+
+  /** Staff and office actions; each returns an error for the player, or nothing. */
+  staffAction(a: { do: 'hire' | 'fire'; id: number } | { do: 'raise'; id: number; pct: number } | { do: 'move'; office: number }): string | undefined {
+    if (this.s.bankruptcy) return 'The firm is bankrupt.';
+    switch (a.do) {
+      case 'hire':
+        return hire(this, a.id);
+      case 'fire':
+        return dismiss(this, a.id);
+      case 'raise':
+        return raise(this, a.id, a.pct);
+      case 'move':
+        return moveOffice(this, a.office);
+    }
+  }
+
+  /** The Lifestyles Catalogue, eBuy, conferences, the State Lotto and Hindsight Research. AI bidders' limits stay hidden. */
+  lifestyle(): LifestyleView {
+    const s = this.s.lifestyle;
+    const { value } = lifestyleValue(s);
+    return {
+      assets: structuredClone(s.assets), hype: structuredClone(s.hype), realized: s.realized, value, prestige: prestige(this),
+      auctions: s.auctions.map(({ ai: _ai, ...a }) => ({ ...a, value: itemValue(s, a) })),
+      items: s.items.map((i) => ({ ...i, value: itemValue(s, i) })),
+      tickets: structuredClone(s.tickets), lotto: { tickets: s.lotto.tickets.length, draws: structuredClone(s.lotto.draws) },
+      hindsight: s.hindsight && { since: s.hindsight.since },
+    };
+  }
+
+  lifestyleAction(
+    a:
+      | { do: 'buyAsset'; asset: string }
+      | { do: 'sellAsset'; id: number }
+      | { do: 'bid'; auction: number; max: number }
+      | { do: 'sellItem'; id: number; reserve?: number }
+      | { do: 'ticket'; conference: string }
+      | { do: 'lotto'; count: number }
+      | { do: 'subscribe'; on: boolean },
+  ): string | undefined {
+    if (this.s.bankruptcy) return 'The firm is bankrupt.';
+    const error = (r: unknown) => (typeof r === 'string' ? r : undefined);
+    switch (a.do) {
+      case 'buyAsset':
+        return error(buyAsset(this, a.asset));
+      case 'sellAsset':
+        return error(sellAsset(this, a.id));
+      case 'bid':
+        return error(bid(this, a.auction, a.max));
+      case 'sellItem':
+        return error(sellItem(this, a.id, a.reserve));
+      case 'ticket':
+        return buyTicket(this, a.conference);
+      case 'lotto':
+        return buyLotto(this, a.count);
+      case 'subscribe':
+        return subscribe(this, a.on);
+    }
+  }
+
+  /** The trading desk (spec §4A): the Trader's rules, price alerts, the pager, ISeekYou and the last letter to clients. */
+  desk(): DeskView {
+    const d = this.s.desk;
+    return {
+      rules: structuredClone(d.rules), alerts: structuredClone(d.alerts), pages: structuredClone(d.pages), contacts: structuredClone(d.contacts),
+      messages: structuredClone(d.messages), letter: d.letter && { ...d.letter }, trader: employed(this, 'trader').length > 0,
+    };
+  }
+
+  deskAction(
+    a:
+      | { do: 'addRule'; rule: RuleRequest }
+      | { do: 'removeRule'; id: number }
+      | { do: 'addAlert'; company: number; level: number }
+      | { do: 'removeAlert'; id: number }
+      | { do: 'answer'; message: number; choice: ImChoice }
+      | { do: 'read'; contact: number }
+      | { do: 'letter'; tone: Tone },
+  ): string | undefined {
+    if (this.s.bankruptcy && a.do !== 'read') return 'The firm is bankrupt.';
+    switch (a.do) {
+      case 'addRule': {
+        const r = addRule(this, a.rule);
+        return typeof r === 'string' ? r : undefined;
+      }
+      case 'removeRule':
+        return removeRule(this, a.id) ? undefined : 'There is no such rule.';
+      case 'addAlert': {
+        const r = addAlert(this, a.company, a.level);
+        return typeof r === 'string' ? r : undefined;
+      }
+      case 'removeAlert':
+        removeAlert(this, a.id);
+        return undefined;
+      case 'answer':
+        return answerIm(this, a.message, a.choice);
+      case 'read':
+        markRead(this, a.contact);
+        return undefined;
+      case 'letter': {
+        const r = clientLetter(this, a.tone);
+        return typeof r === 'string' ? r : undefined;
+      }
+    }
+  }
+
+  /** The IPO Hotline (spec §14.2): filings to come and recent listings. How hot a deal is stays hidden until it prices. */
+  ipos(): IpoView {
+    return { pending: this.s.ipo.pending.map(({ hot: _hot, pop: _pop, ...p }) => ({ ...p })) };
+  }
+
+  ipoAction(a: { do: 'apply'; id: number; shares: number } | { do: 'withdraw'; id: number }): string | undefined {
+    if (this.s.bankruptcy) return 'The firm is bankrupt.';
+    if (a.do === 'apply') return applyIpo(this, a.id, a.shares);
+    return withdrawIpo(this, a.id) ? undefined : 'You have not applied for this IPO.';
+  }
+
+  /**
+   * HomeCities' amateur hot picks for the week (spec §14.1): mostly guesses, now and then one that knows what is coming —
+   * a company with news planned in the next two weeks, and which way it goes. Drawn from their own stream per week, so
+   * reading them changes nothing.
+   */
+  hotPicks(): { company: number; up: boolean }[] {
+    const today = dayOf(this.s.clock);
+    const week = Math.floor((today + 3) / 7);
+    const rng = Rng.stream(this.seed, `homecities:${week}`);
+    const soon = at(addTradingDays(today, 10), 0);
+    const planned = this.s.events.plans.filter((p) => p.time > this.s.clock && p.time < soon && Math.abs(p.move) > 0.05);
+    const listed = () => {
+      for (let k = 0; k < 20; k++) {
+        const i = rng.int(0, this.companies.length - 1);
+        if (!this.market.state.status[i]) return i;
+      }
+      return 0;
+    };
+    return Array.from({ length: 24 }, () => {
+      if (planned.length && rng.chance(0.08)) {
+        const p = planned[rng.int(0, planned.length - 1)];
+        return { company: p.company, up: p.move > 0 };
+      }
+      return { company: listed(), up: rng.chance(0.8) };
+    });
+  }
+
+  // ---------- The fun modules (Phase 10B, spec §16C) ----------
+
+  /** My Computer → Game → Fun modules: each switches on and off cleanly mid-game. Returns the settings now. */
+  setModules(flags: ModuleFlags): GameSettings {
+    setModules(this, flags);
+    return structuredClone(this.s.settings);
+  }
+
+  /** The Tamagotcha (spec §16C.2). */
+  tamagotcha(a: { do: 'adopt' | 'feed' | 'play' | 'resurrect'; name?: string }): string | undefined {
+    if (this.s.bankruptcy) return 'The firm is bankrupt.';
+    return tamagotcha(this, a.do, a.name);
+  }
+
+  /** What the modules show: tensions and leaders (Encarter 98, the news sites), the period's state, the gags'. */
+  modules(): ModulesView {
+    const { geo, period, gags } = this.s.modules;
+    const flags = this.s.settings.modules;
+    return {
+      flags: { ...flags },
+      geo: flags.geopolitics && geo
+        ? {
+          tensions: Object.entries(geo.tensions).map(([pair, t]) => ({ pair, ...t })),
+          leaders: Object.fromEntries(Object.keys(geo.leaders).map((id) => [id, leaderOf(geo, id)])),
+        }
+        : undefined,
+      period: flags.periodEvents && period
+        ? { bubble: period.bubble, popped: period.popped, elNino: period.elNino && { ...period.elNino }, tamagotcha: period.tamagotcha && { ...period.tamagotcha }, renamed: [...period.renamed] }
+        : undefined,
+      gags: flags.gags && gags
+        ? {
+          stress: gags.stress, horoscope: { ...gags.horoscope }, hemline: { ...gags.hemline }, pizza: gags.pizza && { ...gags.pizza }, goat: gags.goat?.company,
+          enrun: gags.fraud && { company: gags.fraud.company, stage: gags.fraud.stage }, darts: { picks: [...gags.darts.picks], wins: gags.darts.wins, losses: gags.darts.losses },
+        }
+        : undefined,
+    };
+  }
+
+  /** ISeekYou's unread messages and the newest one (the chime), and the newest page. */
+  deskStatus(): { im: { unread: number; latest: number }; page: number; companies: number } {
+    const d = this.s.desk;
+    let unread = 0;
+    for (const m of d.messages) if (!m.read) unread++;
+    return { im: { unread, latest: d.messages.at(-1)?.id ?? 0 }, page: d.pages.at(-1)?.id ?? 0, companies: this.companies.length };
+  }
+
   // ---------- Bankruptcy (spec §16) ----------
 
   /** An obligation the firm cannot meet after selling everything: the end, unless the game is a sandbox. */
@@ -2202,11 +2528,178 @@ export class Engine implements Sim {
     return structuredClone(this.s.bankruptcy);
   }
 
+  /**
+   * An obligation falls due (Phase 10: wages, rent, upkeep, tickets): paid from equity the positions don't need, else the
+   * broker sells what it must; a shortfall is bankruptcy, unless the game is a sandbox.
+   */
+  settle(amount: number, bill: Bill): void {
+    if (!(amount > 0)) return;
+    const account = this.s.account;
+    if (!bill.accrued) account.charges += amount;
+    let paid = amount;
+    if (!this.payable(amount)) {
+      this.liquidate({ cash: amount }, bill.cause);
+      paid = this.s.settings.noBankruptcy ? amount : Math.min(amount, Math.max(0, this.marginFigures().excess));
+    }
+    book(account, this.s.clock, bill.kind, -paid, { note: bill.note });
+    // What could not be paid is written off with the firm.
+    if (paid < amount - 0.005) {
+      account.charges -= amount - paid;
+      this.goBankrupt(bill.cause, amount, amount - paid);
+    }
+  }
+
+  // ---------- IPOs and splits (spec §11.6) ----------
+
+  /**
+   * A company joins the market (an IPO): every per-company array grows by one, and the derived model, liquidity and event
+   * rates are rebuilt as a loaded game would build them, so a save made afterwards plays on identically.
+   */
+  addCompany(genome: string, tier: number, price: number, value: number): number {
+    const company = decodeCompany(genome);
+    const i = this.companies.length;
+    (this.companies as Company[]).push(company);
+    const grow = <T extends Float64Array | Float32Array | Uint8Array | Int8Array | Int32Array>(a: T, ...extra: number[]): T => {
+      const out = new (a.constructor as new (length: number) => T)(a.length + extra.length);
+      out.set(a);
+      out.set(extra, a.length);
+      return out;
+    };
+    const w = this.s.world;
+    const insiders = tier <= 2 ? 0.1 : 0.25;
+    w.genomes.push(genome);
+    w.tiers = grow(w.tiers, tier);
+    w.insiderPct = grow(w.insiderPct, insiders);
+    w.floatPct = grow(w.floatPct, 1 - insiders);
+    w.listed[i] = dayOf(this.s.clock);
+    const m = this.market.state;
+    const ln = Math.log(price);
+    m.lnP = grow(m.lnP, ln);
+    m.lnV = grow(m.lnV, Math.log(value));
+    for (const key of ['prevClose', 'dayOpen', 'dayHigh', 'dayLow'] as const) m[key] = grow(m[key], Math.exp(ln));
+    m.dayVolume = grow(m.dayVolume, 0);
+    m.jump = grow(m.jump, 0);
+    m.jumpBars = grow(m.jumpBars, 0);
+    m.status = grow(m.status, 0);
+    m.rating = grow(m.rating, 0);
+    const f = this.s.fundamentals;
+    const fresh = initialFundamentals([company]);
+    for (const key of ['revenue', 'income', 'growth', 'margin', 'dividend'] as const) f[key] = grow(f[key], fresh[key][0]);
+    f.reported = grow(f.reported, -1);
+    f.quarterRevenue = grow(f.quarterRevenue, ...fresh.quarterRevenue);
+    f.quarterIncome = grow(f.quarterIncome, ...fresh.quarterIncome);
+    addToHistory(this.s.history, Math.exp(ln));
+    Object.assign(this.model, buildModel(w.seed, this.companies, this.s.settings, w.splits));
+    m.shortInterest = grow(m.shortInterest, this.model.shortBase[i]);
+    this.market.grow();
+    this.eventRate = eventRates(this.companies, w.tiers, this.s.settings.events);
+    this.events.push({ kind: 'listed', company: i });
+    return i;
+  }
+
+  /** Shares allotted in an IPO: bought at the offer price, without commission. */
+  allot(company: number, shares: number, price: number): void {
+    const account = this.s.account;
+    const order: Order = {
+      company, side: 'buy', type: 'limit', limit: price, shares, tif: 'day', id: account.nextOrder++, placed: this.s.clock, status: 'open', filled: 0,
+      price: 0, commission: 0, updated: this.s.clock, note: 'IPO allocation.',
+    };
+    account.orders.push(order);
+    this.fill(order, shares, price);
+  }
+
+  /**
+   * A stock split (spec §11.6): `ratio` new shares for each old one. The price, value, history and dividend are divided by
+   * it; every holding — the firm's, its open orders, competitors' and the index funds' — is multiplied, so nothing is
+   * worth more or less.
+   */
+  split(i: number, ratio: number, announce = true): void {
+    const w = this.s.world;
+    w.splits[i] = (w.splits[i] ?? 1) * ratio;
+    this.model.shares[i] = this.companies[i].sharesOutstanding * w.splits[i];
+    const m = this.market.state;
+    const down = Math.log(ratio);
+    m.lnP[i] -= down;
+    m.lnV[i] -= down;
+    for (const key of ['prevClose', 'dayOpen', 'dayHigh', 'dayLow'] as const) m[key][i] /= ratio;
+    m.dayVolume[i] *= ratio;
+    this.market.price[i] = Math.exp(m.lnP[i]);
+    this.s.fundamentals.dividend[i] /= ratio;
+    splitHistory(this.s.history, i, ratio);
+    for (const b of this.intraday.get(i) ?? []) {
+      b.open /= ratio;
+      b.high /= ratio;
+      b.low /= ratio;
+      b.close /= ratio;
+      b.volume *= ratio;
+    }
+    const p = this.s.account.positions.find((x) => x.company === i);
+    if (p) p.shares *= ratio;
+    for (const o of this.openOrders()) {
+      if (o.company !== i) continue;
+      o.shares *= ratio;
+      o.filled *= ratio;
+      o.price /= ratio;
+      if (o.limit !== undefined) o.limit /= ratio;
+      if (o.stop !== undefined) o.stop /= ratio;
+    }
+    for (const h of w.holdings) if (h.company === i) h.shares *= ratio;
+    const funds = this.s.funds;
+    funds.members.forEach((members, f) => {
+      const k = members.indexOf(i);
+      if (k >= 0) funds.basket[f][k] *= ratio;
+    });
+    if (!announce) return;
+    this.report({ kind: 'split', company: i, level: ratio });
+    if (p) this.send({ kind: 'split', company: i, shares: p.shares, amount: ratio });
+  }
+
+  /**
+   * A reverse split (Phase 10B: Birkshire Hatchaway's splits undone): one new share for `ratio` old ones. Open orders are
+   * cancelled, and a holding's fraction of a share is paid out (or, short, paid for) in cash at the price.
+   */
+  reverseSplit(i: number, ratio: number): void {
+    for (const o of this.openOrders()) if (o.company === i) this.finish(o, 'cancelled', 'Reverse split');
+    this.split(i, 1 / ratio, false);
+    const account = this.s.account;
+    const p = account.positions.find((x) => x.company === i);
+    if (p) {
+      const whole = Math.trunc(p.shares);
+      const fraction = p.shares - whole;
+      if (Math.abs(fraction) > 1e-12) {
+        const price = this.market.price[i];
+        const amount = fraction * price;
+        const basis = p.cost * (fraction / p.shares);
+        book(account, this.s.clock, 'cashInLieu', amount, { company: i, shares: Math.abs(fraction), price });
+        p.realized += amount - basis;
+        p.cost -= basis;
+      }
+      p.shares = whole;
+      if (!whole) {
+        account.positions.splice(account.positions.indexOf(p), 1);
+        account.closed.push({ company: i, opened: p.opened, closed: this.s.clock, realized: p.realized });
+      }
+      this.send({ kind: 'split', company: i, shares: whole, amount: 1 / ratio });
+    }
+    this.report({ kind: 'story', company: i, text: 'period.neverSplit', args: [String(ratio)] });
+  }
+
+  commodityShock(code: string, move: number, bars: number): void {
+    this.commodities.shock(CONTRACT_INDEX[code], move, bars);
+  }
+
+  emit(event: EngineEvent): void {
+    this.events.push(event);
+  }
+
   // ---------- Views ----------
 
   /** What the firm is worth (spec §16): equity plus goods at resale value, less bank debt and what it owes on it. */
   netWorth(): number {
-    return this.marginFigures().equity + this.goodsValue() - bankDebt(this.s.loans) - accrued(this.s.loans) - (this.s.regulator.fine?.amount ?? 0) - this.sharkDebt();
+    return (
+      this.marginFigures().equity + this.goodsValue() + lifestyleValue(this.s.lifestyle).value - bankDebt(this.s.loans) - accrued(this.s.loans) -
+      (this.s.regulator.fine?.amount ?? 0) - this.sharkDebt() - wagesOwed(this)
+    );
   }
 
   private goodsValue(): number {
@@ -2266,19 +2759,24 @@ export class Engine implements Sim {
     const sharks = this.sharkDebt();
     const funds = this.s.account.funds;
     const fundsValue = this.fundsValue();
+    const lifestyle = lifestyleValue(this.s.lifestyle);
+    const wages = wagesOwed(this);
     return {
       cash,
       value: m.long - m.short,
-      netWorth: m.equity + goodsValue - loans - fine - sharks,
+      netWorth: m.equity + goodsValue + lifestyle.value - loans - fine - sharks - wages,
       deposits,
       dayChange: sum((p) => p.dayChange) + funds.reduce((a, f) => a + f.units * (this.fundPrice(f.fund) - this.fundPrev(f.fund)), 0),
-      unrealized: sum((p) => p.unrealized) + m.open + goodsValue - goodsCost + fundsValue - funds.reduce((a, f) => a + f.cost, 0),
+      unrealized:
+        sum((p) => p.unrealized) + m.open + goodsValue - goodsCost + fundsValue - funds.reduce((a, f) => a + f.cost, 0) + lifestyle.value - lifestyle.cost,
       realized:
         sum((p) => p.realized) + futures.reduce((a, f) => a + f.realized, 0) + funds.reduce((a, f) => a + f.realized, 0) +
-        closed.reduce((a, c) => a + c.realized, 0) - charges,
+        closed.reduce((a, c) => a + c.realized, 0) + this.s.lifestyle.realized - charges,
       fundsValue,
       fine,
       sharks,
+      lifestyleValue: lifestyle.value,
+      wages,
       buyingPower: this.buyingPower(),
       equity: m.equity,
       longValue: m.long,
@@ -2408,6 +2906,8 @@ export class Engine implements Sim {
     const today = dayOf(this.s.clock);
     const year = this.daily(i).slice(-252);
     const borrow = this.borrow(i);
+    // A goat runs it (spec §16C.3), while the gags module is on.
+    const goat = this.s.settings.modules.gags && this.s.modules.gags?.goat?.company === i;
     return {
       id: i,
       genome: c.genome,
@@ -2416,8 +2916,9 @@ export class Engine implements Sim {
       industry: c.industry.name,
       subIndustry: c.subIndustry,
       hq: `${c.hq.name}, ${c.hq.country}`,
-      ceo: this.s.events.ceos[i] ? ceoName(decodeCeo(this.s.events.ceos[i])) : `${c.ceo.firstName} ${c.ceo.lastName}`,
-      ceoCode: this.s.events.ceos[i],
+      ceo: goat ? GOAT_CEO : this.s.events.ceos[i] ? ceoName(decodeCeo(this.s.events.ceos[i])) : `${c.ceo.firstName} ${c.ceo.lastName}`,
+      ceoCode: goat ? undefined : this.s.events.ceos[i],
+      ceoVariant: goat ? 'goat' : undefined,
       status: this.market.state.status[i] as Listing,
       founded: gameYear(START_DAY) - c.founded,
       shares,
@@ -2429,8 +2930,8 @@ export class Engine implements Sim {
       dividendYield: f.dividend[i] / price,
       beta: c.beta,
       volatility: c.volatility,
-      high52: Math.max(...year.map((b) => b.high)),
-      low52: Math.min(...year.map((b) => b.low)),
+      high52: year.length ? Math.max(...year.map((b) => b.high)) : price,
+      low52: year.length ? Math.min(...year.map((b) => b.low)) : price,
       adv: this.market.adv[i],
       nextEarnings: nextReport(f.reported[i] === today ? today + 1 : today, this.model.slot[i]),
       lastEarnings: f.reported[i],
@@ -2442,6 +2943,9 @@ export class Engine implements Sim {
       holders: this.holders(i),
       seat: this.s.governance.seats.includes(i),
       shell: this.s.governance.stakes.some((s) => s.company === i && s.hidden) ? activeShell(this.s.darkweb)?.name : undefined,
+      rating: this.market.state.rating[i],
+      listed: this.s.world.listed[i],
+      split: this.s.world.splits[i],
     };
   }
 
@@ -2514,6 +3018,7 @@ export class Engine implements Sim {
       dividendYield: f.dividend.map((d, i) => d / market.price[i]),
       sector: model.sector.slice(),
       status: market.state.status.slice(),
+      rating: market.state.rating.slice(),
       reported: f.reported.slice(),
       week: weeks
         ? { day: h.weekDays[weeks - 1], close: weekCloses(h, weeks - 1), previous: weeks > 1 ? weekCloses(h, weeks - 2) : start() }
@@ -2621,15 +3126,27 @@ export class Engine implements Sim {
     return { time, open: dayOpen[id], high: dayHigh[id], low: dayLow[id], close: this.market.price[id], volume: dayVolume[id] };
   }
 
-  /** Daily bars: generated pre-game history, the recorded days, and today so far. */
+  /**
+   * Daily bars: generated pre-game history, the recorded days, and today so far. A company that listed later (an IPO) has
+   * none before its first day; a split company's earlier prices are divided by its splits, as real charts show them.
+   */
   private daily(id: number): Bar[] {
     const { days, market } = this.pregameData();
     const h = this.s.history;
-    const pre = id === INDEX ? pregameIndex(this.seed, days, market) : pregameBars(this.seed, id, this.companies[id], days, market);
+    const listed = id === INDEX ? undefined : this.s.world.listed[id];
+    const split = id === INDEX ? 1 : this.s.world.splits[id] ?? 1;
+    const pre =
+      id === INDEX
+        ? pregameIndex(this.seed, days, market)
+        : listed !== undefined
+          ? []
+          : pregameBars(this.seed, id, this.companies[id], days, market).map((b) =>
+              split === 1 ? b : { ...b, open: b.open / split, high: b.high / split, low: b.low / split, close: b.close / split, volume: b.volume * split },
+            );
     const game =
       id === INDEX
         ? h.index.map(([day, open, high, low, close]) => ({ time: (day * 1440 + CLOSE) * 60, open, high, low, close, volume: 0 }))
-        : dailyBars(h, id, CLOSE);
+        : dailyBars(h, id, CLOSE).filter((b) => listed === undefined || b.time >= listed * 86_400);
     const today = this.runningBar(id);
     return [...pre, ...game, ...(today ? [today] : [])];
   }
@@ -2656,8 +3173,9 @@ export class Engine implements Sim {
     if (id === INDEX) return weeks;
     // Only closes survive for those weeks: each opens where the week before closed.
     const oldest = oldestDay(this.s.history) ?? Infinity;
+    const listed = this.s.world.listed[id] ?? -Infinity;
     const archived = weeklyCloses(this.s.history, id)
-      .filter(([day]) => day < oldest)
+      .filter(([day]) => day < oldest && day >= listed)
       .map(([day, close]) => ({ time: (day * 1440 + CLOSE) * 60, open: NaN, high: close, low: close, close, volume: 0 }));
     const bars = [...weeks, ...archived].sort((a, b) => a.time - b.time);
     bars.forEach((b, k) => {

@@ -17,7 +17,17 @@ import Sob from './finance/Sob';
 import { DarkSite } from './darkweb/DarkWeb';
 import { Defaced, ServerTooBusy } from './darkweb/Outages';
 import Tucats from './tucats/Tucats';
-import { BANK, EQUIFACTS, EXCHANGE, FED, OPEK, QUOTEZONE, RAGINGBEAR, REEVES, SOB, TUCATS, WEATHER, YEEHAW, sites } from './urls';
+import { Hindsight, RatingAgency } from './finance/Ratings';
+import IpoHotline from './finance/IpoHotline';
+import { GregsList, Monstrous } from './office/Jobs';
+import { Conferences, Ebuy, Lifestyles, Lotto } from './lifestyle/Lifestyle';
+import { DancingBaby, Hamsters, HomeCities, Majorsoft, Y2kCountdown } from './flavour/Flavour';
+import Intranet from './firm/Intranet';
+import {
+  BANK, DANCING_BABY, DAVOZ, EBUY, EQUIFACTS, EXCHANGE, FED, GREGSLIST, HAMSTERS, HINDSIGHT, HOMECITIES, IPO_HOTLINE, LIFESTYLES, LOTTO, MAJORSOFT,
+  MONSTROUS, MOODY, OPEK, PIZZA, QUOTEZONE, RAGINGBEAR, REEVES, SOB, STANDARD_POURS, TUCATS, WEATHER, Y2K, YEEHAW, intranetHost, sites,
+} from './urls';
+import Pizza from './flavour/Pizza';
 import { usePage, useTitle } from './web';
 
 type SiteComponent = ComponentType<{ url: URL }>;
@@ -44,6 +54,22 @@ const STATIC: Record<string, SiteComponent> = {
   [REEVES]: AskReeves,
   [SOB]: Sob,
   [TUCATS]: Tucats,
+  // Phase 10 (spec §14.2).
+  [STANDARD_POURS]: ({ url }) => <RatingAgency url={url} agency="pours" />,
+  [MOODY]: ({ url }) => <RatingAgency url={url} agency="moody" />,
+  [HINDSIGHT]: Hindsight,
+  [IPO_HOTLINE]: IpoHotline,
+  [MONSTROUS]: Monstrous,
+  [GREGSLIST]: GregsList,
+  [LIFESTYLES]: Lifestyles,
+  [EBUY]: Ebuy,
+  [DAVOZ]: Conferences,
+  [LOTTO]: Lotto,
+  [Y2K]: Y2kCountdown,
+  [MAJORSOFT]: Majorsoft,
+  [HOMECITIES]: HomeCities,
+  [HAMSTERS]: Hamsters,
+  [DANCING_BABY]: DancingBaby,
   ...Object.fromEntries(
     ALL_OUTLETS.map((o) => [o.host, OUTLET_SITES[o.id] ?? (({ url }: { url: URL }) => <TradePress url={url} outlet={o} />)]),
   ),
@@ -64,14 +90,20 @@ export function Site({ url }: { url: URL }) {
   const directory = useGame((s) => s.directory);
   const firmName = useGame((s) => s.firmName);
   const outages = useGame((s) => s.snapshot?.darkweb.outages);
+  const gags = useGame((s) => s.settings?.modules.gags);
   const { garlic } = usePage();
   const page = url.pathname.replace(/^\//, '');
   // Only the Garlic Browser reaches the Garlic network (spec §14A).
   if (url.hostname.endsWith('.garlic')) return garlic ? <DarkSite url={url} /> : <CannotDisplay url={url} />;
+  if (url.hostname === intranetHost(firmName)) return <Intranet />;
+  // Only the gags module's world has a pizza chain that knows about audits.
+  if (url.hostname === PIZZA) return gags ? <Pizza /> : <CannotDisplay url={url} />;
   const Static = STATIC[url.hostname];
   const target = Static ? undefined : sites(directory, firmName).byHost.get(url.hostname);
-  // Web sites the dark web's hackers took down or defaced.
-  const outage = target && outages?.find((o) => (target.kind === 'company' ? o.company === target.id : target.kind === 'firm' && o.firm === target.id));
+  // Web sites the dark web's hackers took down or defaced; the firm's own when hackers got past its IT (spec §4A).
+  const outage =
+    target &&
+    outages?.find((o) => (target.kind === 'company' ? o.company === target.id : target.kind === 'firm' ? o.firm === target.id : target.kind === 'player' && o.player));
   if (outage && target?.kind === 'company') return <Defaced company={target.id} outage={outage} />;
   if (outage) return <ServerTooBusy host={url.hostname} outage={outage} />;
   return Static ? (

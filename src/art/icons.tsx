@@ -253,6 +253,66 @@ const ICONS = {
       <rect x="12.5" y="8.5" width="7" height="4" fill={G} />
     </>
   ),
+  /** Phase 10: a pager with its little screen. */
+  pager: (
+    <>
+      <rect x="6.5" y="4.5" width="19" height="24" rx="2" fill="#303030" stroke={K} />
+      <rect x="9" y="7" width="14" height="7" fill="#9fc08f" stroke={D} />
+      <path d="M10 11h2M13 11h2M16 11h2M19 11h2" stroke="#203020" />
+      <circle cx="12" cy="20" r="2" fill={G} />
+      <circle cx="20" cy="20" r="2" fill={G} />
+      <rect x="11" y="24" width="10" height="2" fill="#606060" />
+    </>
+  ),
+  /** Encarter 98: a globe on a stand, as every 1998 encyclopaedia box had. */
+  encarter: (
+    <>
+      <circle cx="16" cy="13" r="10" fill="#3070d0" stroke={K} />
+      <path d="M9 9c3 0 4 2 6 1s2-3 4-2 2 3 0 4-4 0-4 3-3 3-5 2-3-4-1-8zM20 16c2 0 3 1 3 3s-2 2-3 1z" fill="#40a040" stroke="#206020" strokeWidth="0.5" />
+      <path d="M6 13a10 10 0 0 0 20 0" fill="none" stroke="#c0a040" strokeWidth="1.5" />
+      <rect x="15" y="23" width="2" height="4" fill="#806020" />
+      <rect x="10" y="27" width="12" height="2" fill="#806020" stroke={K} strokeWidth="0.5" />
+    </>
+  ),
+  /** Tamagotcha: an egg-shaped virtual pet with a tiny screen. */
+  tamagotcha: (
+    <>
+      <ellipse cx="16" cy="17" rx="10" ry="12" fill="#f070b0" stroke={K} />
+      <rect x="10" y="10" width="12" height="10" fill="#b8d0a0" stroke={D} />
+      <path d="M13 14h2v2h-2zM17 14h2v2h-2zM14 17h4v1h-4z" fill="#203020" />
+      <circle cx="11" cy="24" r="1.5" fill={W} stroke={K} />
+      <circle cx="16" cy="25" r="1.5" fill={W} stroke={K} />
+      <circle cx="21" cy="24" r="1.5" fill={W} stroke={K} />
+    </>
+  ),
+  /** WinRamp: a llama-free lightning bolt over an equaliser. */
+  winramp: (
+    <>
+      <rect x="2.5" y="6.5" width="27" height="19" fill="#1c2a1c" stroke={K} />
+      {[5, 9, 4, 11, 7, 12, 6].map((h, i) => (
+        <rect key={i} x={5 + i * 3.4} y={23 - h} width="2.4" height={h} fill={i % 2 ? '#e0c020' : '#30d030'} />
+      ))}
+      <path d="M19 3l-6 12h5l-3 13 9-16h-5l3-9z" fill="#ffd000" stroke="#704000" />
+    </>
+  ),
+  /** Margin Sweeper: a mine with a dollar sign. */
+  sweeper: (
+    <>
+      <rect x="3.5" y="3.5" width="25" height="25" fill={G} stroke={D} />
+      <path d="M16 6v20M6 16h20M9 9l14 14M23 9L9 23" stroke={K} strokeWidth="2" />
+      <circle cx="16" cy="16" r="7" fill={K} />
+      <text x="16" y="20" fontSize="10" fontWeight="bold" fontFamily="Arial, sans-serif" textAnchor="middle" fill="#ffd000">$</text>
+    </>
+  ),
+  /** Soli-Tear: two cards and a tear. */
+  solitear: (
+    <>
+      <rect x="4.5" y="7.5" width="14" height="20" rx="1.5" fill="#2050d0" stroke={K} />
+      <rect x="12.5" y="4.5" width="14" height="20" rx="1.5" fill={W} stroke={K} />
+      <path d="M19.5 9c2-2 5 0 3 3l-3 3-3-3c-2-3 1-5 3-3z" fill="#c02020" />
+      <path d="M8 16c1 2 1 3 0 4-1-1-1-2 0-4z" fill="#80c0ff" />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof ICONS;

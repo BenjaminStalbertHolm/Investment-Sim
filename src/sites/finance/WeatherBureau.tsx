@@ -4,7 +4,7 @@ import { CONTRACTS, HAZARDS, WEATHER_LEAD } from '../../sim/data/commodities';
 import type { OutlookView } from '../../sim/types';
 import { useGame } from '../../state/game';
 import { Rng } from '../../world/rng';
-import { useOutlooks } from '../hooks';
+import { useModules, useOutlooks } from '../hooks';
 import { EXCHANGE, WEATHER } from '../urls';
 import { Link, useTitle } from '../web';
 
@@ -38,6 +38,10 @@ export default function WeatherBureau() {
   const weather = (outlooks ?? []).filter((o) => o.source === 'weather');
   const active = weather.filter((o) => !o.done);
   const past = weather.filter((o) => o.done);
+  // The 1998-era events module's El Niño (spec §16C.2), announced here.
+  const day = useGame((s) => (s.snapshot ? dayOf(s.snapshot.time) : 0));
+  const season = useModules()?.period?.elNino;
+  const elNino = season && day <= season.to ? season : undefined;
   const verified = past.filter((o) => o.result === 'hit').length;
   return (
     <div className="site-nwb">
@@ -48,6 +52,14 @@ export default function WeatherBureau() {
         <span>Watching the sky so the farmers don’t have to</span>
       </div>
       <div className="nwb-body">
+        {elNino && (
+          <div className="nwb-warning">
+            <b>⚠ EL NIÑO ADVISORY</b>
+            <br />
+            El Niño conditions are present in the tropical Pacific and are expected to last until {formatDate(elNino.to)}. Expect unusual
+            weather across the growing regions, and volatile prices for grains, softs and coffee.
+          </div>
+        )}
         <h2>Active Warnings and Outlooks</h2>
         {!outlooks ? (
           <p>Receiving data from the field offices…</p>

@@ -13,6 +13,8 @@ export interface Player {
   ceoCode: string;
   /** Management and performance fees (spec §15.1, My Computer → Firm); 1% and 20% when unset. */
   fees?: Fees;
+  /** A MajorPaint picture used as the logo's emblem (spec §4A), 32×32 hexadecimal pixels. */
+  emblem?: string;
 }
 
 /** A firm with the default logo and a CEO drawn from the world seed. */

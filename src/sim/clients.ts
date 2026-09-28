@@ -10,6 +10,7 @@ import {
 import { FUNDS } from './data/funds';
 import { addTradingDays, enqueue } from './events';
 import { frozen } from './regulator';
+import { prestige } from './lifestyle';
 import type { Level } from './settings';
 
 /**
@@ -84,6 +85,12 @@ const nice = (v: number) => {
   return Math.round(v / p) * p;
 };
 
+/**
+ * How prospective clients see the firm: its reputation, plus the prestige of its address and its luxuries (spec §14.2:
+ * office size and luxury assets raise mandate offers). Without either it is the reputation.
+ */
+export const standing = (sim: Sim) => Math.min(100, sim.s.clients.reputation + prestige(sim));
+
 export const unitPrice = (sim: Sim) => (sim.s.clients.units > 0 ? sim.nav() / sim.s.clients.units : 1);
 
 /** Units the clients hold; the rest are the firm's own. */
@@ -150,7 +157,7 @@ export function offerMandate(sim: Sim, fees: Fees): void {
     }
   });
   const aum = Math.max(sim.nav(), 10_000);
-  const size = aum * Math.exp(rng.normal(Math.log(0.3), 0.6)) * (0.5 + state.reputation / 50) * feeAppeal(fees);
+  const size = aum * Math.exp(rng.normal(Math.log(0.3), 0.6)) * (0.5 + standing(sim) / 50) * feeAppeal(fees);
   const amount = nice(Math.min(5 * aum, Math.max(25_000, size)));
   const kinds = Object.entries(pick.constraints) as [ConstraintKind, number][];
   const count = rng.weighted([0, 5, 3, 1]);
@@ -408,7 +415,7 @@ export function morningClients(sim: Sim, day: number, fees: Fees): void {
   if (day < state.nextOffer) return;
   offerMandate(sim, fees);
   // About one offer every two to three weeks, more for a well-regarded, cheap firm.
-  const rate = (1 / 12) * (0.6 + state.reputation / 60) * feeAppeal(fees);
+  const rate = (1 / 12) * (0.6 + standing(sim) / 60) * feeAppeal(fees);
   const gap = Math.max(2, Math.round(-Math.log(1 - sim.rng.clients.float()) / rate));
   state.nextOffer = addTradingDays(day, gap);
 }

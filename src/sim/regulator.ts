@@ -3,6 +3,8 @@ import { OPEN, addTradingDays, at, dayOf, previousTradingDay, type GameTime } fr
 import type { Sim } from './context';
 import { enqueue } from './events';
 import type { Level } from './settings';
+import { damage } from './staff';
+import { hindsightPlan } from './lifestyle';
 
 /**
  * Heat and the Securities Oversight Bureau (spec §16B). Heat (0–100) is the regulator's and the press's attention. In this
@@ -22,7 +24,7 @@ export const OUTCOMES: readonly SobOutcome[] = ['cleared', 'warning', 'fine', 's
 export interface Evidence {
   time: GameTime;
   company: number;
-  kind: 'insider' | 'preNews' | 'consulting' | 'offshore' | 'sting' | 'manipulation';
+  kind: 'insider' | 'preNews' | 'consulting' | 'offshore' | 'sting' | 'manipulation' | 'whistleblower';
   gain: number;
   /** Money paid, for payments in the ledger. */
   amount?: number;
@@ -43,6 +45,8 @@ const weight = (e: Evidence) => {
     case 'sting':
       return 4;
     case 'manipulation':
+      return 2;
+    case 'whistleblower':
       return 2;
   }
 };
@@ -99,6 +103,8 @@ export const addHeat = (sim: Sim, amount: number) => {
  * on a genuine tip about this very event are insider trading; other big, well-timed trades are flagged all the same.
  */
 export function surveil(sim: Sim, company: number, move: number, plan: number): void {
+  // Trading on Hindsight Research's paid early reports is legal (spec §14.2).
+  if (hindsightPlan(sim, plan)) return;
   const since = at(backDays(dayOf(sim.time), LOOKBACK_DAYS), 0);
   const ledger = sim.s.account.ledger;
   let gain = 0;
@@ -139,7 +145,10 @@ export function monthlyAudit(sim: Sim, day: number): void {
   const r = sim.s.regulator;
   if (r.audit) return;
   const chance = Math.min(0.9, (r.heat / 100) ** 2 * STRICTNESS[sim.s.settings.scrutiny]);
-  if (sim.rng.regulator.chance(chance)) openAudit(sim, day);
+  // With the gags module on, the month's audit was decided two weeks ago — the pizza knew (spec §16C.3).
+  const month = new Date(day * 86_400_000).getUTCFullYear() * 12 + new Date(day * 86_400_000).getUTCMonth();
+  const pizza = sim.s.settings.modules.gags ? sim.s.modules.gags?.pizza : undefined;
+  if (pizza?.month === month ? pizza.audit : sim.rng.regulator.chance(chance)) openAudit(sim, day);
 }
 
 /** The SOB opens an examination now (a monthly audit, a sting, a manipulation investigation), unless one is under way. */
@@ -184,7 +193,8 @@ export function auditReport(sim: Sim): { outcome: SobOutcome; fine: number } | u
     if (outcome === 'freeze') r.frozen = Math.max(r.frozen ?? 0, action.until);
   }
   r.record.push(action);
-  sim.s.clients.reputation = Math.max(0, sim.s.clients.reputation - REPUTATION_HIT[outcome]);
+  // An enforcement action is a scandal: a PR manager softens it (spec §4A).
+  sim.s.clients.reputation = Math.max(0, sim.s.clients.reputation - REPUTATION_HIT[outcome] * (outcome === 'enforcement' ? damage(sim) : 1));
   return { outcome, fine };
 }
 

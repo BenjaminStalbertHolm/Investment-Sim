@@ -323,6 +323,10 @@ describe('the firm’s record (spec §16)', () => {
       e.runSessions(1);
       const offer = e.mail().messages.find((m) => m.kind === 'offer' && !m.answer);
       if (offer) e.mailAction(offer.id, 'accept');
+      // New clients' money goes into MJR too, the next morning, so the book stays in the fund whatever it grows to.
+      e.advanceTo(at(nextTradingDay(dayOf(e.time)), OPEN + 30));
+      const units = Math.floor((0.97 * e.account().cash) / e.fundPrice(0));
+      if (units > 0) ok(e.tradeFund(0, units));
     }
     expect(e.ledger().filter((l) => l.kind === 'deposit').length).toBeGreaterThan(1);
     const state = e.exportState();

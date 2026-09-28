@@ -543,3 +543,18 @@ button.pressed {
   border: 1px solid #404040;
   border-radius: 50%;
 }
+
+/* Phase 10: the pager on the tray blinks when a page arrives. */
+.tray-pager.fresh {
+  animation: pager-blink 0.8s steps(2) infinite;
+}
+@keyframes pager-blink {
+  50% {
+    filter: invert(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tray-pager.fresh {
+    animation: none;
+  }
+}

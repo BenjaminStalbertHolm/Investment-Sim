@@ -44,7 +44,7 @@ export interface Order extends OrderRequest {
   /** A stop order whose stop the market reached: it now works as a market order (a limit order, for stop-limits). */
   triggered?: boolean;
   /** Placed by the broker rather than the player: a margin call's liquidation, a buy-in after a recall, a loan default. */
-  forced?: 'margin' | 'buyIn' | 'loan' | 'fine' | 'shark';
+  forced?: 'margin' | 'buyIn' | 'loan' | 'fine' | 'shark' | 'bills' | 'payroll';
 }
 
 /**
@@ -140,7 +140,11 @@ export type LedgerKind =
   // Phase 8: index fund units bought and sold, the regulator's fines, a strategic investor's money and its share of fees.
   | 'fund' | 'sobFine' | 'investment' | 'feeShare'
   // Phase 9: the dark web (spec §14A) — "Consulting fees" and payments through a shell, damages, a loan shark's money.
-  | 'consulting' | 'offshore' | 'lawsuit' | 'shark' | 'sharkInterest';
+  | 'consulting' | 'offshore' | 'lawsuit' | 'shark' | 'sharkInterest'
+  // Phase 10: wages and rent, luxuries and their upkeep, collectibles, conference tickets, the lotto and subscriptions.
+  | 'payroll' | 'rent' | 'asset' | 'upkeep' | 'collectible' | 'ticket' | 'lotto' | 'subscription'
+  // Phase 10B: cash for fractional shares after a reverse split, and the Tamagotcha's resurrection.
+  | 'cashInLieu' | 'pet';
 
 /** A line of the cash ledger (spec §12.7). `balance` is the cash after it. */
 export interface LedgerEntry {
