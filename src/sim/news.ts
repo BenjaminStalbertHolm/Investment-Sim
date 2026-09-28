@@ -78,6 +78,8 @@ export interface NewsItem {
   /** Only these outlets run it (a bought article runs where it was bought, spec §14A), and who wrote it. */
   outlets?: string[];
   journalist?: number;
+  /** Phase 10B: what a module's story is about — countries (ids), a name, a figure — for its words. */
+  args?: string[];
 }
 
 /** A rumour on the Raging Bear boards or in the trade press (spec §11.7), true or bait. */

@@ -16,6 +16,7 @@ const KIND: Record<LedgerEntry['kind'], string> = {
   fund: 'Index fund', sobFine: 'SOB fine', investment: 'Investment', feeShare: 'Investor’s fees',
   consulting: 'Consulting fees', offshore: 'Offshore transfer', lawsuit: 'Legal settlement', shark: 'Private loan', sharkInterest: 'Private loan interest',
   payroll: 'Payroll', rent: 'Rent', asset: 'Lifestyle', upkeep: 'Upkeep', collectible: 'eBuy', ticket: 'Conference', lotto: 'State Lotto', subscription: 'Subscription',
+  cashInLieu: 'Cash in lieu', pet: 'Tamagotcha',
 };
 
 /** What goods a commodity code stands for: "bushels of corn". */

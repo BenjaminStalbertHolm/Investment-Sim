@@ -9,6 +9,7 @@ import type { Mail, MailDraft } from './mail';
 import type { Listing, Market } from './market';
 import type { Model } from './model';
 import type { NewsItem } from './news';
+import type { EngineEvent } from './types';
 
 /** The simulation's random streams (spec §10.1): one per concern, so a new kind of mail never changes the market. */
 export interface Streams {
@@ -34,6 +35,10 @@ export interface Streams {
   lifestyle: Rng;
   ipo: Rng;
   extras: Rng;
+  /** Phase 10B: the fun modules (spec §16C), one stream each, drawn on only while the module is on. */
+  geo: Rng;
+  period: Rng;
+  gags: Rng;
 }
 
 /** What the engine offers the modules that run on its clock: events, macro, clients and mail. */
@@ -83,6 +88,12 @@ export interface Sim {
   allot(company: number, shares: number, price: number): void;
   /** A stock split, `ratio` new shares for each old one. */
   split(company: number, ratio: number): void;
+  /** Phase 10B: a reverse split, one new share for `ratio` old, with cash for the fractions. */
+  reverseSplit(company: number, ratio: number): void;
+  /** A supply shock to a commodity (a log move of its spot, spread over some bars). */
+  commodityShock(code: string, move: number, bars: number): void;
+  /** Tells the UI something happened (the demo crash's blue screen). */
+  emit(event: EngineEvent): void;
 }
 
 /** A bill as the engine collects it: the ledger line, whether it was charged already, and what not paying it ends as. */

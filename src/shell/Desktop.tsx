@@ -22,7 +22,8 @@ export function Desktop() {
   const installed = useShell((s) => s.installed);
   // The loan sharks' collectors took the furniture (spec §14A): no desktop icons for a week.
   const repossessed = useGame((s) => s.snapshot?.darkweb.repossessed);
-  const icons = repossessed ? [] : DESKTOP_ICONS.filter((icon) => available(icon.opens, installed));
+  const modules = useGame((s) => s.settings?.modules);
+  const icons = repossessed ? [] : DESKTOP_ICONS.filter((icon) => available(icon.opens, installed, modules));
   const wallpaper = usePrograms((s) => s.wallpaper);
 
   useEffect(() => {

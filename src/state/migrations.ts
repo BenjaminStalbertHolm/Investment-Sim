@@ -28,7 +28,7 @@ import { newBrowserState } from './browser';
 import { SAVE_FORMAT, type Manifest, type SaveDocuments } from './saveFile';
 
 /** Version of the save format. Bump it, and add a migration, whenever what is saved changes shape (spec §18). */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 type Migration = (documents: SaveDocuments) => SaveDocuments;
 
@@ -136,6 +136,14 @@ export const MIGRATIONS: Record<number, Migration> = {
     sim.desk = newDesk(sim.clock);
     sim.ipo = newIpos(sim.market.status.reduce((n, s) => n + (s ? 0 : 1), 0));
     for (const k of ['staff', 'lifestyle', 'ipo', 'extras'] as const) sim.rng[k] = Rng.stream(seed, STREAM_NAMES[k]).state();
+    return { ...docs, sim };
+  },
+  // Phase 10B: the fun modules' state and streams. A module switched on in Setup (which had nothing to switch on yet) is
+  // started where the game stands when the save loads (Engine.restore).
+  8: (docs) => {
+    const sim = docs.sim as SimState;
+    sim.modules ??= {};
+    for (const k of ['geo', 'period', 'gags'] as const) sim.rng[k] ??= Rng.stream(sim.world.seed, STREAM_NAMES[k]).state();
     return { ...docs, sim };
   },
 };

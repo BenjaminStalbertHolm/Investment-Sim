@@ -145,7 +145,10 @@ export function monthlyAudit(sim: Sim, day: number): void {
   const r = sim.s.regulator;
   if (r.audit) return;
   const chance = Math.min(0.9, (r.heat / 100) ** 2 * STRICTNESS[sim.s.settings.scrutiny]);
-  if (sim.rng.regulator.chance(chance)) openAudit(sim, day);
+  // With the gags module on, the month's audit was decided two weeks ago — the pizza knew (spec §16C.3).
+  const month = new Date(day * 86_400_000).getUTCFullYear() * 12 + new Date(day * 86_400_000).getUTCMonth();
+  const pizza = sim.s.settings.modules.gags ? sim.s.modules.gags?.pizza : undefined;
+  if (pizza?.month === month ? pizza.audit : sim.rng.regulator.chance(chance)) openAudit(sim, day);
 }
 
 /** The SOB opens an examination now (a monthly audit, a sting, a manipulation investigation), unless one is under way. */

@@ -90,9 +90,13 @@ import {
   prestige, revalue, scheduleHindsight, sellAsset, sellEverything, sellItem, subscribe, type LifestyleState,
 } from './lifestyle';
 import { applyIpo, fileIpos, listIpo, newIpos, splits, withdrawIpo, type IpoState } from './ipo';
+import { closeModules, morningModules, setModules, startModules, type ModuleFlags, type ModulesState } from './modules';
+import { exemptFromSplits, tamagotcha } from './period';
+import { momsTip } from './gags';
+import { leaderOf } from './geo';
 import { addToHistory, splitHistory } from './history';
 import type { Bill } from './context';
-import type { LifestyleView, StaffView, DeskView, IpoView } from './types';
+import type { LifestyleView, StaffView, DeskView, IpoView, ModulesView } from './types';
 
 /** The generated world, as saved: genomes rather than decoded companies (spec §18). */
 export interface SavedWorld {
@@ -144,17 +148,19 @@ export interface SimState {
   lifestyle: LifestyleState;
   desk: DeskState;
   ipo: IpoState;
+  /** Phase 10B: the fun modules' state (spec §16C), made the first time each is switched on. */
+  modules: ModulesState;
 }
 
 const STREAMS: (keyof Streams)[] = [
   'tick', 'regime', 'earnings', 'events', 'macro', 'clients', 'mail', 'commodities', 'broker', 'rivals', 'governance', 'regulator', 'darkweb',
-  'staff', 'lifestyle', 'ipo', 'extras',
+  'staff', 'lifestyle', 'ipo', 'extras', 'geo', 'period', 'gags',
 ];
 /** The stream each saved state is named after (spec §10.1). */
 export const STREAM_NAMES: Record<keyof Streams, string> = {
   tick: 'market:tick', regime: 'market:regime', earnings: 'earnings', events: 'events', macro: 'macro', clients: 'clients', mail: 'mail',
   commodities: 'commodities', broker: 'broker', rivals: 'competitors:ai', governance: 'governance', regulator: 'regulator', darkweb: 'darkweb',
-  staff: 'staff', lifestyle: 'lifestyle', ipo: 'ipo', extras: 'extras',
+  staff: 'staff', lifestyle: 'lifestyle', ipo: 'ipo', extras: 'extras', geo: 'modules:geo', period: 'modules:period', gags: 'modules:gags',
 };
 const MORNING = 7 * 60;
 /** Letters that page the player (spec §4A: margin calls and urgent mail). */
@@ -285,6 +291,7 @@ export class Engine implements Sim {
       lifestyle: newLifestyle(),
       desk: newDesk(clock),
       ipo: newIpos(companies.length),
+      modules: {},
     };
     state.clients.nextOffer = firstOffer(START_DAY);
     const engine = new Engine(structuredClone(state), companies, model);
@@ -298,6 +305,8 @@ export class Engine implements Sim {
     this.send({ kind: 'welcome' });
     if (this.s.settings.clients) this.send({ kind: 'founders', amount: this.s.settings.startingCapital });
     this.scheduleDay(day);
+    // Fun modules switched on in Setup (spec §16C).
+    startModules(this);
   }
 
   /** Continues a game from exportState(). Companies are decoded from their genomes, not regenerated. */
@@ -307,7 +316,10 @@ export class Engine implements Sim {
       loan.interest ??= 0;
       loan.accruedTo ??= dayOf(saved.clock);
     }
-    return new Engine({ ...saved, history: unpackHistory(saved.history) }, saved.world.genomes.map(decodeCompany));
+    const engine = new Engine({ ...saved, history: unpackHistory(saved.history) }, saved.world.genomes.map(decodeCompany));
+    // A module switched on before it existed (a Phase 10 save) starts now; one already running is left as it is.
+    startModules(engine);
+    return engine;
   }
 
   /** A snapshot of the whole simulation, ready to save (spec §18). Intraday bars are not part of it. */
@@ -479,8 +491,10 @@ export class Engine implements Sim {
     morningDesk(this, day);
     conferences(this, day, this.fees);
     scheduleHindsight(this, day);
-    splits(this, day);
+    splits(this, day, exemptFromSplits(this));
     y2k(this, day, previousTradingDay(day));
+    // Phase 10B: the fun modules, when on.
+    morningModules(this, day, isPaymentDay(day));
   }
 
   /**
@@ -634,6 +648,7 @@ export class Engine implements Sim {
       quarterlyFlows(this, day, published);
       quarterlyBoardLetters(this);
     }
+    closeModules(this, day, endsWeek(day), quarter);
     checkStakes(this);
     this.checkMargin(day);
     const worth = this.netWorth();
@@ -876,6 +891,12 @@ export class Engine implements Sim {
         if (action === 'pay' && !this.payable(b.blackmail.amount)) return 'You do not have the cash to pay.';
         answerBlackmail(this, mail.journalist!, action === 'pay');
         return answered(action === 'pay' ? 'paid' : 'refused');
+      }
+      case 'momClub': {
+        if (action !== 'tip0' && action !== 'tip1' && action !== 'tip2' && action !== 'noTip') break;
+        momsTip(this, action === 'noTip' ? undefined : Number(action.slice(3)), mail.options ?? []);
+        mail.answer = 'done';
+        return undefined;
       }
       case 'poached': {
         if (action !== 'match' && action !== 'letGo') break;
@@ -2439,6 +2460,44 @@ export class Engine implements Sim {
     });
   }
 
+  // ---------- The fun modules (Phase 10B, spec §16C) ----------
+
+  /** My Computer → Game → Fun modules: each switches on and off cleanly mid-game. Returns the settings now. */
+  setModules(flags: ModuleFlags): GameSettings {
+    setModules(this, flags);
+    return structuredClone(this.s.settings);
+  }
+
+  /** The Tamagotcha (spec §16C.2). */
+  tamagotcha(a: { do: 'adopt' | 'feed' | 'play' | 'resurrect'; name?: string }): string | undefined {
+    if (this.s.bankruptcy) return 'The firm is bankrupt.';
+    return tamagotcha(this, a.do, a.name);
+  }
+
+  /** What the modules show: tensions and leaders (Encarter 98, the news sites), the period's state, the gags'. */
+  modules(): ModulesView {
+    const { geo, period, gags } = this.s.modules;
+    const flags = this.s.settings.modules;
+    return {
+      flags: { ...flags },
+      geo: flags.geopolitics && geo
+        ? {
+          tensions: Object.entries(geo.tensions).map(([pair, t]) => ({ pair, ...t })),
+          leaders: Object.fromEntries(Object.keys(geo.leaders).map((id) => [id, leaderOf(geo, id)])),
+        }
+        : undefined,
+      period: flags.periodEvents && period
+        ? { bubble: period.bubble, popped: period.popped, elNino: period.elNino && { ...period.elNino }, tamagotcha: period.tamagotcha && { ...period.tamagotcha }, renamed: [...period.renamed] }
+        : undefined,
+      gags: flags.gags && gags
+        ? {
+          stress: gags.stress, horoscope: { ...gags.horoscope }, hemline: { ...gags.hemline }, pizza: gags.pizza && { ...gags.pizza }, goat: gags.goat?.company,
+          enrun: gags.fraud && { company: gags.fraud.company, stage: gags.fraud.stage }, darts: { picks: [...gags.darts.picks], wins: gags.darts.wins, losses: gags.darts.losses },
+        }
+        : undefined,
+    };
+  }
+
   /** ISeekYou's unread messages and the newest one (the chime), and the newest page. */
   deskStatus(): { im: { unread: number; latest: number }; page: number; companies: number } {
     const d = this.s.desk;
@@ -2552,7 +2611,7 @@ export class Engine implements Sim {
    * it; every holding — the firm's, its open orders, competitors' and the index funds' — is multiplied, so nothing is
    * worth more or less.
    */
-  split(i: number, ratio: number): void {
+  split(i: number, ratio: number, announce = true): void {
     const w = this.s.world;
     w.splits[i] = (w.splits[i] ?? 1) * ratio;
     this.model.shares[i] = this.companies[i].sharesOutstanding * w.splits[i];
@@ -2588,8 +2647,47 @@ export class Engine implements Sim {
       const k = members.indexOf(i);
       if (k >= 0) funds.basket[f][k] *= ratio;
     });
+    if (!announce) return;
     this.report({ kind: 'split', company: i, level: ratio });
     if (p) this.send({ kind: 'split', company: i, shares: p.shares, amount: ratio });
+  }
+
+  /**
+   * A reverse split (Phase 10B: Birkshire Hatchaway's splits undone): one new share for `ratio` old ones. Open orders are
+   * cancelled, and a holding's fraction of a share is paid out (or, short, paid for) in cash at the price.
+   */
+  reverseSplit(i: number, ratio: number): void {
+    for (const o of this.openOrders()) if (o.company === i) this.finish(o, 'cancelled', 'Reverse split');
+    this.split(i, 1 / ratio, false);
+    const account = this.s.account;
+    const p = account.positions.find((x) => x.company === i);
+    if (p) {
+      const whole = Math.trunc(p.shares);
+      const fraction = p.shares - whole;
+      if (Math.abs(fraction) > 1e-12) {
+        const price = this.market.price[i];
+        const amount = fraction * price;
+        const basis = p.cost * (fraction / p.shares);
+        book(account, this.s.clock, 'cashInLieu', amount, { company: i, shares: Math.abs(fraction), price });
+        p.realized += amount - basis;
+        p.cost -= basis;
+      }
+      p.shares = whole;
+      if (!whole) {
+        account.positions.splice(account.positions.indexOf(p), 1);
+        account.closed.push({ company: i, opened: p.opened, closed: this.s.clock, realized: p.realized });
+      }
+      this.send({ kind: 'split', company: i, shares: whole, amount: 1 / ratio });
+    }
+    this.report({ kind: 'story', company: i, text: 'period.neverSplit', args: [String(ratio)] });
+  }
+
+  commodityShock(code: string, move: number, bars: number): void {
+    this.commodities.shock(CONTRACT_INDEX[code], move, bars);
+  }
+
+  emit(event: EngineEvent): void {
+    this.events.push(event);
   }
 
   // ---------- Views ----------

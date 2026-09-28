@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { PROGRAMS, available, type AppId } from '../apps/catalog';
 import { Icon, type IconName } from '../art/icons';
 import { helpUrl } from '../sites/urls';
+import { useGame } from '../state/game';
 import { useShell } from '../state/shell';
 import { usePrograms } from '../state/programs';
 import { useTrade } from '../state/trade';
@@ -13,6 +14,7 @@ const SETTINGS = ['Display', 'Sounds', 'Game', 'Firm', 'Saves'];
 export function StartMenu({ onClose }: { onClose(): void }) {
   const ref = useRef<HTMLDivElement>(null);
   const installed = useShell((s) => s.installed);
+  const modules = useGame((s) => s.settings?.modules);
   const stapley = usePrograms((s) => s.stapley.enabled);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export function StartMenu({ onClose }: { onClose(): void }) {
       </div>
       <ul className="menu">
         <Item icon="programs" label="Programs">
-          {PROGRAMS.filter((a) => available(a.id, installed)).map((a) => (
+          {PROGRAMS.filter((a) => available(a.id, installed, modules)).map((a) => (
             <Item key={a.id} icon={a.icon} label={a.title} small onClick={launch(a.id)} />
           ))}
         </Item>

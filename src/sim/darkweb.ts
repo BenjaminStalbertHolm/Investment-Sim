@@ -29,6 +29,11 @@ import { contactOf } from './desk';
  * save does not re-roll it; what came of it lands later (`resolve`), as a news story, a letter, a price move. Some
  * vendors are exit scams or SOB stings: their rating and account age are the only warning.
  */
+
+/** Shell companies cost less to register in Ireland (spec §16C.1), where the Geopolitics module puts them all. */
+const IRISH = 0.6;
+const irish = (sim: Sim) => (sim.s.settings.modules.geopolitics ? IRISH : 1);
+
 export type Outcome = 'success' | 'failure' | 'scam' | 'sting';
 
 export interface Vendor {
@@ -318,8 +323,8 @@ export function quote(sim: Sim, r: DarkRequest): Terms | string {
       break;
     case 'shell':
       if (shell) return `You already own ${shell.name}.`;
-      price = PRICES.shell;
-      extra.yearly = PRICES.shellYear;
+      price = PRICES.shell * irish(sim);
+      extra.yearly = PRICES.shellYear * irish(sim);
       extra.discovery = discoveryChance(heat);
       extra.fine = shellFine(sim);
       extra.reputation = 20;
@@ -625,6 +630,8 @@ export function resolve(sim: Sim, id: number): void {
       const shell: Shell = {
         name: `${rng.pick(SHELL_NAMES)} ${rng.pick(SHELL_FORMS)}`, jurisdiction: rng.pick(JURISDICTIONS), opened: day, renews: day + 365,
       };
+      // With the Geopolitics module, every shell lives in the same mailbox in Dublin.
+      if (irish(sim) < 1) shell.jurisdiction = 'Ireland (a mailbox in Dublin)';
       d.shells.push(shell);
       return void mail({ text: `${shell.name} (${shell.jurisdiction})` });
     }
@@ -785,7 +792,7 @@ export function morningDarkWeb(sim: Sim, day: number): void {
   if (!shell) return;
   if (day >= shell.renews) {
     shell.renews += 365;
-    pay(sim, PRICES.shellYear, true, `${shell.name}: registered agent’s yearly fee`);
+    pay(sim, PRICES.shellYear * irish(sim), true, `${shell.name}: registered agent’s yearly fee`);
   }
   if (rng.chance(1 - (1 - discoveryChance(sim.s.regulator.heat)) ** (1 / 12))) shellFound(sim, shell);
 }

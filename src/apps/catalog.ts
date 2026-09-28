@@ -23,6 +23,8 @@ export type AppId =
   | 'sweeper'
   | 'solitear'
   | 'pager'
+  | 'encarter'
+  | 'tamagotcha'
   | 'installer'
   | 'quote'
   | 'run'
@@ -43,6 +45,8 @@ export interface AppDef {
   inPrograms?: boolean;
   /** Only there once installed from Tucats Downloads (spec §4A, §14A). */
   installable?: boolean;
+  /** Only there while a fun module is on (spec §16C). */
+  module?: 'geopolitics' | 'periodEvents' | 'gags';
 }
 
 const WIN = { width: 640, height: 440 };
@@ -95,6 +99,11 @@ const defs: AppDef[] = [
     blurb: 'The mines are companies that went bankrupt.' },
   { id: 'solitear', title: 'Soli-Tear', icon: 'solitear', defaultSize: { width: 640, height: 480 }, inPrograms: true, installable: true,
     blurb: 'Solitaire, with your firm’s logo on every card.' },
+  // The fun modules' programs (spec §16C).
+  { id: 'encarter', title: 'Encarter 98', icon: 'encarter', defaultSize: { width: 780, height: 520 }, inPrograms: true, module: 'geopolitics',
+    blurb: 'The world atlas, as the Geopolitics module draws it.' },
+  { id: 'tamagotcha', title: 'Tamagotcha', icon: 'tamagotcha', defaultSize: { width: 260, height: 330 }, inPrograms: true, module: 'periodEvents',
+    blurb: 'A virtual pet. Feed it or it dies.' },
   { id: 'installer', title: 'Setup', icon: 'installer', defaultSize: { width: 500, height: 380 }, dialog: true },
   { id: 'run', title: 'Run', icon: 'run', defaultSize: { width: 360, height: 170 }, dialog: true },
   { id: 'shutdown', title: 'Shut Down Doors', icon: 'shutdown', defaultSize: { width: 340, height: 160 }, dialog: true },
@@ -126,7 +135,10 @@ export const DESKTOP_ICONS: DesktopIconDef[] = [
   ),
   // Installed from Tucats Downloads (spec §4A: optional apps appear only once installed).
   ...(['garlic', 'winramp', 'sweeper', 'solitear'] as const).map((id) => ({ id, label: APPS[id].title, icon: APPS[id].icon, opens: id })),
+  // The fun modules' programs, while their module is on.
+  ...(['encarter', 'tamagotcha'] as const).map((id) => ({ id, label: APPS[id].title, icon: APPS[id].icon, opens: id })),
 ];
 
 /** Whether a program is on this machine: always, or once installed from Tucats. */
-export const available = (id: AppId, installed: readonly string[]) => !APPS[id]?.installable || installed.includes(id);
+export const available = (id: AppId, installed: readonly string[], modules?: Partial<Record<NonNullable<AppDef['module']>, boolean>>) =>
+  (!APPS[id]?.installable || installed.includes(id)) && (!APPS[id]?.module || !!modules?.[APPS[id].module!]);

@@ -92,7 +92,9 @@ export type MailKind =
   | 'lotto'
   | 'hindsight'
   | 'ipo'
-  | 'split';
+  | 'split'
+  // Phase 10B: Mom's investment club asks for a tip (spec §16C.3).
+  | 'momClub';
 
 export type Folder = 'inbox' | 'clients' | 'broker' | 'news' | 'tips' | 'junk' | 'sent';
 
@@ -113,6 +115,7 @@ export const FOLDER_OF: Record<MailKind, Folder> = {
   darkweb: 'inbox', blackmail: 'inbox', sharkCall: 'inbox', shellFound: 'inbox', forgeryFound: 'inbox',
   research: 'inbox', poached: 'inbox', staffLeft: 'inbox', compliance: 'inbox', hackBlocked: 'inbox', hacked: 'inbox', clientLetter: 'sent',
   ebuy: 'inbox', conference: 'inbox', lotto: 'inbox', hindsight: 'news', ipo: 'broker', split: 'broker',
+  momClub: 'inbox',
   spam: 'junk',
 };
 
@@ -143,6 +146,8 @@ export interface Mail {
   filed?: boolean;
   client?: number;
   company?: number;
+  /** Phase 10B: the companies a letter offers to choose from (Mom's club). */
+  options?: number[];
   /** News item (alerts). */
   news?: number;
   tip?: number;
@@ -189,7 +194,10 @@ export interface Mail {
 }
 
 /** The action buttons a letter can carry (spec §15, §15.5–15.6). */
-export type MailAction = 'accept' | 'decline' | 'report' | Vote | 'replaceCeo' | 'raiseDividend' | 'cutDividend' | 'pay' | 'refuse' | 'match' | 'letGo';
+export type MailAction =
+  | 'accept' | 'decline' | 'report' | Vote | 'replaceCeo' | 'raiseDividend' | 'cutDividend' | 'pay' | 'refuse' | 'match' | 'letGo'
+  // Phase 10B: which of the holdings in her letter Mom's club should buy, or none.
+  | 'tip0' | 'tip1' | 'tip2' | 'noTip';
 
 export type MailDraft = Omit<Mail, 'id' | 'time' | 'read' | 'flagged' | 'deleted'> & { time?: GameTime; read?: boolean };
 

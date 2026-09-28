@@ -16,6 +16,8 @@ import type { Employee } from './staff';
 import type { Auction, OwnedAsset, OwnedItem } from './lifestyle';
 import type { Alert, Contact, DeskState, ImMessage, Page, Rule } from './desk';
 import type { PendingIpo } from './ipo';
+import type { Tamagotcha } from './period';
+import type { GameSettings } from './settings';
 
 /** Chart timeframes (spec §13). */
 export type Timeframe = '1D' | '5D' | '1M' | '6M' | '1Y' | '5Y' | 'MAX';
@@ -268,7 +270,9 @@ export type EngineEvent =
   | { kind: 'page' }
   | { kind: 'im' }
   | { kind: 'listed'; company: number }
-  | { kind: 'bounce' };
+  | { kind: 'bounce' }
+  // Phase 10B: Doors crashes on stage at COMDEXX, and the player's screen fakes a blue screen (spec §16C.2).
+  | { kind: 'demoCrash' };
 
 /** The firm's clients and money (spec §15.1): everything is AUM; the firm's own capital is the part no client owns. */
 export interface ClientsView {
@@ -549,6 +553,25 @@ export interface DeskView {
 
 export interface IpoView {
   pending: Omit<PendingIpo, 'hot' | 'pop'>[];
+}
+
+/** The fun modules as the UI shows them (Phase 10B): each module's part only while it is on. */
+export interface ModulesView {
+  flags: GameSettings['modules'];
+  geo?: {
+    tensions: { pair: string; rung: number; since: number }[];
+    leaders: Record<string, { title: string; name: string; note?: string; ceo: string; since: number }>;
+  };
+  period?: { bubble: number; popped?: number; elNino?: { from: number; to: number }; tamagotcha?: Tamagotcha; renamed: number[] };
+  gags?: {
+    stress: number;
+    horoscope: { week: number; sign: 1 | -1 };
+    hemline: { month: number; sign: 1 | -1 };
+    pizza?: { month: number; decided: number; audit: boolean };
+    goat?: number;
+    enrun?: { company: number; stage: number };
+    darts: { picks: number[]; wins: number; losses: number };
+  };
 }
 
 export type { Bar, ClosedPosition, LedgerEntry, Order };

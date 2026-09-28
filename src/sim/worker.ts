@@ -257,6 +257,10 @@ const api = {
   deskAction: (a: Parameters<Engine['deskAction']>[0]) => changed(game().deskAction(a)),
   ipos: () => game().ipos(),
   ipoAction: (a: Parameters<Engine['ipoAction']>[0]) => changed(game().ipoAction(a)),
+  // Phase 10B: the fun modules.
+  setModules: (flags: Parameters<Engine['setModules']>[0]) => changed(game().setModules(flags)),
+  tamagotcha: (a: Parameters<Engine['tamagotcha']>[0]) => changed(game().tamagotcha(a)),
+  modules: () => game().modules(),
   directory: () => game().directory(),
 };
 

@@ -264,6 +264,27 @@ const ICONS = {
       <rect x="11" y="24" width="10" height="2" fill="#606060" />
     </>
   ),
+  /** Encarter 98: a globe on a stand, as every 1998 encyclopaedia box had. */
+  encarter: (
+    <>
+      <circle cx="16" cy="13" r="10" fill="#3070d0" stroke={K} />
+      <path d="M9 9c3 0 4 2 6 1s2-3 4-2 2 3 0 4-4 0-4 3-3 3-5 2-3-4-1-8zM20 16c2 0 3 1 3 3s-2 2-3 1z" fill="#40a040" stroke="#206020" strokeWidth="0.5" />
+      <path d="M6 13a10 10 0 0 0 20 0" fill="none" stroke="#c0a040" strokeWidth="1.5" />
+      <rect x="15" y="23" width="2" height="4" fill="#806020" />
+      <rect x="10" y="27" width="12" height="2" fill="#806020" stroke={K} strokeWidth="0.5" />
+    </>
+  ),
+  /** Tamagotcha: an egg-shaped virtual pet with a tiny screen. */
+  tamagotcha: (
+    <>
+      <ellipse cx="16" cy="17" rx="10" ry="12" fill="#f070b0" stroke={K} />
+      <rect x="10" y="10" width="12" height="10" fill="#b8d0a0" stroke={D} />
+      <path d="M13 14h2v2h-2zM17 14h2v2h-2zM14 17h4v1h-4z" fill="#203020" />
+      <circle cx="11" cy="24" r="1.5" fill={W} stroke={K} />
+      <circle cx="16" cy="25" r="1.5" fill={W} stroke={K} />
+      <circle cx="21" cy="24" r="1.5" fill={W} stroke={K} />
+    </>
+  ),
   /** WinRamp: a llama-free lightning bolt over an equaliser. */
   winramp: (
     <>

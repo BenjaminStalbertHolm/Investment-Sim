@@ -142,7 +142,9 @@ export type LedgerKind =
   // Phase 9: the dark web (spec §14A) — "Consulting fees" and payments through a shell, damages, a loan shark's money.
   | 'consulting' | 'offshore' | 'lawsuit' | 'shark' | 'sharkInterest'
   // Phase 10: wages and rent, luxuries and their upkeep, collectibles, conference tickets, the lotto and subscriptions.
-  | 'payroll' | 'rent' | 'asset' | 'upkeep' | 'collectible' | 'ticket' | 'lotto' | 'subscription';
+  | 'payroll' | 'rent' | 'asset' | 'upkeep' | 'collectible' | 'ticket' | 'lotto' | 'subscription'
+  // Phase 10B: cash for fractional shares after a reverse split, and the Tamagotcha's resurrection.
+  | 'cashInLieu' | 'pet';
 
 /** A line of the cash ledger (spec §12.7). `balance` is the cash after it. */
 export interface LedgerEntry {
