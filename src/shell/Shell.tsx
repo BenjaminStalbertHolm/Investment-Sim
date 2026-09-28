@@ -1,12 +1,15 @@
 import { Suspense, lazy, useCallback, useEffect } from 'react';
-import { boot, saveGame, useGame } from '../state/game';
+import { installClickSounds, startup } from '../audio/sounds';
+import { boot, useGame } from '../state/game';
+import { usePrefs } from '../state/prefs';
 import { useShell } from '../state/shell';
-import { useWindows } from '../state/windows';
 import { MessageBox } from '../ui98/MessageBox';
 import { TickerTape } from '../ui98/TickerTape';
 import { BlueScreen, DemoCrash } from './BlueScreen';
 import { BootScreen } from './BootScreen';
 import { Desktop } from './Desktop';
+import { Screensaver, useIdleSaver } from './Screensaver';
+import { onShortcut } from './shortcuts';
 import { ShutdownScreen } from './ShutdownScreen';
 import { Taskbar } from './Taskbar';
 
@@ -31,37 +34,38 @@ export function Shell() {
   const stopCrash = useCallback(() => useGame.setState({ demoCrash: false }), []);
   const periodEvents = useGame((s) => s.settings?.modules.periodEvents);
   const toReport = useCallback(() => useGame.setState({ bust: 'report' }), []);
-  const booted = useCallback(() => setPower('running'), [setPower]);
+  const booted = useCallback(() => {
+    setPower('running');
+    startup();
+  }, [setPower]);
+  const scheme = usePrefs((s) => s.scheme);
+  const crt = usePrefs((s) => s.crt);
+
+  // Colour scheme (spec §17); the sound of a click.
+  useEffect(() => {
+    document.documentElement.dataset.scheme = scheme;
+  }, [scheme]);
+  useEffect(() => installClickSounds(), []);
+  useIdleSaver(power === 'running' && !setup && ready);
 
   // Power on: continue the latest save or start a new game while the splash shows.
   useEffect(() => {
     if (power === 'booting') void boot();
   }, [power]);
 
-  // Cmd/Ctrl+S saves anywhere (spec §18).
+  // Ctrl+Alt+Del, F1 and Cmd/Ctrl+S work anywhere on the desktop.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      // Ctrl+Alt+Del: Task Mangler (spec §4A).
-      if (e.ctrlKey && e.altKey && (e.key === 'Delete' || e.key === 'Backspace') && useShell.getState().power === 'running') {
-        e.preventDefault();
-        useWindows.getState().open('taskmangler');
-        return;
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        const { power, setup } = useShell.getState();
-        if (useGame.getState().ready && power === 'running' && !setup) void saveGame();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onShortcut);
+    return () => window.removeEventListener('keydown', onShortcut);
   }, []);
 
-  if (power === 'booting') return <BootScreen ready={ready || setup} status={busy} onDone={booted} />;
-  if (power === 'off') return <ShutdownScreen onPowerOn={() => setPower('booting')} />;
+  const glass = crt && <div className="crt" aria-hidden="true" />;
+  if (power === 'booting') return <>{glass}<BootScreen ready={ready || setup} status={busy} onDone={booted} /></>;
+  if (power === 'off') return <>{glass}<ShutdownScreen onPowerOn={() => setPower('booting')} /></>;
   if (setup) {
     return (
       <Suspense fallback={<div className="setup-screen" />}>
+        {glass}
         <SetupWizard />
         {alert && <MessageBox text={alert} onClose={() => useGame.setState({ alert: undefined })} />}
       </Suspense>
@@ -69,6 +73,8 @@ export function Shell() {
   }
   return (
     <div className="screen">
+      {glass}
+      <Screensaver />
       <Desktop />
       <TickerTape />
       <Taskbar />

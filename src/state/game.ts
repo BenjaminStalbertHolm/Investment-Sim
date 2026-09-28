@@ -14,6 +14,8 @@ import { DIFFICULTIES, type GameSettings } from '../sim/settings';
 import type { Directory, Snapshot } from '../sim/types';
 import { chime } from '../audio/chime';
 import { uhOh } from '../audio/uhoh';
+import { autosaveDue, ironmanSlot } from './autosave';
+import { usePrefs } from './prefs';
 import { newBrowserState, useBrowser, type Dialup, type Favourite } from './browser';
 import { newMailView, useMailView, type MailView } from './mail';
 import { newPrograms, usePrograms, type Programs } from './programs';
@@ -130,7 +132,7 @@ export async function newGame(options: NewGameOptions): Promise<void> {
   const started = await simulation().newGame(options);
   setStartYear(started.settings.startYear);
   useWindows.getState().closeAll();
-  useShell.setState({ installed: [] });
+  useShell.setState({ installed: [], speed: usePrefs.getState().startSpeed });
   useTrade.setState(newTradeState());
   useBrowser.setState(newBrowserState());
   useMailView.setState(newMailView(), true);
@@ -164,6 +166,9 @@ export async function loadGame(id: string): Promise<void> {
     });
     if (bankrupt) setSpeed(0);
     resume();
+    if (loaded.upgradedFrom !== undefined) {
+      notify('This game was saved by an older version of Majorsoft Doors 98 and has been upgraded. Save it to keep the upgrade.');
+    }
   } finally {
     useGame.setState({ busy: undefined });
   }
@@ -179,7 +184,9 @@ export async function saveGame(target?: { id: string; name: string }): Promise<S
     notify('A bankrupt firm cannot be saved again: its save is read-only.');
     return undefined;
   }
-  const slot = target ??
+  // Ironman (spec §9): the game has one slot, and every save goes there.
+  const ironman = useGame.getState().settings?.ironman ? ironmanSlot(useGame.getState().seed, firmName) : undefined;
+  const slot = ironman ?? target ??
     useGame.getState().slot ?? { id: `save-${Date.now()}`, name: `${firmName} ${formatDate(dayOf(snapshot?.time ?? 0))}` };
   const saved = await write(slot.id, slot.name, false);
   if (saved) {
@@ -189,9 +196,18 @@ export async function saveGame(target?: { id: string; name: string }): Promise<S
   return saved;
 }
 
-/** Every game week, and before risky actions such as signing a loan (spec §18): into the oldest of the three autosave slots. */
+/**
+ * On the schedule set in My Computer → Game (every game week unless changed), and before risky actions such as signing a
+ * loan (spec §18): into the oldest of the three autosave slots. An Ironman game keeps one slot instead.
+ */
 export async function autosave(): Promise<void> {
-  if (useGame.getState().bankrupt || useGame.getState().snapshot?.account.bankrupt) return;
+  const { bankrupt, snapshot, settings, seed, firmName } = useGame.getState();
+  if (bankrupt || snapshot?.account.bankrupt) return;
+  if (settings?.ironman) {
+    const slot = ironmanSlot(seed, firmName);
+    if (await write(slot.id, slot.name, false)) useGame.setState({ slot });
+    return;
+  }
   const id = nextAutosave(await listSaves());
   await write(id, `Autosave ${id.slice(-1)}`, true);
 }
@@ -213,6 +229,10 @@ async function write(id: string, name: string, auto: boolean): Promise<SaveSlot 
 
 /** Adds a .d98 file (from the file picker or dropped on the desktop) to C:\Saves\ and loads it. */
 export async function importSave(file: File): Promise<void> {
+  if (useGame.getState().settings?.ironman) {
+    showError('This is an Ironman game: nothing can be loaded until you start a new game.');
+    return;
+  }
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const manifest = await simulation().inspect(bytes);
@@ -301,12 +321,15 @@ export function useAccountData<T>(fetch: () => Promise<T>): T | undefined {
 }
 
 function resume(): void {
+  lastClose = undefined;
   lastWatch = '';
   syncWatch();
   void simulation().setSpeed(useShell.getState().speed);
 }
 
 let fetchingDirectory = false;
+/** The last session to close, for the monthly autosave. */
+let lastClose: number | undefined;
 
 function receive(snapshot: Snapshot): void {
   useGame.setState({ snapshot });
@@ -325,8 +348,14 @@ function receive(snapshot: Snapshot): void {
     notify(`You have ${mail === 1 ? 'a new message' : `${mail} new messages`} in Outbox Express.`);
   }
   for (const event of snapshot.events) {
-    if (event.kind === 'close' && event.weekEnd) void autosave();
-    else if (event.kind === 'halt') notify('Trading halted: the MAJOR 500 is down 10% today.');
+    if (event.kind === 'close') {
+      const due = autosaveDue(useGame.getState().settings?.ironman ? 'day' : usePrefs.getState().autosave, event, lastClose);
+      lastClose = event.day;
+      if (due) void autosave();
+    } else if (event.kind === 'page' && usePrefs.getState().pauseOnPage && useShell.getState().speed !== 0) {
+      setSpeed(0);
+      notify('The clock is paused: you have a page. Set the speed again when you are ready.');
+    } else if (event.kind === 'halt') notify('Trading halted: the MAJOR 500 is down 10% today.');
     else if (event.kind === 'fill') {
       const verb = { buy: 'Bought', sell: 'Sold', short: 'Sold short', cover: 'Bought to cover' }[event.side];
       notify(`${verb} ${event.shares.toLocaleString('en-US')} ${tickers[event.company]} at $${event.price.toFixed(2)}`);

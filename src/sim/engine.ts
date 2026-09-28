@@ -4,7 +4,7 @@ import { generateWorld, type World, type WorldOptions } from '../world/generator
 import type { Firm, Holding } from '../world/ownership';
 import { Rng, type RngState } from '../world/rng';
 import {
-  book, bookCash, bookFill, bookFund, direction, isStop, opens, type Account, type Order, type OrderRequest, type OrderStatus, type Side,
+  book, bookCash, bookFill, bookFund, direction, isStop, opens, pruneBooks, type Account, type Order, type OrderRequest, type OrderStatus, type Side,
 } from './account';
 import { bankruptcyReport, type BankruptcyReport, type Cause } from './bankruptcy';
 import {
@@ -606,6 +606,7 @@ export class Engine implements Sim {
     const { dayOpen, dayHigh, dayLow, dayVolume, index } = market.state;
     const prices = { open: dayOpen, high: dayHigh, low: dayLow, close: market.price, volume: dayVolume };
     recordDay(this.s.history, day, prices, [index.open, index.high, index.low, market.indexLevel]);
+    pruneBooks(this.s.account);
     const { settings } = this.s;
     const next = nextTradingDay(day);
     const nights = next - day;
@@ -1468,7 +1469,8 @@ export class Engine implements Sim {
       shortInterest[company] = pileIn(shortInterest[company], move);
       return move;
     }
-    const factor = squeeze(this.borrow(company).shortInterest);
+    // Short interest does not depend on the firm's own pending orders, so they are not looked up (this runs for every company).
+    const factor = squeeze(this.borrow(company, 0).shortInterest);
     // The shorts who covered into the squeeze are gone.
     if (factor > 1) shortInterest[company] *= 0.7;
     return move * factor;
@@ -2592,7 +2594,8 @@ export class Engine implements Sim {
     Object.assign(this.model, buildModel(w.seed, this.companies, this.s.settings, w.splits));
     m.shortInterest = grow(m.shortInterest, this.model.shortBase[i]);
     this.market.grow();
-    this.eventRate = eventRates(this.companies, w.tiers, this.s.settings.events);
+    // A company's event rate depends on itself alone: the new one is added to the others' rather than every rate recomputed.
+    this.eventRate = grow(this.eventRate, ...eventRates([company], [tier], this.s.settings.events));
     this.events.push({ kind: 'listed', company: i });
     return i;
   }

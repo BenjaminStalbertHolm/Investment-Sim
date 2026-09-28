@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../../art/icons';
+import { dialUp } from '../../audio/sounds';
 import { companyAt, Site } from '../../sites/Site';
 import { CELLAR, CLOVE, MARKETS } from '../../sim/data/darkweb';
 import { BARRENS, JOTTINGS, NEWSWIRE, QUOTEZONE, normalizeUrl } from '../../sites/urls';
@@ -65,6 +66,7 @@ export function BrowserWindow({ windowId, garlic = false }: AppProps & { garlic?
   const [reloads, setReloads] = useState(0);
   const [layer, setLayer] = useState(1);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const dialled = useRef(false);
   const scroller = useRef<HTMLDivElement>(null);
   const parsed = useMemo(() => new URL(url), [url]);
 
@@ -101,6 +103,11 @@ export function BrowserWindow({ windowId, garlic = false }: AppProps & { garlic?
       const next = move === 'go' ? normalizeUrl(target) : target;
       const ms = (garlic ? garlicDelay : loadingDelay)(next, useBrowser.getState().dialup);
       if (!ms) return commit(next, move);
+      // The modem answers the first page of a window that has not connected yet (spec §17: dial-up noise).
+      if (!garlic && !dialled.current && useBrowser.getState().dialup === 'authentic') {
+        dialled.current = true;
+        dialUp(ms / 1000);
+      }
       setPending({ url: next, move, ms });
       timer.current = setTimeout(() => commit(next, move), ms);
     },

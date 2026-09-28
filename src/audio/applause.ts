@@ -1,16 +1,16 @@
-let context: AudioContext | undefined;
-let last = 0;
+import { output, throttled } from './mixer';
+
+const ready = throttled(3000);
 
 /**
  * A short burst of applause (spec §16C.1: hovering over North Korea): a crowd's claps, each a few milliseconds of
  * filtered noise, scattered over a second and a half.
  */
 export function applause(): void {
-  const now = performance.now();
-  if (now - last < 3000 || typeof AudioContext === 'undefined') return;
-  last = now;
-  context ??= new AudioContext();
-  const ctx = context;
+  if (!ready()) return;
+  const sound = output();
+  if (!sound) return;
+  const { ctx, out } = sound;
   const clap = ctx.createBuffer(1, Math.round(ctx.sampleRate * 0.03), ctx.sampleRate);
   const data = clap.getChannelData(0);
   for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (data.length / 6));
@@ -24,7 +24,7 @@ export function applause(): void {
     const gain = ctx.createGain();
     const at = t + Math.random() * 1.5;
     gain.gain.value = 0.12 * (1 - (at - t) / 1.8);
-    source.connect(filter).connect(gain).connect(ctx.destination);
+    source.connect(filter).connect(gain).connect(out);
     source.start(at);
   }
 }

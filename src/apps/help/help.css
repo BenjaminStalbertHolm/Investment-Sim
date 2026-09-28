@@ -1,0 +1,92 @@
+/* Doors Help (Phase 11): a 90s help file — navigation on the left, the guide on the right. */
+
+.help-app .help-body {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  min-height: 0;
+  padding: 4px;
+}
+
+.help-nav {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 220px;
+  min-height: 0;
+}
+
+.help-nav-panel {
+  flex: 1;
+  min-height: 0;
+  padding: 6px;
+  overflow: auto;
+}
+
+.help-contents {
+  margin: 0;
+  padding: 4px;
+  background: #fff;
+}
+
+.help-contents a {
+  cursor: default;
+}
+
+.help-contents a.current {
+  background: var(--highlight);
+  color: #fff;
+}
+
+.help-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+}
+
+.help-list label {
+  display: block;
+}
+
+.help-list input[type='text'] {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.help-results {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  background: #fff;
+}
+
+.help-results li {
+  padding: 1px 4px;
+}
+
+.help-results a,
+.help-topic a[role='link'] {
+  color: #00e;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.help-topic {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 14px 14px;
+  overflow: auto;
+  background: #fdf8ec;
+  color: #222;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.help-topic h1 {
+  margin: 4px 0 8px;
+  color: #5a141e;
+  font-size: 20px;
+}

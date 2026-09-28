@@ -18,6 +18,8 @@ export interface WindowParams {
   chart?: ChartType;
   /** The page a browser window shows. */
   url?: string;
+  /** The guide Doors Help shows. */
+  topic?: string;
 }
 
 export interface WindowState {

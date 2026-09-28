@@ -1,0 +1,65 @@
+/* My Computer → Display, Sounds and Game (Phase 11). */
+
+.settings-panel fieldset {
+  margin-bottom: 8px;
+}
+
+.settings-panel .field-row {
+  margin: 4px 0;
+}
+
+.settings-row {
+  display: flex;
+  gap: 12px;
+}
+
+.wallpaper-list {
+  flex: 1;
+  height: 96px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  background: #fff;
+  box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+}
+
+.wallpaper-list li {
+  padding: 1px 4px;
+  cursor: default;
+}
+
+.wallpaper-list li.selected {
+  background: var(--highlight);
+  color: #fff;
+}
+
+.wallpaper-preview {
+  flex: none;
+  width: 120px;
+  padding: 8px 10px 14px;
+  background: #d8d0c0;
+  border: 2px outset #eee;
+}
+
+.wallpaper-monitor {
+  height: 72px;
+  border: 2px inset #777;
+}
+
+.sound-event {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.sound-event .field-row {
+  margin: 0;
+}
+
+.volume-value {
+  min-width: 34px;
+  text-align: right;
+}

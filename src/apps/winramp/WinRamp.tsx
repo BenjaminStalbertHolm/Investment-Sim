@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { usePrefs } from '../../state/prefs';
 import { usePrograms } from '../../state/programs';
 import { useWindows } from '../../state/windows';
 import type { AppProps } from '../types';
@@ -12,6 +13,7 @@ const SKINS = ['Classic', 'Bull Market', 'Bear Market'];
 export default function WinRamp({ windowId }: AppProps) {
   const prefs = usePrograms((s) => s.winramp);
   const set = (patch: Partial<typeof prefs>) => usePrograms.setState({ winramp: { ...usePrograms.getState().winramp, ...patch } });
+  const master = usePrefs((s) => s.volume);
   const player = useRef<ChipPlayer>(undefined);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -33,7 +35,7 @@ export default function WinRamp({ windowId }: AppProps) {
     setElapsed(0);
   };
   useEffect(() => () => player.current?.stop(), []);
-  useEffect(() => player.current?.setVolume(prefs.volume), [prefs.volume]);
+  useEffect(() => player.current?.setVolume(prefs.volume), [prefs.volume, master]);
   useEffect(() => {
     if (!playing) return;
     let frame = 0;

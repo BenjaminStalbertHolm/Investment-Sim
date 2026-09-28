@@ -54,7 +54,7 @@ export function Check(props: { label: string; value: boolean; onChange(v: boolea
   );
 }
 
-function Choice<T extends string>(props: { label: string; value: T; options: [T, string][]; onChange(v: T): void }) {
+export function Choice<T extends string>(props: { label: string; value: T; options: [T, string][]; onChange(v: T): void }) {
   const id = useId();
   return (
     <div className="field-row">

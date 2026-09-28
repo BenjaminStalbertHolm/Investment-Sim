@@ -11,18 +11,20 @@ import { VirtualTable, type Column } from '../../ui98/VirtualTable';
 import { AppMenuBar } from '../AppMenuBar';
 import { useRecord } from '../../sites/hooks';
 import { count, money, pct, signedPct } from '../format';
+import { DisplayPanel } from './DisplayPanel';
 import { FinalReport } from './FinalReport';
 import { GamePanel } from './GamePanel';
 import { FirmPanel } from './FirmPanel';
+import { SoundsPanel } from './SoundsPanel';
 import type { AppProps } from '../types';
 
-/** Control-Panel-style panels (spec §17). Those without a phase are built. */
-const PANELS: { id: string; label: string; icon: IconName; phase?: number }[] = [
+/** Control-Panel-style panels (spec §17). */
+const PANELS: { id: string; label: string; icon: IconName }[] = [
   { id: 'saves', label: 'Saves', icon: 'documents' },
   { id: 'shame', label: 'Hall of Shame', icon: 'shame' },
   { id: 'newgame', label: 'New Game', icon: 'doors' },
-  { id: 'display', label: 'Display', icon: 'computer', phase: 11 },
-  { id: 'sounds', label: 'Sounds', icon: 'settings', phase: 11 },
+  { id: 'display', label: 'Display', icon: 'computer' },
+  { id: 'sounds', label: 'Sounds', icon: 'settings' },
   { id: 'game', label: 'Game', icon: 'settings' },
   { id: 'firm', label: 'Firm', icon: 'portfolio' },
   { id: 'about', label: 'About', icon: 'help' },
@@ -55,15 +57,11 @@ export default function MyComputer({ windowId }: AppProps) {
             ))}
           </div>
         )}
-        {panel?.phase && (
-          <div className="placeholder">
-            <Icon name={panel.icon} size={64} />
-            <p>Setup has not finished installing the {panel.label} panel. It will be ready in Phase {panel.phase}.</p>
-          </div>
-        )}
         {view === 'saves' && <Saves />}
         {view === 'shame' && <HallOfShame />}
         {view === 'newgame' && <NewGame />}
+        {view === 'display' && <DisplayPanel />}
+        {view === 'sounds' && <SoundsPanel />}
         {view === 'firm' && <FirmPanel />}
         {view === 'game' && <GamePanel />}
         {view === 'about' && <About />}
@@ -79,6 +77,8 @@ function Saves() {
   const [dialog, setDialog] = useState<'save' | 'load' | 'delete'>();
   const busy = useGame((s) => s.busy);
   const current = useGame((s) => s.slot);
+  // Ironman (spec §9): one save slot and no reloading. Loading and importing wait for a new game.
+  const ironman = useGame((s) => !!s.settings?.ironman);
   const picker = useRef<HTMLInputElement>(null);
   const slot = saves.find((s) => s.id === selected);
 
@@ -111,14 +111,14 @@ function Saves() {
         rowKey={(s) => s.id}
         selected={selected}
         onSelect={(s) => setSelected(s.id)}
-        onOpen={(s) => (setSelected(s.id), setDialog('load'))}
+        onOpen={(s) => (setSelected(s.id), !ironman && setDialog('load'))}
         empty="No saved games. Press Save… or Ctrl+S."
       />
       <div className="button-row">
         <button onClick={() => setDialog('save')} disabled={!!busy}>
           Save…
         </button>
-        <button onClick={() => setDialog('load')} disabled={!slot || !!busy}>
+        <button onClick={() => setDialog('load')} disabled={!slot || !!busy || ironman}>
           Load
         </button>
         <button onClick={() => setDialog('delete')} disabled={!slot || !!busy}>
@@ -127,7 +127,7 @@ function Saves() {
         <button onClick={() => slot && void exportSave(slot).catch(showError)} disabled={!slot}>
           Export .d98…
         </button>
-        <button onClick={() => picker.current?.click()} disabled={!!busy}>
+        <button onClick={() => picker.current?.click()} disabled={!!busy || ironman}>
           Import .d98…
         </button>
         <input
@@ -143,6 +143,7 @@ function Saves() {
         />
         {busy && <span>{busy}</span>}
       </div>
+      {ironman && <p className="hint">Ironman: the game saves to its one slot every game day, and nothing can be loaded until you start a new game.</p>}
       {dialog === 'save' && (
         <Prompt
           title="Save Game"
@@ -293,7 +294,7 @@ function About() {
   return (
     <div className="tab-page about">
       <p>
-        <b>Majorsoft Doors 98</b> — Investment Firm Edition, build 8.
+        <b>Majorsoft Doors 98</b> — Investment Firm Edition, version 1.0.
       </p>
       <p>
         Licensed to: {firmName}
@@ -347,6 +348,11 @@ function About() {
       </p>
       <p>ID badge barcodes by JsBarcode (MIT). Logo export by html-to-image (MIT).</p>
       <p>Loan and bond arithmetic by financial, a port of numpy-financial by Luciano Mammino (MIT).</p>
+      <p>
+        WinRamp’s synthesiser is Tone.js (MIT). Encarter 98 draws Natural Earth country shapes (public domain, via world-atlas, ISC) with
+        d3-geo and topojson-client (ISC). Exceed’s formulas by hot-formula-parser (MIT). Also: React, Zustand, react-rnd, TanStack Virtual,
+        fflate, pure-rand, @noble/hashes and js-crc (MIT); Comlink, idb-keyval and @thi.ng/bitstream (Apache-2.0).
+      </p>
     </div>
   );
 }

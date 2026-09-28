@@ -1,7 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { PROGRAMS, available, type AppId } from '../apps/catalog';
 import { Icon, type IconName } from '../art/icons';
-import { helpUrl } from '../sites/urls';
 import { useGame } from '../state/game';
 import { useShell } from '../state/shell';
 import { usePrograms } from '../state/programs';
@@ -16,6 +15,15 @@ export function StartMenu({ onClose }: { onClose(): void }) {
   const installed = useShell((s) => s.installed);
   const modules = useGame((s) => s.settings?.modules);
   const stapley = usePrograms((s) => s.stapley.enabled);
+  const documents = usePrograms((s) => s.documents);
+  const sheets = usePrograms((s) => s.sheets);
+  const notes = usePrograms((s) => s.notepad);
+  // The newest first (ids only grow), then the notes: what you wrote last is what you'll want again.
+  const recent: { key: string; name: string; icon: IconName; app: AppId; view?: string }[] = [
+    ...[...documents].reverse().map((d) => ({ key: `d${d.id}`, name: d.name, icon: 'word' as const, app: 'word' as const, view: String(d.id) })),
+    ...[...sheets].reverse().map((d) => ({ key: `s${d.id}`, name: d.name, icon: 'sheet' as const, app: 'sheet' as const, view: String(d.id) })),
+    ...(notes.trim() ? [{ key: 'notes', name: 'Notes', icon: 'notepad' as const, app: 'notepad' as const }] : []),
+  ].slice(0, 12);
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -52,7 +60,11 @@ export function StartMenu({ onClose }: { onClose(): void }) {
           ))}
         </Item>
         <Item icon="documents" label="Documents">
-          <li className="menu-empty">(Empty)</li>
+          {recent.length ? (
+            recent.map((d) => <Item key={d.key} icon={d.icon} label={d.name} small onClick={launch(d.app, { view: d.view })} />)
+          ) : (
+            <li className="menu-empty">(Empty)</li>
+          )}
         </Item>
         <Item icon="settings" label="Settings">
           {SETTINGS.map((s) => (
@@ -69,8 +81,8 @@ export function StartMenu({ onClose }: { onClose(): void }) {
           />
         </Item>
         <Item icon="find" label="Find" onClick={find} />
-        {/* Help: Ask Reeves answers questions until Phase 11's help file (spec §14.2: it doubles as the in-game help). */}
-        <Item icon="help" label="Help" onClick={launch('browser', { url: helpUrl() })} />
+        {/* Help: the in-game manual (spec §4), built from Ask Reeves's guides (spec §14.2). */}
+        <Item icon="help" label="Help" onClick={launch('help')} />
         <Item icon="run" label="Run…" onClick={launch('run')} />
         <li className="menu-separator" />
         <Item icon="shutdown" label="Shut Down…" onClick={launch('shutdown')} />

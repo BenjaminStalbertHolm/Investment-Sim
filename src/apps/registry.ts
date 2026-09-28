@@ -34,6 +34,8 @@ const components: Partial<Record<AppId, LazyApp>> = {
   // Phase 10B: the fun modules' programs (spec §16C).
   encarter: lazy(() => import('./encarter/Encarter')),
   tamagotcha: lazy(() => import('./tamagotcha/Tamagotcha')),
+  // Phase 11: the help file (spec §4 Start → Help).
+  help: lazy(() => import('./help/Help')),
   run: lazy(() => import('./run/RunDialog')),
   shutdown: lazy(() => import('./shutdown/ShutdownDialog')),
 };

@@ -1,3 +1,4 @@
+import { usePrefs } from '../../state/prefs';
 import type { Track } from './tracks';
 
 type ToneModule = typeof import('tone');
@@ -43,8 +44,10 @@ export class ChipPlayer {
     Tone.getTransport().start();
   }
 
+  /** WinRamp's own volume, under the master volume set in My Computer → Sounds. */
   setVolume(volume: number): void {
-    if (this.tone) this.tone.getDestination().volume.value = volume <= 0 ? -Infinity : 20 * Math.log10(volume);
+    const level = volume * usePrefs.getState().volume;
+    if (this.tone) this.tone.getDestination().volume.value = level <= 0 ? -Infinity : 20 * Math.log10(level);
   }
 
   stop(): void {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '../../art/icons';
+import { shutdown } from '../../audio/sounds';
 import { simulation } from '../../sim/client';
 import { saveGame, useGame } from '../../state/game';
 import { useShell } from '../../state/shell';
@@ -17,6 +18,7 @@ export default function ShutdownDialog({ windowId }: AppProps) {
     if (save && !(await saveGame())) return;
     void simulation().setSpeed(0);
     closeAll();
+    shutdown();
     useShell.getState().setPower(choice);
   };
 
