@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "typecheck": "tsc",
     "test": "vitest run",
-    "bench": "vitest bench --run --reporter=verbose"
+    "bench": "vitest bench --run --reporter=verbose",
+    "soak": "SOAK=1 vitest run tests/soak.test.ts --testTimeout=3600000",
+    "frames": "node scripts/frames.mjs"
   },
   "dependencies": {
     "@noble/hashes": "^2.4.0",

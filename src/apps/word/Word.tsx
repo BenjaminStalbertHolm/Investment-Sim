@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { simulation } from '../../sim/client';
 import type { Tone } from '../../sim/desk';
 import { quarterOf } from '../../sim/desk';
 import { dayOf } from '../../sim/calendar';
 import { showError, useGame } from '../../state/game';
 import { deleteFile, saveFile, usePrograms, type Doc } from '../../state/programs';
+import { useWindows } from '../../state/windows';
 import { useDesk, useFetched } from '../../sites/hooks';
 import { Modal, Prompt } from '../../ui98/Modal';
 import { AppMenuBar } from '../AppMenuBar';
@@ -29,7 +30,12 @@ const FONTS: Record<Doc['font'], string> = { serif: '"Times New Roman", Times, s
  */
 export default function Word({ windowId }: AppProps) {
   const documents = usePrograms((s) => s.documents);
-  const [id, setId] = useState<number | undefined>(documents[0]?.id);
+  // Start → Documents opens a particular document.
+  const param = useWindows((w) => w.windows.find((x) => x.id === windowId)?.params?.view);
+  const [id, setId] = useState<number | undefined>(param ? Number(param) : documents[0]?.id);
+  useEffect(() => {
+    if (param) setId(Number(param));
+  }, [param]);
   const [letter, setLetter] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const doc = documents.find((d) => d.id === id);

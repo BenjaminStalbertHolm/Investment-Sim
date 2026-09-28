@@ -137,8 +137,23 @@ const api = {
 
   /** Loads a .d98 file: the simulation resumes here, and the UI's half of the game goes back to the caller. */
   load(bytes: Uint8Array) {
-    const documents = migrate(unpackSave(bytes));
-    return { ...start(Engine.restore(documents.sim as SimState)), game: documents.game, manifest: documents.manifest };
+    const raw = unpackSave(bytes);
+    const from = raw.manifest?.version;
+    let documents;
+    try {
+      documents = migrate(raw);
+    } catch (error) {
+      // A message the player can act on, not a stack trace from inside an upgrade step.
+      if (error instanceof Error && /not a Majorsoft|newer version/.test(error.message)) throw error;
+      throw new Error(`This game was saved by version ${from} of Majorsoft Doors 98 and could not be upgraded (${error instanceof Error ? error.message : error}). The file has not been changed.`);
+    }
+    return {
+      ...start(Engine.restore(documents.sim as SimState)),
+      game: documents.game,
+      manifest: documents.manifest,
+      /** The version an older save came from, so the desktop can say it was upgraded. */
+      upgradedFrom: from < SAVE_VERSION ? from : undefined,
+    };
   },
 
   /** A .d98 file's manifest, once checked to be a save this version can load. */

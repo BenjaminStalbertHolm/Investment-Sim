@@ -86,7 +86,7 @@ const defs: AppDef[] = [
     blurb: 'Running rules, open orders and scheduled actions.' },
   { id: 'paint', title: 'MajorPaint', icon: 'paint', defaultSize: WIN, inPrograms: true,
     blurb: 'Pixel paint for wallpapers and logo emblems.' },
-  { id: 'help', title: 'Doors Help', icon: 'help', defaultSize: { width: 560, height: 420 }, phase: 11,
+  { id: 'help', title: 'Doors Help', icon: 'help', defaultSize: { width: 680, height: 480 },
     blurb: 'The Majorsoft Doors 98 manual.' },
   { id: 'garlic', title: 'Garlic Browser', icon: 'garlic', defaultSize: { width: 800, height: 580 }, inPrograms: true, installable: true,
     blurb: 'The Garlic network: anonymous, slow, and not for the faint of heart.' },

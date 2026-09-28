@@ -1129,3 +1129,128 @@ Judgement calls made where the spec leaves details open.
   Scoop, the pizza page and the modules' Ask Reeves guide, with no console errors. It caught a map that didn't fill its
   pane, headings too big for the country page, facts that didn't wrap, the same horoscope for three signs and a menu bar
   centred in the Tamagotcha.
+
+## Phase 11 — Polish
+
+- **Libraries, and what was not built.** Nothing new was installed. Settings persist with Zustand's own `persist` middleware
+  (`createJSONStorage`); the sounds are plain WebAudio (Tone.js stays WinRamp's, loaded on first use: a 340 kB chunk is not
+  worth fetching for a click); the screensaver's pipes are Canvas 2D (three.js would be several hundred kB to draw a 9×9×9
+  cube of tubes) and its flying logos are CSS animations of the existing `Logo`; colour schemes are CSS variables and
+  CSS nesting, which Vite's minifier handles; the help file is built from Ask Reeves's typed guides (`sites/help/topics.tsx`)
+  rather than a second manual that would drift from the first; the frame check drives Chromium with Playwright, which the
+  environment already has, so it is a script (`npm run frames`) and not a dependency.
+- **The machine's settings are not the game's** (`state/prefs.ts`). Wallpaper, scheme, CRT, screensaver, volume, autosave and
+  the rest belong to the computer, so they live in the browser's localStorage, survive New Game and Load, and are not in a
+  `.d98` (a save sent to a friend does not turn their CRT on). The wallpaper is the exception: MajorPaint pictures are in the
+  save, so the wallpaper chosen from them stays with it (Phase 10). Damaged or hand-edited storage is sanitised value by
+  value, and a browser without localStorage (private windows) keeps the settings for the session.
+- **Display (spec §17).** Wallpaper (Teal, the majorsoft.com patterns, MajorPaint pictures), four colour schemes, the CRT
+  effect and the screensaver with its wait (never, 1, 2, 3, 5, 10, 15 or 30 minutes; the spec's 3 is the default) and a
+  Preview button. 98.css hard-codes its silver and navy, so a scheme repaints the chrome only — windows, buttons, tabs,
+  table headers, title bars, selections, the desktop — and leaves documents and pages alone. *Teal* and *Brick* recolour;
+  *High Contrast* is Windows' white-and-black scheme (hard outlines, no bevels, black title bars) rather than an inversion,
+  because inverting would put white text on the many white panels 98.css draws inside a window. The CRT is one fixed
+  `mix-blend-mode: multiply` overlay (scanlines every 3 px and a vignette) above everything and under the pointer.
+- **Screensaver (spec §4).** After the wait, with the desktop up, "3D Pipelines" draws oil pipelines or the firm's logo flies at
+  the screen; the market carries on behind it (a screensaver that paused the game would punish a player for reading).
+  Pipes is a pure walk in a 9×9×9 cube (`shell/saver/pipes.ts`): mostly straight, a third of the time a turn, ending at a wall
+  or another pipe, the cube cleared when 45% full; it is projected with a fixed three-quarter view that a test proves fits
+  every cell on every screen size (the first version's cube ran off the screen). Any key, click, wheel or touch wakes it, and
+  a mouse move of more than 6 px does — a bumped desk does not — but neither counts in the first 0.4 s, so the click on
+  Preview does not end its own preview. The pipes draw on a stream of their own that is seeded from the world seed and the time:
+  a picture, not state, and never saved.
+- **Sounds (spec §17).** One `audio/mixer.ts` is the game's sound card: the master volume is squared onto a gain node (perceived
+  loudness is not linear), every sound goes through it, and nothing plays until the player has pressed something — the
+  browser would only play a sound scheduled earlier all at once later, so the start-up sound is silent on a page's first load
+  and heard on a restart. Chime, uh-oh and applause (Phase 6, 10, 10B) moved onto it. New: a click (a 20 ms burst of a fixed
+  noise pattern through a high-pass, from one capture-phase listener on the page, so every button and menu item clicks
+  without any component knowing), the Doors start-up and shut-down figures (four sines, rising and falling), and the dial-up
+  handshake — touch-tones, the 2100 Hz answer and hopping carriers over line noise, as long as the page takes to load — played
+  on the first page a browser window loads when the delay is Authentic. Each has a Test button that ignores the switches.
+  WinRamp's volume sits under the master. All are synthesised as they play; none is a recording.
+- **Game settings (spec §17).** The speed a new game starts at; the autosave interval (every game day, week — the default, as
+  before — or month, or never; the autosaves before a loan or a dark web purchase stay whatever it says); pausing the clock
+  when a page arrives (the Pager already pages for margin calls and the other urgent letters, so "important mail" is exactly
+  the pages); and the browser's dial-up delay, which had been reachable only from the browser's menu. A monthly autosave is on
+  the first close of a month, and not on the first close after a load, which has no month to compare with.
+- **Ironman (spec §9).** The setting had been saved and ignored since Phase 5. Now an Ironman game has one slot,
+  `ironman-<seed>`, that Ctrl+S, Save As, the autosaves and Shut Down all write to; it saves at every close, whatever the
+  autosave interval says; and Load and Import are refused (the buttons are disabled, and the drop of a `.d98` on the desktop
+  says why). Starting a new game is the way out, and the slot is what the computer boots into next time. It is not a rotating
+  autosave, so nothing pushes it out.
+- **Doors Help (spec §4).** Start → Help and F1 open a contents/index/search window (Hide, Back, Forward, Home) over Ask
+  Reeves's guides, so the manual and the butler cannot disagree and the numbers in it are the game's own (commission, leverage,
+  grace days). Links to other guides stay in the window (the page context the browser gives sites is given to the guide, with
+  a `navigate` that keeps `/guide` links here, sends `/ask` to the Search tab and opens anything else in Internet Exploiter). Three
+  guides are new, in a new section, "The Desktop and Settings": the desktop and tray, the settings above, and the keyboard
+  shortcuts. The Index lists every guide and every question a guide answers, alphabetically, and filters as you type.
+- **Small things.** Start → Documents lists the newest MajorWord documents, Exceed sheets and the notes, and opens them (Word
+  now takes a document from its window's params, as Exceed already did); the shortcuts moved into `shell/shortcuts.ts` so they
+  can be tested; About lists the libraries the credits had missed (Tone.js, d3-geo, topojson, Natural Earth, hot-formula-parser…).
+- **Migrations (spec §19).** Phase 11 changed one saved thing — the published index level, below — so the save version is 10, and
+  its step from 9 changes nothing (the market works the level out when it loads a save that lacks it, as it always did). What was
+  added: a real save file from this release (`tests/fixtures/v9.d98`, 300 companies, a week of play, a position and a resting
+  order), which the tests load, migrate to 10, restore and play on, and which later phases must keep loading; a test that every
+  version has a step to the next; the worker's load turning an error inside an upgrade step into a message the player can act on
+  ("could not be upgraded… the file has not been changed" — loading never rewrites the file); and a notice when an older save was
+  upgraded, telling the player to save to keep it. The in-memory history has spare columns (below); `exportState()` writes it
+  exactly as before, so the fingerprint digests recorded in Phase 10B are untouched.
+- **The performance pass.** Method: a ten-year game headless (`tests/soak.ts`: 10,000 companies, all three modules on, a player
+  who never stops — trades every four sessions, keeps about thirty holdings, buys and sells funds, accepts mandates, buys lottery
+  tickets), with a CPU profile of years 1, 2, 8 and 9 (Node's inspector) and a year-by-year report of time, heap after a
+  full collection, exported state and the size of a `.d98`. The first run took 44 s for year 1 and 72 s for year 10, and the heap
+  grew from 47 to 135 MB. The profile said: (1) the order book kept every order ever placed, and `openOrders()` filters it —
+  called for every company by the horoscope's weekly nudge (via the short-squeeze factor, which looks up pending short orders
+  it does not need) — so a year's work grew with the years played (2.6 s a year in `borrow` alone, plus `open`, `workOrders` and
+  `marginFigures`); (2) each IPO re-cut all ten arrays of the price history, 26 MB of daily rows plus every week ever recorded
+  (2.6 s and a great deal of garbage: the collector's share went from 4.9 s to 10.4 s a year); (3) the weekly archive grew
+  for ever, and was copied every week. Fixes, none of which changes any number the game shows before its books are large: the
+  squeeze looks up no pending orders; closed orders (2,000 kept), ledger lines (20,000) and closed positions (5,000) are
+  dropped oldest first once a tenth past the limit (`pruneBooks`, each close); history arrays keep spare columns (1% of the
+  market, at least 32) and re-cut only when they run out, and are saved compacted; the weekly closes keep the newest 1,040
+  weeks (twenty years); a new company's event rate is appended to the others' instead of every rate being recomputed. Left
+  alone, with their costs: `buildModel` and the ticker/name uniqueness scan in `draft` still run over every company for each IPO
+  (about 3 s of a 45 s year, growing with the market), because the model's MAJOR 500 membership is derived from all caps and
+  making it incremental was not worth a determinism risk; and `step`, the price model, is 60% of all time at 1.4 ms a bar
+  for 10,000 companies (budget 4 ms), the loop being four transcendental functions per company.
+- **The long run (spec §19: "10 simulated years headless without errors or unbounded memory growth").** `npm run soak` plays
+  it, and asserts: no error, no bankruptcy, every price finite; the heap after a collection under the 300 MB budget of §11.3, and
+  its yearly growth in years 6–10 no faster than in years 2–6; the same of the exported state; year 10 no more than 1.5× the time of
+  year 1; the books and history within their bounds; and that a save made at the end loads into a second engine which, after ten
+  more sessions, is identical to the first byte for byte (the save test, extended as every phase must). Measured here (year 1 → year
+  10): time 36 → 45 s a year; heap 48 → 123 MB; exported state 39 → 85 MB; a `.d98` 22.3 → 42.6 MB. `npm test` carries a light
+  version (1,000 companies, three years, and the same save comparison).
+  **The run found a bug.** Its first complete run failed the last check: a game saved at the end of year 10 differed from the one
+  that was not saved after one session (`market.index.prevClose`, and a client's `mark.index` behind it). The MAJOR 500's level
+  is a field set at each bar; prices that moved after the last bar — competitors trade at each week's close, and a fill's impact
+  moves a price at once — leave it a little different (4,559.05) from what a loaded game works out afresh from the prices
+  (4,561.82), and the field was not saved. The first thing to read it is the next morning's mail (client marks at 07:00), before
+  the day's first bar can refresh it, so the two games disagreed about the index, and about yesterday's close, for ever after.
+  A first fix, working the level out again when the day starts, was too late for the 07:00 work, and the run said so; making the
+  level always fresh (a getter) was right in principle but changes what the game did in Phase 10, and the digests pinned in
+  10B would no longer hold. The level as published is what the morning's mail should read, so it is now state
+  (`market.index.level`, saved; a save from before it works the level out at load, as they always did). The 10B fingerprint
+  strips that one key, which the Phase 10 build did not have, and the digests are unchanged. A test moves twenty index members
+  after the close, saves, and plays a day in both; it fails on the old code. The earlier save tests could not see this: they need a
+  price move between the last bar and a morning that reads the index, in the session the save is made.
+- **What is still linear, and the save size.** Memory is bounded where it can be without dropping what the spec promises to keep:
+  the weekly closes (twenty years), the order book, ledger and closed positions. What is left grows with time by design: the news
+  archive (every article is archived and searchable, spec §14.1; an item's id is its index, so old items cannot be dropped without a
+  renumbering) at about 1.5 MB of JSON a year, mail, the funds' daily closes and the MAJOR 500's daily bars — about 5 MB of
+  state and 8 MB of heap a year. The spec's 25 MB target for a save is met for a first year only (22.3 MB) at 10,000 companies: the 260 days of
+  open, high, low, close and volume for every company are 19.5 MB of it, constant, and a year adds 2.2 MB compressed (1.2 for weekly
+  closes, 0.4 for news). The levers — coarser quantisation of the daily ring, or of weeks more than a year old — change the recorded
+  history and with it every digest the earlier phases pinned, so they were not pulled; a game with fewer companies (the Advanced
+  Settings go down to 1,000) saves at a tenth of the size.
+- **Frames at 20× (spec §19).** `npm run frames` opens MajorTrade Pro, Outbox Express and Internet Exploiter on a company's
+  Investor Relations page with its live chart, and measures frames paused, at 1×, at 20× and while dragging a window at 20×.
+  In headless Chromium here (software rendering, the dev server, 1280×800) all four ran at 60 fps with no dropped frame worth
+  the name (0–0.3% over 15 s, each run a game's day or two at 20×) and no long task; the worker does the simulation, and the UI
+  receives at most four snapshots a second. A frame is "dropped" over 1.5 median frame times; the script passes when 20× drops no
+  more than the paused desktop does, and no task blocks the page for 100 ms.
+- **Tests.** `tests/phase11.test.ts` (settings, autosave rules, the migration chain and the v9 fixture, the pipes, the help
+  index, spare columns against re-cutting every time, the weekly cap, the books' limits, event rates, and a save made after prices
+  moved past the last bar), `phase11-ui.test.tsx` (the
+  Display, Sounds and Game panels, the click and Test sounds against a counting sound card, the screensaver and its idle timer, Doors
+  Help, Start → Documents, shortcuts), `phase11-game.test.tsx` (autosave intervals, pausing for pages, Ironman's one slot, the
+  upgrade notice, against the real save format and IndexedDB) and `soak.test.ts`.

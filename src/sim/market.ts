@@ -56,6 +56,13 @@ export interface IndexState {
   open: number;
   high: number;
   low: number;
+  /**
+   * The level as last published — at a bar, the opening gap or a delisting — which is what the morning's mail reads. Prices
+   * can move after it (a fill's impact, competitors trading at the week's close), so it is state: a game loaded from a save
+   * must read what the game that carried on reads, not work the level out afresh (Phase 11's long run found the difference).
+   * Saves from before Phase 11 lack it; the market works it out when it loads them.
+   */
+  level?: number;
 }
 
 /** The market's dynamic state (spec §11.3): typed arrays indexed by company id. */
@@ -139,7 +146,12 @@ export class Market {
   /** Average daily volume in shares, ∝ market cap^0.8 / price (spec §11.2). */
   adv: Float64Array;
   halfSpread: Float64Array;
-  indexLevel = 0;
+  get indexLevel(): number {
+    return this.state.index.level!;
+  }
+  set indexLevel(level: number) {
+    this.state.index.level = level;
+  }
   /** The Federal Reservoir's policy rate (sim/macro.ts): value grows at it plus the equity premium. */
   rate = POLICY_RATE;
   /** Commodity moves by industry (sim/commodities.ts). */
@@ -159,7 +171,7 @@ export class Market {
     this.adv = new Float64Array(n);
     this.halfSpread = new Float64Array(n);
     this.refreshLiquidity();
-    this.indexLevel = this.computeIndex();
+    if (state.index.level === undefined) this.indexLevel = this.computeIndex();
   }
 
   /**

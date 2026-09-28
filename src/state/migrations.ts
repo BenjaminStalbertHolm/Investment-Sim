@@ -28,7 +28,7 @@ import { newBrowserState } from './browser';
 import { SAVE_FORMAT, type Manifest, type SaveDocuments } from './saveFile';
 
 /** Version of the save format. Bump it, and add a migration, whenever what is saved changes shape (spec §18). */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 type Migration = (documents: SaveDocuments) => SaveDocuments;
 
@@ -146,6 +146,9 @@ export const MIGRATIONS: Record<number, Migration> = {
     for (const k of ['geo', 'period', 'gags'] as const) sim.rng[k] ??= Rng.stream(sim.world.seed, STREAM_NAMES[k]).state();
     return { ...docs, sim };
   },
+  // Phase 11: the MAJOR 500 level as last published is saved (`market.index.level`). A save without it has the level worked
+  // out from its prices when it loads (the Market's constructor), which is what the game always did; nothing to change here.
+  9: (docs) => docs,
 };
 
 /** Throws, with a message for the player, unless the manifest belongs to a save this version can load. */

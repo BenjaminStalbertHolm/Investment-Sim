@@ -2,9 +2,11 @@
 
 Run an investment firm from inside a fake 1998 desktop operating system. Fully offline; runs in the browser.
 
-**Status:** Phase 9 (the Garlic Browser and the dark web), after Phase 8's competitors, governance, scoring, the
-regulator, index funds and optional leverage. A seed
-generates a market of 10,000
+**Status:** all eleven build phases are done (see [DECISIONS.md](DECISIONS.md) for how each went). Phase 11 was
+polish: a screensaver, colour schemes, a CRT effect, sounds, the settings panels, a help file, and a long-run test that
+plays ten years in bounded memory.
+
+A seed generates a market of 10,000
 companies, and a Web Worker runs it in real time: trading hours and holidays, market regimes, sector moves, earnings
 seasons and the MAJOR 500. MajorTrade Pro 98 has watchlists, quote windows with charts, a margin account (buy, sell,
 sell short and buy to cover; market, limit, stop, stop-limit and trailing-stop orders), a portfolio, a cash ledger,
@@ -31,9 +33,18 @@ Debt, a final report, and a place in the Hall of Shame. For the unscrupulous, an
 Garlic Browser on Tucats Downloads: installed, it reaches the dark web's eleven markets — bribed journalists, leaked
 earnings, bot farms, espionage, hackers, offshore shells, pump-and-dumps, planted rumours, forged statements, loan
 sharks and fakes — and The Cellar forum. Every listing states its price, its odds, what failure costs and the heat it
-adds; some vendors are exit scams and some are the SOB. Games save anywhere to named slots and
-rotating autosaves, and export as `.d98` files. Apps not built yet are placeholders that say which build phase
-delivers them.
+adds; some vendors are exit scams and some are the SOB. The desktop has the rest of the office: ISeekYou for chatting
+with your broker, informants and your mother; MajorWord for the quarterly letter to clients; Exceed for spreadsheets;
+PeopleSoftie HR for hiring analysts, traders and compliance officers; Stapley, the sarcastic stapler; WinRamp, the
+Pager, the Rolodex, the Portfolio Defragmenter, Task Mangler, MajorPaint and two games. Beyond the browser's
+finance sites are a job board, offices to rent, a lifestyle catalogue, collectibles, IPOs and conferences. Three optional
+fun modules add a world atlas with countries and their quarrels (Encarter 98), the events of 1998, and running gags.
+Games save anywhere to named slots and rotating autosaves, and export as `.d98` files.
+
+My Computer has the settings: the wallpaper, colour scheme, CRT effect and screensaver (3D Pipelines, or your logo
+flying at you); the master volume and which sounds play; how often the game autosaves, whether urgent pages stop the
+clock, and the speed a new game starts at. **Ironman** games have one save slot and no reloading. F1 opens Doors Help,
+the manual.
 
 ## Running on macOS
 
@@ -55,9 +66,10 @@ Targets Safari and Chrome on macOS, 1280×800 minimum window.
 
 ## Playing
 
-The game boots into your most recent save; the first time, the Setup Wizard founds your firm. New to investing? The
-**Ask Reeves** icon on the desktop (or Start → Help) opens the in-game help: guides to stocks, orders, margin, short
-selling, futures, loans and clients, and a butler who answers questions. Open **MajorTrade Pro 98**
+The game boots into your most recent save; the first time, the Setup Wizard founds your firm. New to investing? **F1**
+(or Start → Help) opens Doors Help, the manual: guides to stocks, orders, margin, short selling, futures, loans and
+clients, with a contents, an index and a search. The **Ask Reeves** icon on the desktop is the same guides on the web, with
+a butler who answers questions. Open **MajorTrade Pro 98**
 to watch quotes and trade, and **Internet Exploiter** to read the news and visit companies (type a company or ticker
 in the address bar to search Yeehaw!); the tray sets the game speed (a trading day takes two minutes at 1×).
 **Outbox Express** (the tray's envelope shows unread mail) is where clients offer mandates — each with rules that apply
@@ -83,6 +95,8 @@ Saves live in the browser's IndexedDB, so they belong to the browser and address
 | `npm run dev` | Dev server with hot reload |
 | `npm test` | Unit tests (Vitest) |
 | `npm run bench` | Benchmarks (budgets: world generation 1.5 s, one bar for 10,000 companies 4 ms) |
+| `npm run soak` | The long run: 10,000 companies for ten simulated years with every module on (about ten minutes); checks memory, time per year and a save at the end |
+| `npm run frames` | Frame check in Chromium against `npm run dev`: paused, 1×, 20× and dragging a window at 20× (needs Playwright: `npm i -D playwright`) |
 | `npm run typecheck` | TypeScript strict check |
 | `npm run build` | Typecheck + production build into `dist/` |
 
@@ -91,13 +105,14 @@ Saves live in the browser's IndexedDB, so they belong to the browser and address
 ```
 src/
   main.tsx          entry point
-  shell/            Desktop, Window, Taskbar (+ tray), StartMenu, BootScreen, ShutdownScreen, BlueScreen
+  shell/            Desktop, Window, Taskbar (+ tray), StartMenu, BootScreen, ShutdownScreen, BlueScreen, Screensaver
+                    (saver/pipes.ts is 3D Pipelines' pure part), shortcuts.ts, schemes.css (colour schemes, CRT)
   apps/             catalog.ts (app metadata as data), registry.ts (lazy components), one folder per app:
                     trade/ (MajorTrade Pro), quote/ (quote windows), browser/ (Internet Exploiter; garlic/ is its dark
                     skin, the Garlic Browser), installer/ (setup programs for Tucats downloads), mail/ (Outbox
                     Express: letters.ts writes the letters, data.ts their templates), mycomputer/ (saves, Setup Wizard,
                     logo and portrait designers, advanced settings, firm panel with clients and fees),
-                    recyclebin/, run/, shutdown/
+                    help/ (Doors Help, made from Ask Reeves's guides), recyclebin/, run/, shutdown/
   sites/            the in-game web: urls.ts (domains), Site.tsx (URL → site), web.tsx (links, marquee, hit counter),
                     text.ts (template writer), portal/ (Yeehaw!), company/ (company sites: content.ts generates them),
                     firm/, news/ (every outlet; articles.ts writes articles from the news archive), forum/ (Raging
@@ -126,9 +141,10 @@ src/
                     data/ holds event types, outlets, client lexicons, macro sensitivities, the commodities, the funds,
                     the competitors' strategies and the dark web's markets;
                     worker.ts runs it in a Web Worker via comlink
-  audio/            WebAudio sounds (the new-mail chime)
-  state/            Zustand stores: windows, shell, trade (watchlists), mail (Outbox view), game (session: boot, save, load);
-                    saveFile.ts (.d98 format), saves.ts (IndexedDB slots), migrations.ts
+  audio/            WebAudio sounds: mixer.ts (master volume), the chimes, clicks, start-up and the modem
+  state/            Zustand stores: windows, shell, trade (watchlists), mail (Outbox view), game (session: boot, save, load),
+                    prefs (the machine's settings, kept in localStorage); saveFile.ts (.d98 format), saves.ts (IndexedDB
+                    slots), migrations.ts, autosave.ts
   world/            world generation: rng, bitcode (genome, CEO and logo codes), genome, ceo, generator, company
                     decoding, ownership
                     data: industries, lexicons/, top100, presetFirms, cities, people-names
@@ -154,4 +170,10 @@ clip-art are silhouettes from [game-icons.net](https://game-icons.net) by Lorc, 
 [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), via [react-icons](https://react-icons.github.io/react-icons/)
 (MIT). ID badge barcodes by [JsBarcode](https://github.com/lindell/JsBarcode) (MIT); logo SVG export by
 [html-to-image](https://github.com/bubkoo/html-to-image) (MIT). Loan and bond arithmetic by
-[financial](https://github.com/lmammino/financial) (MIT). All other game art, portraits included, is original.
+[financial](https://github.com/lmammino/financial) (MIT). WinRamp's synthesiser is [Tone.js](https://tonejs.github.io/) (MIT).
+Encarter 98 draws [Natural Earth](https://www.naturalearthdata.com/) country shapes (public domain, via
+[world-atlas](https://github.com/topojson/world-atlas), ISC) with [d3-geo](https://github.com/d3/d3-geo) and
+[topojson-client](https://github.com/topojson/topojson-client) (ISC). Exceed's formulas are
+[hot-formula-parser](https://github.com/handsontable/formula-parser) (MIT). The app is built on React, Zustand, react-rnd,
+TanStack Virtual, fflate, pure-rand, @noble/hashes and js-crc (MIT), and Comlink, idb-keyval and @thi.ng/bitstream
+(Apache-2.0). All other game art, portraits included, is original; every sound is synthesised as it plays.

@@ -80,9 +80,12 @@ export function fingerprintRun(world: World, settings = DIFFICULTIES.medium): En
   return e;
 }
 
-/** What Phase 10B added to a state: the modules' own state and streams. Everything else must be as before. */
+/** What later phases added to a state: Phase 10B's modules (their state and streams), and Phase 11's saved index level. Everything else must be as before. */
 export function withoutModules(state: SimState): unknown {
   const { modules: _m, ...rest } = state as SimState & { modules?: unknown };
   const { geo: _g, period: _p, gags: _x, ...rng } = rest.rng as Record<string, unknown>;
-  return { ...rest, rng };
+  // Phase 11 saves the index level published at the last bar (`market.index.level`): the Phase 10 build had it as a field
+  // that was not saved, so the recorded digests have nothing to compare it with.
+  const { level: _l, ...index } = rest.market.index;
+  return { ...rest, rng, market: { ...rest.market, index } };
 }

@@ -26,6 +26,7 @@ export interface HelpContext {
 
 export const SECTIONS = [
   { id: 'start', title: 'Getting Started' },
+  { id: 'desktop', title: 'The Desktop and Settings' },
   { id: 'stocks', title: 'Stocks and Orders' },
   { id: 'margin', title: 'Margin and Short Selling' },
   { id: 'futures', title: 'Futures and Commodities' },
@@ -143,7 +144,8 @@ export const TOPICS: Topic[] = [
       <>
         <p>
           Press <b>Ctrl+S</b> (⌘S on a Mac) at any time, or use File → Save in any program. The game also saves itself at the
-          end of each trading week and before you sign a loan, into three rotating autosaves.
+          end of each trading week (or as often as you choose in <Go app="mycomputer" view="game">My Computer → Game</Go>) and
+          before you sign a loan or buy on the dark web, into three rotating autosaves.
         </p>
         <p>
           <Go app="mycomputer" view="saves">My Computer → Saves</Go> lists your saved games: load, delete, or export one as a
@@ -151,6 +153,96 @@ export const TOPICS: Topic[] = [
           it carries on from your most recent save.
         </p>
       </>
+    ),
+  },
+
+  // ---------- The desktop and settings ----------
+  {
+    id: 'desktop',
+    title: 'The desktop: windows, the taskbar and the Start menu',
+    section: 'desktop',
+    questions: ['How do I open a program?', 'How do I move an icon?', 'What is in the tray?', 'What does Run do?', 'Where is the Task Manager?'],
+    keywords: 'desktop icon window taskbar tray start menu run programs minimise maximise resize ticker tape task mangler recycle bin pager stapley',
+    body: () => (
+      <>
+        <p>
+          Everything happens in programs, opened from the desktop icons or <b>Start → Programs</b>. Windows drag by their title bar,
+          resize from any edge, minimise to the taskbar, maximise (double-click the title bar) and remember where you left them.
+          Icons can be dragged wherever you like, and stay there.
+        </p>
+        <h3>The tray</h3>
+        <ul>
+          <li>The game’s date and time, and a light for the market: green open, amber pre-market, red closed or halted.</li>
+          <li>The speed buttons: pause, 1×, 2×, 5×, 20×, and skip to the next open. See <See topic="time">Time and the speed buttons</See>.</li>
+          <li>An unread-mail badge, and a button for the scrolling ticker tape of your watchlist.</li>
+          <li>The heat thermometer, once the regulator has started to take an interest.</li>
+        </ul>
+        <h3>Start menu</h3>
+        <p>
+          <b>Documents</b> lists what you have written, <b>Settings</b> opens the panels of My Computer, <b>Find</b> looks up a
+          company, <b>Run…</b> takes a program, a web address, a ticker or a company’s registration number and opens it, and <b>Shut Down…</b>
+          saves and switches off.
+        </p>
+        <Tip>Ctrl+Alt+Delete opens the Task Mangler, which lists your automated rules and open orders like processes and lets you end them.</Tip>
+      </>
+    ),
+  },
+  {
+    id: 'settings',
+    title: 'Settings: display, sounds, autosave and Ironman',
+    section: 'desktop',
+    questions: ['How do I change the wallpaper?', 'How do I turn on the CRT effect?', 'How do I turn the sound off?', 'How do I change the screensaver?', 'What is Ironman?', 'How often does the game autosave?'],
+    keywords:
+      'settings display wallpaper colour color scheme crt scanlines screensaver pipes sound volume click chime dial up modem autosave pause page speed ironman my computer options preferences',
+    body: ({ settings }) => (
+      <>
+        <p>
+          The panels are in <Go app="mycomputer" view="display">My Computer</Go>, and under Start → Settings. They belong to your
+          computer, not to a game: they stay as you set them when you load another save or start a new firm.
+        </p>
+        <ul>
+          <li>
+            <b>Display</b>: the wallpaper (or a MajorPaint picture), the colour scheme (Doors Standard, Teal, Brick or High Contrast), the
+            CRT effect, and the screensaver — 3D Pipelines or Flying Firm Logos — with the time it waits. The market keeps running
+            behind it; move the mouse or press a key to wake up.
+          </li>
+          <li>
+            <b>Sounds</b>: the master volume, and switches for clicks, the new-mail chime and the dial-up noise. All are made by the
+            computer as they play.
+          </li>
+          <li>
+            <b>Game</b>: the speed a new game starts at, how often it autosaves (every day, week or month, or never), whether the
+            clock pauses when a page arrives, and the browser’s dial-up delay. The fun modules are here too.
+          </li>
+        </ul>
+        <h3>Ironman</h3>
+        <p>
+          A game started with <b>Ironman</b> has a single save slot, written at every day’s close, and cannot load or import anything.
+          Whatever happens, happens.
+          {settings.ironman ? ' This is an Ironman game.' : ' This game is not Ironman.'}
+        </p>
+      </>
+    ),
+  },
+  {
+    id: 'shortcuts',
+    title: 'Keyboard shortcuts',
+    section: 'desktop',
+    questions: ['What are the keyboard shortcuts?', 'How do I open help?', 'How do I save with the keyboard?'],
+    keywords: 'keyboard shortcut key ctrl alt delete f1 escape enter save help',
+    body: () => (
+      <dl className="reeves-terms">
+        <dt>F1</dt>
+        <dd>Doors Help, this manual.</dd>
+        <dt>Ctrl+S (⌘S)</dt>
+        <dd>Save the game.</dd>
+        <dt>Ctrl+Alt+Delete</dt>
+        <dd>Task Mangler: running rules, open orders and scheduled actions.</dd>
+        <dt>Esc</dt>
+        <dd>Closes the Start menu and menus; wakes a screensaver preview.</dd>
+        <dt>Enter</dt>
+        <dd>Opens the selected icon, follows a link, or presses the default button.</dd>
+      </dl>
     ),
   },
 

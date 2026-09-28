@@ -1,0 +1,85 @@
+/* Colour schemes (spec §17 Display) and the CRT effect (spec §4). 98.css hard-codes its colours, so a scheme repaints the chrome:
+   windows, buttons, tabs, headers, title bars and selections. Page and document content keeps its own colours. */
+
+:root {
+  --surface: silver;
+  --title-a: #000080;
+  --title-b: #1084d0;
+  --title-off-a: grey;
+  --title-off-b: #b5b5b5;
+}
+
+:root[data-scheme='teal'] {
+  --surface: #c9d9d5;
+  --title-a: #044c4c;
+  --title-b: #2aa0a0;
+  --highlight: #044c4c;
+  --desktop-bg: #24403f;
+}
+
+:root[data-scheme='brick'] {
+  --surface: #d9c5b2;
+  --title-a: #7a2818;
+  --title-b: #c8663f;
+  --title-off-a: #8a7a70;
+  --title-off-b: #b8aaa0;
+  --highlight: #7a2818;
+  --desktop-bg: #5e2c1b;
+}
+
+:root[data-scheme='contrast'] {
+  --surface: #fff;
+  --title-a: #000;
+  --title-b: #000;
+  --title-off-a: #555;
+  --title-off-b: #555;
+  --highlight: #000;
+  --desktop-bg: #000;
+}
+
+:root[data-scheme='teal'],
+:root[data-scheme='brick'],
+:root[data-scheme='contrast'] {
+  & :is(.window, button, input[type='reset'], input[type='submit'], legend, .status-field-border, table > thead > tr > *, menu[role='tablist'] > li[aria-selected='true']) {
+    background-color: var(--surface);
+  }
+  & .title-bar {
+    background: linear-gradient(90deg, var(--title-a), var(--title-b));
+  }
+  & .title-bar.inactive {
+    background: linear-gradient(90deg, var(--title-off-a), var(--title-off-b));
+  }
+  & :is(ul.tree-view a:focus, select:focus, table > tbody > tr.highlighted) {
+    background-color: var(--highlight);
+  }
+}
+
+/* High contrast: white and black, with hard outlines in place of the bevels. */
+:root[data-scheme='contrast'] {
+  & :is(.window, button, input, select, textarea, .sunken-panel, fieldset) {
+    box-shadow: inset 0 0 0 2px #000;
+  }
+  & :is(button, .window) {
+    color: #000;
+  }
+  & .desktop-icon-label {
+    background: #000;
+    color: #fff;
+  }
+  & a {
+    color: #00f;
+  }
+}
+
+/* ---------- CRT ---------- */
+
+.crt {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, transparent 62%, rgba(0, 0, 0, 0.32) 100%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.13) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}

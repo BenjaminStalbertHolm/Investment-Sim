@@ -171,7 +171,7 @@ export interface Account {
   positions: Position[];
   closed: ClosedPosition[];
   ledger: LedgerEntry[];
-  /** Every order ever placed, oldest first. */
+  /** Every open order, and the most recent ones that closed (see `pruneBooks`), oldest first. */
   orders: Order[];
   nextOrder: number;
   futures: FuturesPosition[];
@@ -181,6 +181,36 @@ export interface Account {
   /** Interest, fees and fines paid that belong to no position (margin and loan interest, fines): realised losses. */
   charges: number;
   call?: MarginCall;
+}
+
+/** How much history the books keep (Phase 11: a game can run for ever in a bounded amount of memory). */
+export const KEEP = { orders: 2000, ledger: 20_000, closed: 5000 };
+
+/**
+ * Drops the oldest closed orders, ledger lines and closed positions beyond what the books keep. Open orders are never
+ * dropped. It waits until a tenth more than the limit has built up, so the arrays are re-cut rarely. Returns whether it did.
+ */
+export function pruneBooks(account: Account): boolean {
+  let pruned = false;
+  const orders = account.orders;
+  if (orders.length > KEEP.orders * 1.1) {
+    let closed = 0;
+    for (const o of orders) if (o.status !== 'open') closed++;
+    let drop = closed - KEEP.orders;
+    if (drop > 0) {
+      account.orders = orders.filter((o) => o.status === 'open' || drop-- <= 0);
+      pruned = true;
+    }
+  }
+  if (account.ledger.length > KEEP.ledger * 1.1) {
+    account.ledger = account.ledger.slice(-KEEP.ledger);
+    pruned = true;
+  }
+  if (account.closed.length > KEEP.closed * 1.1) {
+    account.closed = account.closed.slice(-KEEP.closed);
+    pruned = true;
+  }
+  return pruned;
 }
 
 /** Adds a ledger line and moves the cash. */

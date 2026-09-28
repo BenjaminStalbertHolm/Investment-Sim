@@ -15,6 +15,8 @@ interface ShellStore {
   setup: boolean;
   /** Programs installed from Tucats Downloads (spec §4A, §14A): the Garlic Browser so far. Saved with the game. */
   installed: string[];
+  /** The screensaver is showing (spec §4). Not saved. */
+  saver: boolean;
 
   setPower(power: Power): void;
   moveIcon(id: string, x: number, y: number): void;
@@ -22,6 +24,7 @@ interface ShellStore {
   toggleTickerTape(): void;
   setSetup(setup: boolean): void;
   install(app: string): void;
+  setSaver(on: boolean): void;
 }
 
 export const useShell = create<ShellStore>()((set) => ({
@@ -31,11 +34,13 @@ export const useShell = create<ShellStore>()((set) => ({
   tickerTape: false,
   setup: false,
   installed: [],
+  saver: false,
 
   setPower: (power) => set({ power }),
   moveIcon: (id, x, y) => set((s) => ({ iconPositions: { ...s.iconPositions, [id]: { x, y } } })),
   setSpeed: (speed) => set({ speed }),
   toggleTickerTape: () => set((s) => ({ tickerTape: !s.tickerTape })),
   setSetup: (setup) => set({ setup }),
+  setSaver: (saver) => set({ saver }),
   install: (app) => set((s) => (s.installed.includes(app) ? s : { installed: [...s.installed, app] })),
 }));
